@@ -1,0 +1,37 @@
+<template id="game-group-template">
+
+  <div class="game-group row g-0">
+
+  </div>
+
+</template>
+
+
+<template id="game-item-template">
+
+  <div class="game-item row g-0">
+    <div class="team-col col-9 pe-3">
+      <div class="d-flex flex-column row-gap-0">
+        <div class="team-item d-flex align-items-center column-gap-2">
+          <span data-item="team1_id" class="team-id"></span>
+          <span data-item="team1_name" class="team-name"></span>
+          <span data-item="team1_record" class="team-record ms-auto"></span>
+        </div>
+        <div class="team-item d-flex align-items-center column-gap-2">
+          <span data-item="team2_id" class="team-id"></span>
+          <span data-item="team2_name" class="team-name"></span>
+          <span data-item="team2_record" class="team-record ms-auto"></span>
+        </div>
+      </div>
+    </div>
+    <div class="stat-col col-3 ps-3">
+      <div class="d-flex flex-column justify-content-center">
+        <span data-item="time" class="game-time"></span>
+        <span class="game-court-label">Court
+          <span data-item="court" class="game-court"></span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+</template>

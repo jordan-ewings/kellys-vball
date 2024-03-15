@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="rgb(14, 14, 15)">
+  <meta name="description" content="Kelly's Volleyball">
+  <title>Kelly's Volleyball</title>
+  <!-- <link rel="icon" href="img/logo-512.png" type="image/png"> -->
+  <!-- <link rel="apple-touch-icon" href="img/logo-512.png"> -->
+
+  <!-- <link rel="manifest" href="manifest.json"> -->
+  <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="css/schedule.css">
+  <script src="js/jquery/jquery-3.7.1.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      $("#templates").load("components/schedule/templates.html");
+    });
+  </script>
+</head>
+
+<body>
+  <div id="nav-wrapper">
+    <nav id="navCont" class="navbar">
+      <div class="container-fluid">
+        <div class="navbar-nav d-flex flex-row w-100 nav-underline justify-content-evenly">
+          <a id="nav-standings" class="nav-link flex-fill" href="index.html">STANDINGS</a>
+          <a id="nav-schedule" class="nav-link flex-fill active" href="schedule.html">SCHEDULE</a>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <div id="main" class="container-fluid g-0">
+    <div id="main-header" class="mb-3 mt-1">
+      <div id="filter-container" class="btn-group d-flex flex-nowrap overflow-x-scroll mx-2" role="group">
+        <!-- filter buttons -->
+      </div>
+    </div>
+    <div id="main-body">
+      <div id="schedule-container" class="px-0">
+        <!-- schedule items -->
+      </div>
+    </div>
+  </div>
+
+  <div id="templates" class="d-none"></div>
+  <script src="js/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="js/schedule.js" type="module"></script>
+</body>
+
+</html>

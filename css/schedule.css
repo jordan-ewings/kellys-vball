@@ -1,0 +1,132 @@
+@import url("style.css");
+
+/* ---------------------------------- */
+
+#filter-container button {
+  color: var(--ios-text2);
+  margin: .4rem .6rem;
+  padding: .25rem 0rem;
+  border: none;
+  border-radius: 0;
+  pointer-events: auto;
+  font-size: 1rem;
+  font-weight: 300 !important;
+  text-transform: uppercase;
+}
+
+#filter-container button.active {
+  color: var(--ios-text) !important;
+  border-bottom: 2px solid var(--ios-blue) !important;
+  font-weight: 600 !important;
+  font-size: 1.1rem;
+}
+
+/* ---------------------------------- */
+
+.game-group {
+  background-color: var(--ios-bg) !important;
+  margin: .6rem 0;
+  padding: 0 .5rem 0 1rem;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.game-group-header {
+  color: var(--ios-text2) !important;
+  font-size: .9rem !important;
+  font-weight: 500 !important;
+}
+
+.game-group-header-text {
+  transform: rotate(-90deg);
+  transform-origin: bottom;
+  white-space: nowrap;
+}
+
+/* ---------------------------------- */
+
+.game-item {
+  border-top: 1px dotted var(--ios-separator);
+  padding: .6rem 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.game-item:first-child {
+  border-top: none;
+}
+
+.game-item .team-col {
+  border-right: 1px solid var(--ios-separator);
+}
+
+.game-item .stat-col {
+  padding-right: 0;
+}
+
+.game-item .team-item {
+  pointer-events: auto;
+}
+
+.game-item .team-item>* {
+  pointer-events: none;
+}
+
+.game-item .team-id {
+  color: var(--ios-blue) !important;
+  font-weight: 500 !important;
+  font-size: 1rem !important;
+  text-align: right !important;
+  min-width: 1.1rem;
+}
+
+.game-item .team-name {
+  color: var(--ios-text2);
+  font-size: 1.1rem !important;
+  font-weight: 300 !important;
+}
+
+.game-item .team-record {
+  color: var(--ios-text4) !important;
+  font-size: .9rem !important;
+}
+
+.game-item .game-time {
+  color: var(--ios-text1);
+  font-size: 1rem !important;
+  font-weight: 400 !important;
+}
+
+.game-item .game-court,
+.game-item .game-court-label {
+  color: var(--ios-text2);
+  font-size: .9rem !important;
+  font-weight: 300;
+}
+
+.game-item .game-court {
+  font-weight: 400 !important;
+}
+
+/* ---------------------------------- */
+
+.game-item .stat-col.selected .game-time {
+  color: var(--ios-green) !important;
+  font-weight: 500 !important;
+}
+
+.game-item .stat-col.selected * {
+  color: var(--ios-green) !important;
+}
+
+.game-item .team-item.selected .team-name {
+  color: var(--ios-blue) !important;
+  font-weight: 500 !important;
+}
+
+.game-item .team-item.selected .team-id {
+  color: var(--ios-blue) !important;
+  font-weight: 700 !important;
+}

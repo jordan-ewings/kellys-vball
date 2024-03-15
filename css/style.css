@@ -1,0 +1,101 @@
+/* define apple ios colors */
+:root {
+  --ios-blue: rgb(10, 132, 255);
+  --ios-green: rgb(48, 209, 88);
+  --ios-indigo: rgb(94, 92, 230);
+  --ios-orange: rgb(255, 159, 10);
+  --ios-pink: rgb(255, 55, 95);
+  --ios-purple: rgb(191, 90, 242);
+  --ios-red: rgb(255, 69, 58);
+  --ios-teal: rgb(100, 210, 255);
+  --ios-yellow: rgb(255, 214, 10);
+
+  --ios-blue-darker: rgb(0, 72, 255);
+  --ios-blue-lighter: rgb(62, 158, 253);
+  --ios-red-lighter: rgb(255, 77, 92);
+
+  --ios-bg-black: rgb(14, 14, 15);
+  --ios-bg: rgb(22, 22, 24);
+  --ios-bg1: rgb(24, 24, 26);
+  --ios-bg2: rgb(28, 28, 30);
+  --ios-bg3: rgb(58, 58, 60);
+  --ios-bg4: rgb(72, 72, 74);
+
+  --ios-text: rgb(255, 255, 255, .85);
+  --ios-text1: rgb(255, 255, 255, .6);
+  --ios-text2: rgb(255, 255, 255, .3);
+  --ios-text3: rgb(255, 255, 255, .15);
+  --ios-text4: rgb(255, 255, 255, .05);
+
+  --ios-separator: rgb(255, 255, 255, .12);
+  --ios-separator-dark: rgba(0, 0, 0, 0.8);
+
+  --font: 11pt;
+
+  --font-sm1: .95rem !important;
+  --font-sm2: .9rem !important;
+  --font-sm3: .85rem !important;
+  --font-sm4: .8rem !important;
+  --font-sm5: .75rem !important;
+
+  --font-lg1: 12pt;
+  --font-lg2: 13pt;
+  --font-lg3: 14pt;
+  --font-lg4: 15pt;
+  --font-lg5: 16pt;
+}
+
+:root {
+  --bs-body-color: var(--ios-text);
+  --bs-body-color-rgb: 255, 255, 255;
+  --bs-body-bg: var(--ios-bg-black);
+  --bs-body-bg-rgb: 14, 14, 15;
+  --bs-border-color: var(--ios-separator);
+  --bs-border-color-translucent: rgba(255, 255, 255, 0.1);
+}
+
+/* ---------------------------------- */
+
+html {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background-color: var(--ios-bg-black);
+  z-index: 1000;
+}
+
+body {
+  background-color: var(--ios-bg-black);
+  color: var(--ios-text);
+  font-family: system-ui, -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  /* font-size: var(--font) !important; */
+  padding: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-right: auto;
+  margin-left: auto;
+  max-width: 700px;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+div::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------------------------------- */
+
+.navbar a {
+  font-weight: 500 !important;
+  font-size: 1rem !important;
+  padding-top: 0 !important;
+  padding-bottom: .5rem !important;
+  text-align: center !important;
+}
