@@ -1,5 +1,5 @@
 import * as util from './util.js';
-import DB from './DB.js';
+import { DB, APP } from './DB.js';
 
 /* ------------------------------------------------ */
 
@@ -7,25 +7,58 @@ document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
 
+  // load data
   await DB.load('Schedule');
+
+  // set APP data
+  // current week
+  let data = DB.get('Schedule');
+  let weeks = data.map(d => d.week).filter((v, i, a) => a.findIndex(t => (t === v)) === i);
+  let currentWeek = weeks[0];
+  weeks.forEach(w => {
+    let week = data.filter(d => d.week === w);
+    let games = week.filter(d => d.status === 'POST');
+    if (games.length > 0) {
+      currentWeek = w;
+    }
+  });
+
+  APP.set('currentWeek', currentWeek);
+  APP.set('focusedTeam', null);
+
+  // make page
   makeFilters();
+
+  // stop loading animation
+  let loading = document.querySelector('#loading');
+  loading.classList.add('d-none');
 }
 
 /* ------------------------------------------------ */
 
 function makeGameItem(d) {
 
-  let matchup = util.createFromTemplate('game-item-template');
-  let items = matchup.querySelectorAll('span[data-item]');
+  let gameItem = util.createFromTemplate('game-item-template');
+  let items = gameItem.querySelectorAll('span[data-item]');
 
   items.forEach(item => {
     let dataItem = item.getAttribute('data-item');
     let text = d[dataItem];
-    if (dataItem == 'court') text = text.replace('Court ', '');
+    if (dataItem == 'court') text = text.replace('Court ', 'C');
     item.textContent = text;
   });
 
-  return matchup;
+  let teamItems = gameItem.querySelectorAll('.team-item');
+  teamItems.forEach(teamItem => {
+    teamItem.addEventListener('click', handleTeamSelection);
+    teamItem.addEventListener('mouseover', handleTeamHover);
+    teamItem.addEventListener('mouseleave', resetTeamSelection);
+
+    let teamName = teamItem.querySelector('.team-name').textContent;
+    teamItem.setAttribute('data-team_name', teamName);
+  });
+
+  return gameItem;
 }
 
 /* ------------------------------------------------ */
@@ -47,10 +80,28 @@ function makeSchedule(data, groupField = 'time') {
     scheduleContainer.appendChild(gameGroup);
   });
 
-  let teamItems = scheduleContainer.querySelectorAll('.team-item');
-  teamItems.forEach(teamItem => {
-    teamItem.addEventListener('click', handleTeamSelection);
-    teamItem.addEventListener('mouseover', handleTeamHover);
+  setTimeout(() => {
+    let focusedTeam = APP.get('focusedTeam');
+    if (focusedTeam) {
+      handleTeamSelection();
+    }
+  }, 250);
+
+}
+
+/* ------------------------------------------------ */
+
+function resetTeamSelection(e, force = false) {
+
+  if (APP.get('focusedTeam') && !force) return;
+
+  let teamItems = document.querySelectorAll('.team-item');
+  let statCols = document.querySelectorAll('.stat-col');
+  teamItems.forEach(ti => {
+    ti.classList.remove('selected');
+  });
+  statCols.forEach(sc => {
+    sc.classList.remove('selected');
   });
 
 }
@@ -59,72 +110,93 @@ function makeSchedule(data, groupField = 'time') {
 
 function handleTeamSelection(e) {
 
-  let teamItems = document.querySelectorAll('.team-item');
-  let statCols = document.querySelectorAll('.stat-col');
-  let team = e.target.querySelector('.team-name').textContent;
-  let isSelected = false;
-  let statCol = e.target.closest('.game-item').querySelector('.stat-col');
-  if (statCol.classList.contains('selected')) isSelected = true;
-
-  if (isSelected) {
-    teamItems.forEach(ti => {
-      ti.classList.remove('selected');
-    });
-    statCols.forEach(sc => {
-      sc.classList.remove('selected');
-    });
-    return;
+  resetTeamSelection(e, true);
+  let team = APP.get('focusedTeam');
+  if (e) {
+    let clickedTeam = e.target.dataset.team_name;
+    if (clickedTeam == team) {
+      APP.set('focusedTeam', null);
+      return;
+    }
+    APP.set('focusedTeam', clickedTeam);
+    team = clickedTeam;
   }
 
-  teamItems.forEach(ti => {
-    let teamName = ti.querySelector('.team-name').textContent;
-    if (teamName === team) {
-      ti.classList.add('selected');
-    } else {
-      ti.classList.remove('selected');
-    }
-  });
+  let teamItems = document.querySelectorAll('.team-item[data-team_name="' + team + '"]');
+  teamItems.forEach((ti, index) => {
+    ti.classList.add('selected');
+    let gameItem = ti.closest('.game-item');
+    let statCol = gameItem.querySelector('.stat-col');
+    statCol.classList.add('selected');
 
-  statCols.forEach(sc => {
-    let game = sc.closest('.game-item');
-    let gameTeamItems = game.querySelectorAll('.team-item');
-    let highlight = false;
-    gameTeamItems.forEach(ti => {
-      let gameTeam = ti.querySelector('.team-name').textContent;
-      if (gameTeam === team) {
-        highlight = true;
-      }
-    });
-    if (highlight) {
-      sc.classList.add('selected');
-    } else {
-      sc.classList.remove('selected');
+    if (index == 0) {
+      let gameGroup = gameItem.closest('.game-group');
+      // gameGroup.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+      scrollIntoView(gameGroup);
     }
   });
 }
 
 /* ------------------------------------------------ */
 
-function handleTeamHover(e) {
-  let statCols = document.querySelectorAll('.stat-col');
-  let isTeamSelected = false;
-  statCols.forEach(sc => {
-    if (sc.classList.contains('selected')) {
-      isTeamSelected = true;
-    }
-  });
-  if (isTeamSelected) return;
+function createAlert(type, msg) {
 
-  let team = e.target.querySelector('.team-name').textContent;
-  let teamItems = document.querySelectorAll('.team-item');
+  let alert = document.createElement('div');
+  alert.classList.add('alert', 'd-flex', 'align-items-center');
+  alert.classList.add('py-2', 'px-3', 'mb-2');
+  alert.classList.add('alert-' + type);
+  alert.setAttribute('role', 'alert');
+
+  let alertMsg = document.createElement('div');
+  alertMsg.classList.add('me-auto', 'fw-medium');
+  alertMsg.innerHTML = msg;
+  alert.appendChild(alertMsg);
+
+  let closeBtn = document.createElement('button');
+  closeBtn.id = 'alertCloseBtn';
+  closeBtn.classList.add('btn-close');
+  // closeBtn.classList.add('btn-' + type, 'align-middle', 'ms-2')
+  closeBtn.classList.add('btn-sm');
+  closeBtn.setAttribute('type', 'button');
+  // closeBtn.setAttribute('data-bs-dismiss', 'alert');
+  // closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  alert.appendChild(closeBtn);
+
+  return alert;
+}
+
+/* ------------------------------------------------ */
+
+function handleTeamHover(e) {
+
+  if (APP.get('focusedTeam')) return;
+  resetTeamSelection(e);
+
+  let team = e.target.dataset.team_name;
+  let teamItems = document.querySelectorAll('.team-item[data-team_name="' + team + '"]');
   teamItems.forEach(ti => {
-    let teamName = ti.querySelector('.team-name').textContent;
-    if (teamName === team) {
-      ti.classList.add('selected');
-    } else {
-      ti.classList.remove('selected');
-    }
+    ti.classList.add('selected');
   });
+
+}
+
+/* ------------------------------------------------ */
+
+function scrollIntoView(element) {
+
+  let header = document.querySelector('#main-header');
+  let headerHeight = header.offsetHeight;
+  let top = element.getBoundingClientRect().top;
+  let elementMarginTop = window.getComputedStyle(element).marginTop;
+  if (elementMarginTop) {
+    top = top - parseInt(elementMarginTop);
+  }
+
+  let scrollTop = window.scrollY;
+  let topAdjusted = top + scrollTop - headerHeight;
+
+  console.log('top', top, 'scrollTop', scrollTop, 'headerHeight', headerHeight, 'topAdjusted', topAdjusted);
+  window.scrollTo({ top: topAdjusted, behavior: 'smooth' });
 }
 
 /* ------------------------------------------------ */
@@ -159,7 +231,7 @@ function makeFilters() {
       e.target.classList.add('active');
 
       // scroll into view of button
-      e.target.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'center' });
+      e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     });
 
     btn.classList.add('btn', 'text-dim2', 'fw-medium', 'text-nowrap');
@@ -167,7 +239,74 @@ function makeFilters() {
     filterContainer.appendChild(btn);
   });
 
-  let initButton = filterContainer.querySelector('button');
-  initButton.click();
+  // click button of current week
+  let currentWeek = APP.get('currentWeek');
+  let currentWeekBtn = filterContainer.querySelector('button[data-week="' + currentWeek + '"]');
+  currentWeekBtn.click();
 }
+
+/* ------------------------------------------------ */
+
+// if user swipes left or right, change the week
+// if no week to change to, do nothing (e.g. if at the first or last week)
+let scheduleContainer = document.querySelector('#schedule-container');
+scheduleContainer.addEventListener('touchstart', handleTouchStart, false);
+scheduleContainer.addEventListener('touchmove', handleTouchMove, false);
+
+let xDown = null;
+let yDown = null;
+
+function getTouches(evt) {
+  return evt.touches ||             // browser API
+    evt.originalEvent.touches; // jQuery
+}
+
+function handleTouchStart(evt) {
+  const firstTouch = getTouches(evt)[0];
+  xDown = firstTouch.clientX;
+  yDown = firstTouch.clientY;
+}
+
+function handleTouchMove(evt) {
+  if (!xDown || !yDown) {
+    return;
+  }
+
+  let xUp = evt.touches[0].clientX;
+  let yUp = evt.touches[0].clientY;
+
+  let xDiff = xDown - xUp;
+  let yDiff = yDown - yUp;
+
+  // if xDiff is 2x greater than yDiff then it's a swipe
+  // but, xDiff must be greater than 50px
+  let swipeAction = Math.abs(xDiff) > Math.abs(yDiff) * 2;
+  if (swipeAction === false) return;
+  if (Math.abs(xDiff) < 75) return;
+
+  if (swipeAction === true) {
+    if (xDiff > 0) {
+      // left swipe
+      let active = document.querySelector('#filter-container .active');
+      let next = active.nextElementSibling;
+      if (next) {
+        next.click();
+      }
+    } else {
+      // right swipe
+      let active = document.querySelector('#filter-container .active');
+      let prev = active.previousElementSibling;
+      if (prev) {
+        prev.click();
+      }
+    }
+  }
+
+  xDown = null;
+  yDown = null;
+}
+
+/* ------------------------------------------------ */
+
+
 

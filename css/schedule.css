@@ -2,16 +2,39 @@
 
 /* ---------------------------------- */
 
+#loading {
+  height: 50vh;
+  width: 100%;
+  z-index: 1000;
+  background-color: var(--ios-bg-black);
+}
+
+/* ---------------------------------- */
+
+#main-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: var(--ios-bg-black);
+  border-bottom: 1px solid var(--ios-separator-dark);
+  box-shadow: 0 15px 10px -15px var(--ios-separator-dark);
+}
+
 #filter-container button {
   color: var(--ios-text2);
-  margin: .4rem .6rem;
-  padding: .25rem 0rem;
+  margin: .8rem .6rem;
+  padding: .1rem 0rem;
   border: none;
   border-radius: 0;
   pointer-events: auto;
   font-size: 1rem;
   font-weight: 300 !important;
   text-transform: uppercase;
+}
+
+#filter-container button:hover {
+  color: var(--ios-blue) !important;
+  cursor: pointer;
 }
 
 #filter-container button.active {
@@ -73,6 +96,13 @@
 .game-item .team-item>* {
   pointer-events: none;
 }
+
+/* make the team items look like buttons when hovered (pointer is a finger, not just a cursor) */
+.game-item .team-item:hover {
+  cursor: pointer;
+}
+
+/* ---------------------------------- */
 
 .game-item .team-id {
   color: var(--ios-blue) !important;

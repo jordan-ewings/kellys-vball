@@ -1,41 +1,68 @@
 
-export default {
+export const DB = {
 
   data: {
-    sheets: {},
-    app: {},
+    sheets: {}
   },
 
+  // load sheet data
   async load(sheet) {
     this.data.sheets[sheet] = await getSheet(sheet);
   },
 
-  async reload() {
-    if (this.data.sheets == {}) {
-      console.log('DB.reload() cancelled - no sheets loaded');
-      return;
-    }
-    for (let sheet in this.data.sheets) {
+  // refresh sheet data (default: all sheets currently loaded)
+  async refresh(sheet = null) {
+    if (sheet) {
       this.data.sheets[sheet] = await getSheet(sheet);
+    } else {
+      if (this.data.sheets == {}) {
+        console.log('DB.refresh() cancelled - no sheets loaded');
+        return;
+      }
+      for (let sheet in this.data.sheets) {
+        this.data.sheets[sheet] = await getSheet(sheet);
+      }
     }
   },
 
+  // get sheet data
   get(sheet) {
-    return this.data.sheets[sheet];
-  },
-
-  app: {
-    get: function (key) {
-      return this.data.app[key];
-    },
-    set: function (key, value) {
-      this.data.app[key] = value;
-    },
-    reset: function () {
-      this.data.app = {};
+    if (this.data.sheets[sheet]) {
+      return this.data.sheets[sheet];
+    } else {
+      console.log('DB.get() cancelled - sheet \'' + sheet + '\' not loaded');
+      return null;
     }
   }
 };
+
+export const APP = {
+
+  data: {},
+
+  get: function (key) {
+    return this.data[key];
+  },
+
+  set: function (key, value) {
+    this.data[key] = value;
+  },
+
+  reset: function () {
+    this.data = {};
+  }
+
+};
+
+//   async reload() {
+//   if (this.data.sheets == {}) {
+//     console.log('DB.reload() cancelled - no sheets loaded');
+//     return;
+//   }
+//   for (let sheet in this.data.sheets) {
+//     this.data.sheets[sheet] = await getSheet(sheet);
+//   }
+// },
 
 /* ------------------------------------------------ */
 
