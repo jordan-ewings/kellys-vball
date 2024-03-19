@@ -19,7 +19,7 @@
   <script src="js/jquery/jquery-3.7.1.min.js"></script>
   <script>
     $(document).ready(function () {
-      $("#templates").load("components/schedule/templates.html");
+      $("#templates").load("components/standings/templates.html");
     });
   </script>
 </head>
@@ -29,22 +29,31 @@
     <nav id="navCont" class="navbar">
       <div class="container-fluid">
         <div class="navbar-nav d-flex flex-row w-100 nav-underline justify-content-evenly">
-          <a id="nav-standings" class="nav-link flex-fill" href="standings.html">STANDINGS</a>
-          <a id="nav-schedule" class="nav-link flex-fill active" href="schedule.html">SCHEDULE</a>
+          <a id="nav-standings" class="nav-link flex-fill active" href="standings.html">STANDINGS</a>
+          <a id="nav-schedule" class="nav-link flex-fill" href="schedule.html">SCHEDULE</a>
         </div>
       </div>
     </nav>
   </div>
   <div id="alert-container" class="alert-container"></div>
   <div id="main" class="container-fluid g-0">
-    <div id="main-header" class="mb-3 mt-1">
-      <div id="filter-container" class="btn-group d-flex flex-nowrap overflow-x-scroll" role="group">
-        <!-- filter buttons -->
-      </div>
-    </div>
+    <!-- <div id="main-header" class="mb-3 mt-1"></div> -->
     <div id="main-body">
-      <div id="schedule-container">
-        <!-- schedule items -->
+      <div id="standings-container" class="cont-card">
+        <div class="cont-card-title">
+          <span>LEADERBOARD</span>
+        </div>
+        <div class="cont-card-body">
+          <div class="table-responsive">
+            <table class="table table-borderless align-middle text-nowrap m-0">
+              <thead>
+              </thead>
+              <tbody>
+                <!-- standings items -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -58,7 +67,7 @@
 
   <div id="templates" class="d-none"></div>
   <script src="js/bootstrap/bootstrap.bundle.min.js"></script>
-  <script src="js/schedule.js" type="module"></script>
+  <script src="js/standings.js" type="module"></script>
 </body>
 
 </html>
