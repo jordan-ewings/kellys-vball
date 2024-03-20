@@ -125,14 +125,14 @@ div::-webkit-scrollbar {
   background-color: transparent !important;
   color: var(--ios-text1);
   font-size: 1rem;
-  padding: .4rem;
+  padding: .5rem .4rem;
   text-align: center;
 }
 
 .table thead th {
-  color: var(--ios-text2);
+  color: var(--ios-text3);
   font-size: .8rem;
-  font-weight: 500;
+  font-weight: 600;
   padding-bottom: .6rem;
   border: none;
   border-bottom: 1px solid var(--ios-separator);
@@ -195,21 +195,20 @@ div::-webkit-scrollbar {
 
 #standings-container td.team span[data-item="id"] {
   color: var(--ios-blue) !important;
-  font-weight: 500 !important;
-  font-size: 1rem !important;
+  /* font-weight: 400 !important; */
+  /* font-size: 1rem !important; */
   text-align: right !important;
   min-width: 1.1rem;
 }
 
 #standings-container td.team span[data-item="name"] {
-  color: var(--ios-text1);
-  font-size: 1rem !important;
-  font-weight: 300 !important;
+  color: var(--ios-text);
+  /* font-weight: 400 !important; */
 }
 
-#standings-container td.record {
-  font-size: 1rem !important;
-  font-weight: 400 !important;
+#standings-container td.winPct {
+  /* color: var(--ios-text1); */
+  /* font-weight: 400 !important; */
 }
 
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
@@ -267,62 +266,80 @@ div::-webkit-scrollbar {
   padding-right: 0;
 }
 
-.game-item .team-item {
-  pointer-events: auto;
-}
-
-.game-item .team-item>* {
-  pointer-events: none;
-}
-
-/* make the team items look like buttons when hovered (pointer is a finger, not just a cursor) */
 .game-item .team-item:hover {
+  /* color: var(--ios-blue); */
   cursor: pointer;
 }
 
-.game-item .team-item input {
-  /* custom radio button */
-  /* make bigger */
-  width: 1.2rem;
-  height: 1.2rem;
-
+.game-item .stat-col:hover i {
+  cursor: pointer;
 }
 
-.game-item .team-item.winner .team-result {
-  color: var(--ios-green) !important;
-  /* font-weight: 700 !important; */
+.game-item .stat-col i {
+  color: var(--ios-blue);
+  font-size: .8rem;
 }
+
+/* make the team items look like buttons when hovered (pointer is a finger, not just a cursor) */
 
 /* ---------------------------------- */
 
 .game-item .team-id {
-  color: var(--ios-blue) !important;
-  font-weight: 500 !important;
-  font-size: 1rem !important;
-  text-align: right !important;
+  color: var(--ios-blue);
+  font-weight: 500;
+  font-size: 1rem;
+  text-align: right;
   min-width: 1.1rem;
 }
 
 .game-item .team-name {
   color: var(--ios-text2);
-  font-size: 1rem !important;
-  font-weight: 300 !important;
+  font-size: 1rem;
+  font-weight: 300;
+}
+
+.game-item .team-item.winner .team-name {
+  color: var(--ios-text);
+  font-weight: 400;
+}
+
+/* .game-item-form .team-name {
+  font-weight: 500;
+} */
+
+.game-item-form .team-item.winner .team-name {
+  color: var(--ios-text);
+  /* font-weight: 500; */
 }
 
 .game-item .team-record {
-  color: var(--ios-text4) !important;
-  font-size: .8rem !important;
+  color: var(--ios-text3);
+  font-size: .8rem;
+}
+
+.game-item-form .team-record {
+  display: none;
 }
 
 .game-item .team-result {
-  color: var(--ios-text4);
-  font-size: 1.2rem !important;
+  color: var(--ios-text);
+  font-size: 1.1rem;
 }
+
+.game-item-form .team-result {
+  color: var(--ios-text3);
+  font-size: 1.5rem;
+}
+
+.game-item-form .team-item.winner .team-result {
+  color: var(--ios-green);
+}
+
 
 .game-item .game-time {
   color: var(--ios-text1);
-  font-size: 1rem !important;
-  font-weight: 400 !important;
+  font-size: 1rem;
+  font-weight: 400;
 }
 
 .game-item .game-court,
@@ -338,21 +355,19 @@ div::-webkit-scrollbar {
 
 /* ---------------------------------- */
 
-.game-item .stat-col.selected .game-time {
-  color: var(--ios-green) !important;
-  font-weight: 500 !important;
-}
-
-.game-item .stat-col.selected * {
-  color: var(--ios-green) !important;
-}
 
 .game-item .team-item.selected .team-name {
   color: var(--ios-blue) !important;
   font-weight: 500 !important;
 }
 
-.game-item .team-item.selected .team-id {
-  color: var(--ios-blue) !important;
-  font-weight: 700 !important;
+.game-item .team-item.unselected .team-name {
+  color: var(--ios-text2) !important;
+}
+
+/* ---------------------------------- */
+
+.game-item-form .help-text {
+  color: var(--ios-text1);
+  font-weight: 500;
 }

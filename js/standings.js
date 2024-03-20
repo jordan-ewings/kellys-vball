@@ -68,6 +68,9 @@ function makeStandings() {
   data.sort((a, b) => {
     if (a.winPct < b.winPct) return 1;
     if (a.winPct > b.winPct) return -1;
+    if (a.losses > b.losses) return 1;
+    if (a.losses < b.losses) return -1;
+
     return 0;
   });
 
@@ -113,6 +116,8 @@ function makeStandings() {
       });
       standingsHead.appendChild(tr);
     }
+
+    team.winPct = util.formatNumber(team.winPct, '0.000');
 
     let dataItems = standingsItem.querySelectorAll('[data-item]');
     dataItems.forEach(item => {

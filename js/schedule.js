@@ -120,19 +120,24 @@ function makeSchedule(data, groupField = 'time') {
     scheduleContainer.appendChild(gameCard);
   });
 
-  setTimeout(() => {
-    let focusedTeam = APP.get('focusedTeam');
-    if (focusedTeam) {
-      handleTeamSelection();
-    }
-    // if (!focusedTeam) {
-    //   let gameGroup = scheduleContainer.querySelector('.game-group');
-    //   scrollIntoView(gameGroup);
-    // }
-  }, 250);
+
+  // setTimeout(() => {
+  //   let focusedTeam = APP.get('focusedTeam');
+  //   if (focusedTeam) {
+  //     handleTeamSelection();
+  //   }
+  //   // if (!focusedTeam) {
+  //   //   let gameGroup = scheduleContainer.querySelector('.game-group');
+  //   //   scrollIntoView(gameGroup);
+  //   // }
+  // }, 250);
 }
 
 /* ------------------------------------------------ */
+
+let regWinTeamClass = ['fa-solid', 'fa-caret-left'];
+let formWinTeamClass = ['fa-solid', 'fa-circle-check'];
+let formLoseTeamClass = ['fa-regular', 'fa-circle'];
 
 function makeGameItem(d) {
 
@@ -158,121 +163,379 @@ function makeGameItem(d) {
 
     let teamResult = teamItem.querySelector('.team-result');
     if (d.winner_id == teamId) {
-      teamResult.classList.add('fa-solid', 'fa-circle-check');
+      teamResult.classList.add(...regWinTeamClass);
       teamItem.classList.add('winner');
-    } else {
-      teamResult.classList.add('fa-regular', 'fa-circle');
     }
 
-    teamItem.addEventListener('click', (e) => {
+    if (APP.get('focusedTeam')) {
+      if (APP.get('focusedTeam') == teamName) {
+        teamItem.classList.add('selected');
+      } else {
+        teamItem.classList.add('unselected');
+      }
+    }
+
+    let teamNameSpan = teamItem.querySelector('.team-name');
+    teamNameSpan.addEventListener('click', (e) => {
       let focusedTeam = (APP.get('focusedTeam') == teamName) ? null : teamName;
       APP.set('focusedTeam', focusedTeam);
       handleTeamSelection();
     });
   });
 
-  if (d.winner_id) {
-    let winner = gameItem.querySelector('.team-item[data-team_id="' + d.winner_id + '"]');
-    let teamResult = winner.querySelector('.team-result');
-    teamResult.classList.replace('fa-regular', 'fa-solid');
-    teamResult.classList.replace('fa-circle', 'fa-circle-check');
-    winner.classList.add('winner');
-  }
-
   let statCol = gameItem.querySelector('.stat-col');
   statCol.addEventListener('click', (e) => {
+    // clear focused team
+    APP.set('focusedTeam', null);
+    handleTeamSelection();
+    // replace all existing game item forms with game items beforehand
+    // only one game item form can be open at a time
+    let gameItemForms = document.querySelectorAll('.game-item-form');
+    gameItemForms.forEach(gif => {
+      let gameId = gif.dataset.game_id;
+      let game = DB.get('Schedule').find(g => g.game_id === gameId);
+      let gameItem = makeGameItem(game);
+      gif.replaceWith(gameItem);
+    });
     let gameItemForm = gameItemToForm(gameItem);
     gameItem.replaceWith(gameItemForm);
   });
-
-
-  // set up expand button
-  // let expandBtn = gameItem.querySelector('.expand-btn');
-  // expandBtn.addEventListener('click', () => {
-
-  //   let gameItemForm = gameItem.cloneNode(true);
-  //   let expandBtnForm = gameItemForm.querySelector('.expand-btn');
-  //   let expandBtnFormIcon = expandBtnForm.querySelector('i');
-  //   expandBtnFormIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
-  //   expandBtnForm.addEventListener('click', () => {
-  //     gameItemForm.replaceWith(gameItem);
-  //   });
-
-  //   let submitBtn = document.createElement('button');
-  //   submitBtn.type = 'button';
-  //   submitBtn.classList.add('btn', 'btn-sm', 'btn-primary', 'w-75');
-  //   submitBtn.innerHTML = '<i class="fas fa-check"></i>';
-  //   submitBtn.addEventListener('click', () => {
-  //     let winner = gameItemForm.querySelector('input[name="' + d.game_id + '"]:checked');
-  //     if (!winner) {
-  //       createAlert('danger', 'Please select a winner');
-  //       return;
-  //     }
-
-  //     let winnerId = winner.value;
-  //     let game = DB.get('Schedule').find(g => g.game_id == d.game_id);
-  //     game.winner_id = winnerId;
-  //     let newGameItem = makeGameItem(game);
-  //     gameItemForm.replaceWith(newGameItem);
-  //   });
-
-  //   let statCol = gameItemForm.querySelector('.stat-col');
-  //   statCol.classList.add('d-flex', 'align-items-center');
-  //   statCol.innerHTML = '';
-  //   statCol.appendChild(submitBtn);
-  //   // let statColContent = statCol.querySelector('div');
-  //   // statColContent.innerHTML = '';
-  //   // statColContent.appendChild(submitBtn);
-
-  //   // make the team items selectable
-  //   let teams = gameItemForm.querySelectorAll('.team-item');
-  //   teams.forEach(team => {
-
-  //     let teamId = team.querySelector('.team-id').textContent;
-
-  //     let teamCopy = team.cloneNode(true);
-  //     //
-  //     let isWinner = team.classList.contains('winner');
-
-  //     let input = document.createElement('input');
-  //     input.classList.add('ms-auto');
-  //     input.setAttribute('type', 'radio');
-  //     input.setAttribute('name', d.game_id);
-  //     input.setAttribute('id', teamId);
-  //     input.setAttribute('value', teamId);
-  //     if (isWinner) input.setAttribute('checked', true);
-
-  //     let teamResult = teamCopy.querySelector('.team-result');
-  //     teamResult.replaceWith(input);
-
-  //     let label = document.createElement('label');
-  //     label.setAttribute('for', teamId);
-  //     label.appendChild(teamCopy);
-
-  //     team.replaceWith(label);
-  //   });
-
-  //   gameItem.replaceWith(gameItemForm);
-  // });
 
   return gameItem;
 }
 
 /* ------------------------------------------------ */
 
+function gameItemToForm(gameItem) {
+
+  let gameItemForm = gameItem.cloneNode(true);
+  gameItemForm.classList.add('game-item-form');
+  gameItemForm.removeAttribute('id');
+  gameItemForm.setAttribute('data-form_winner_id', gameItemForm.dataset.winner_id);
+
+  // let teamCol = gameItemForm.querySelector('.team-col');
+  // teamCol.classList.add('row-gap-2');
+
+  const selectTeam = (teamItem) => {
+    let teamResult = teamItem.querySelector('.team-result');
+    teamItem.classList.add('winner');
+    teamResult.classList.remove(...formLoseTeamClass);
+    teamResult.classList.add(...formWinTeamClass);
+  };
+
+  const deselectTeam = (teamItem) => {
+    let teamResult = teamItem.querySelector('.team-result');
+    teamItem.classList.remove('winner');
+    teamResult.classList.remove(...formWinTeamClass);
+    teamResult.classList.add(...formLoseTeamClass);
+  };
+
+
+  let teamItems = gameItemForm.querySelectorAll('.team-item');
+  teamItems.forEach(ti => {
+    let tiForm = ti.cloneNode(true);
+    tiForm.classList.add('team-item-form');
+    tiForm.classList.add('py-1');
+
+    let teamId = ti.dataset.team_id;
+    let teamName = ti.dataset.team_name;
+    let gameId = gameItem.dataset.game_id;
+    let winnerId = gameItem.dataset.winner_id;
+
+    deselectTeam(tiForm);
+    if (winnerId == teamId) {
+      selectTeam(tiForm);
+    }
+
+    // make tiForm the label for input
+    tiForm.addEventListener('click', (e) => {
+
+      let isSelected = tiForm.classList.contains('winner');
+      if (isSelected) {
+        deselectTeam(tiForm);
+        gameItemForm.dataset.form_winner_id = '';
+      } else {
+        let tiForms = gameItemForm.querySelectorAll('.team-item-form');
+        tiForms.forEach(tif => {
+          deselectTeam(tif);
+        });
+        selectTeam(tiForm);
+        gameItemForm.dataset.form_winner_id = teamId;
+      }
+
+      let saveBtn = gameItemForm.querySelector('#saveBtn');
+      if (gameItemForm.dataset.form_winner_id != gameItemForm.dataset.winner_id) {
+        saveBtn.disabled = false;
+        saveBtn.classList.replace('btn-outline-primary', 'btn-primary');
+      } else {
+        saveBtn.disabled = true;
+        saveBtn.classList.replace('btn-primary', 'btn-outline-primary');
+      }
+    });
+    ti.replaceWith(tiForm);
+  });
+
+  // switch chevron to down
+  let statCol = gameItemForm.querySelector('.stat-col');
+  // let statColChevron = statCol.querySelector('.fa-chevron-right');
+  // statColChevron.classList.remove('fa-chevron-right');
+  // statColChevron.classList.add('fa-chevron-down');
+  statCol.addEventListener('click', (e) => {
+    gameItemForm.replaceWith(gameItem);
+  });
+
+  // save button
+  let saveBtn = document.createElement('button');
+  saveBtn.id = 'saveBtn';
+  saveBtn.type = 'button';
+  saveBtn.classList.add('btn', 'btn-outline-primary');
+  saveBtn.textContent = 'Submit';
+  saveBtn.addEventListener('click', handleGameItemFormSave);
+  saveBtn.disabled = true;
+
+  // cancel button
+  let cancelBtn = document.createElement('button');
+  cancelBtn.id = 'cancelBtn';
+  cancelBtn.type = 'button';
+  cancelBtn.classList.add('btn', 'btn-secondary');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', (e) => {
+    gameItemForm.replaceWith(gameItem);
+  });
+
+  // help text
+  let helpText = document.createElement('div');
+  helpText.textContent = 'Select the winning team';
+  helpText.classList.add('help-text', 'me-auto');
+
+  let footer = document.createElement('div');
+  footer.classList.add('d-flex', 'justify-content-end', 'mt-4', 'mb-2', 'column-gap-2');
+  // footer.appendChild(helpText);
+  footer.appendChild(cancelBtn);
+  footer.appendChild(saveBtn);
+  gameItemForm.appendChild(footer);
+
+  return gameItemForm;
+}
+
+function pendingChanges() {
+  let gameItems = document.querySelectorAll('.game-item-form');
+  let changes = false;
+  gameItems.forEach(gif => {
+    let winnerId = gif.dataset.winner_id;
+    let formWinnerId = gif.dataset.form_winner_id;
+    if (winnerId != formWinnerId) {
+      changes = true;
+    }
+  });
+  return changes;
+}
+
+function setSaveCancelButtons(mode, saveEnabled = false) {
+
+  if (mode != 'show') {
+    let formActionButtons = document.querySelector('#form-action-buttons');
+    if (formActionButtons) {
+      formActionButtons.remove();
+    }
+    return;
+  }
+
+  let formActionButtons = document.querySelector('#form-action-buttons');
+  if (formActionButtons) {
+    let saveBtn = formActionButtons.querySelector('#saveBtn');
+    saveBtn.disabled = !saveEnabled;
+    return;
+  }
+
+  // save button
+  let saveBtn = document.createElement('button');
+  saveBtn.id = 'saveBtn';
+  saveBtn.type = 'button';
+  saveBtn.classList.add('btn', 'btn-sm', 'btn-primary');
+  saveBtn.textContent = 'Save';
+  saveBtn.addEventListener('click', handleGameItemFormSave);
+  saveBtn.disabled = !saveEnabled;
+
+
+  // cancel button
+  let cancelBtn = document.createElement('button');
+  cancelBtn.id = 'cancelBtn';
+  cancelBtn.type = 'button';
+  cancelBtn.classList.add('btn', 'btn-sm', 'btn-secondary');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', (e) => {
+    let gameItemForms = document.querySelectorAll('.game-item-form');
+    gameItemForms.forEach(gif => {
+      let gameId = gif.dataset.game_id;
+      let game = DB.get('Schedule').find(g => g.game_id === gameId);
+      let gameItem = makeGameItem(game);
+      gif.replaceWith(gameItem);
+    });
+  });
+
+  // div for cancel and save buttons
+  let btnDiv = document.createElement('div');
+  btnDiv.id = 'form-action-buttons';
+  btnDiv.classList.add('d-flex', 'justify-content-end', 'm-3', 'column-gap-2');
+  btnDiv.appendChild(cancelBtn);
+  btnDiv.appendChild(saveBtn);
+
+  // append btnDiv to main-header
+  let mainHeader = document.querySelector('#main-header');
+  mainHeader.appendChild(btnDiv);
+
+}
+
+/* ------------------------------------------------ */
+
+// handleGameItemFormSave
+// this will:
+// - get data from form
+// - post data to server
+// - get response from server
+// - update DB with response
+// - replace all game items with new game items (don't want to destory any elements, just update/replace them)
+//   - this will also replace the form with the new game item (i.e. the form will be destroyed)
+// the final result will be exactly the same view the user had before clicking the stat column, but with the updated data
+// keep in mind that posting data via fetch() is asynchronous, so we need to handle the response in a promise
+
+
+function handleGameItemFormSave(e) {
+
+  console.log('Start: handleGameItemFormSave()');
+  let gameItemForm = e.target.closest('.game-item-form');
+
+  // temporarily disable buttons
+  let saveBtn = gameItemForm.querySelector('#saveBtn');
+  let saveBtnOriginalHTML = saveBtn.innerHTML;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+  let cancelBtn = gameItemForm.querySelector('#cancelBtn');
+  cancelBtn.disabled = true;
+
+  let gameId = gameItemForm.dataset.game_id;
+  let winnerId = gameItemForm.dataset.form_winner_id;
+  // winnerId = (winnerId == '') ? 'NONE' : winnerId;
+
+  let data = {
+    game_id: gameId,
+    winner_id: winnerId
+  };
+
+  let urlRoot = 'https://script.google.com/macros/s/AKfycbxMeB_AspCRyeO7C5Y_cZl5b3_h6DJJv3OPX1-RiVZBJJx6Fo3x4PSf6vqNVpu_0Dssqw/exec';
+  let urlParams = new URLSearchParams(data);
+  let url = urlRoot + '?' + urlParams;
+
+  let options = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    redirect: 'follow'
+  };
+
+  console.log('Posting:', url);
+  // return;
+  fetch(url, options)
+    .then(response => response.json())
+    .then(result => {
+      console.log('Success:', result);
+      // createAlert('success', JSON.stringify(result));
+      // reload DB
+      DB.load('Schedule')
+        .then(() => {
+          let gameItems = document.querySelectorAll('.game-item');
+          gameItems.forEach(gi => {
+            let game_id = gi.dataset.game_id;
+            let game = DB.get('Schedule').find(g => g.game_id === game_id);
+            let gameItem = makeGameItem(game);
+            gi.replaceWith(gameItem);
+          });
+        });
+    })
+    .catch(error => {
+      // createAlert('danger', error.message);
+      console.error('Error:', error);
+    });
+
+
+}
+
+/* ------------------------------------------------ */
+
+// google appscript function to handle POST request
+// this is for illustration purposes only, won't actually be used in the app
+// function doPost(e) {
+
+//   let data = e.parameter;
+//   let game_id = data.game_id;
+//   let winner_id = data.winner_id;
+
+//   // getSheet() is a function that returns json data from a google sheet
+//   // the result looks the same as DB.get('Schedule') in this app
+//   let schedule = getSheet('Schedule');
+//   let game = schedule.find(g => g.game_id === game_id);
+//   game.winner_id = winner_id;
+//   schedule.forEach(g => {
+//     g.status = (g.winner_id != '') ? 'POST' : 'PRE';
+//   });
+
+//   // re-calculate team records
+//   let teams = getSheet('Teams');
+//   teams.forEach(team => {
+//     let games = schedule.filter(g => g.team1_id === team.team_id || g.team2_id === team.team_id);
+//     let completedGames = games.filter(g => g.status === 'POST');
+//     if (completedGames.length > 0) {
+//       let wins = completedGames.filter(g => g.winner_id === team.team_id);
+//       team.wins = wins.length;
+//       team.losses = completedGames.length - wins.length;
+//     } else {
+//       team.wins = 0;
+//       team.losses = 0;
+//     }
+
+//     let teamRecord = team.wins + '-' + team.losses;
+//     games.forEach(g => {
+//       let teamNum = (g.team1_id === team.team_id) ? 1 : 2;
+//       g['team' + teamNum + '_record'] = teamRecord;
+//     });
+//   });
+
+//   // need to update the 'Teams' and 'Schedule' sheets in the google sheet
+//   // this is done by calling another google appscript function
+//   setSheet('Teams', teams);
+//   setSheet('Schedule', schedule);
+
+//   return ContentService.createTextOutput(JSON.stringify(game)).setMimeType(ContentService.MimeType.JSON);
+// }
+
+
+/* ------------------------------------------------ */
+
 function handleTeamSelection(e) {
 
   let team = APP.get('focusedTeam');
+  let allTeamItems = document.querySelectorAll('.team-item');
+  if (!team) {
+    allTeamItems.forEach(ti => {
+      ti.classList.remove('selected', 'unselected');
+    });
+    return;
+  }
+
   let teamItem1 = document.querySelector('.team-item[data-team_name="' + team + '"]');
   document.querySelectorAll('.team-item').forEach(ti => {
     if (ti.getAttribute('data-team_name') == team) {
+      ti.classList.remove('unselected');
       ti.classList.add('selected');
       if (ti == teamItem1) {
         let gameGroup = ti.closest('.game-group');
-        scrollIntoView(gameGroup);
+        // scrollIntoView(gameGroup);
       }
     } else {
       ti.classList.remove('selected');
+      ti.classList.add('unselected');
     }
   });
 }
