@@ -252,7 +252,7 @@ div::-webkit-scrollbar {
 .game-item {
   -webkit-user-select: none;
   user-select: none;
-  padding: 0 .25rem;
+  padding: 0 .1rem;
 }
 
 .game-item:first-child {
@@ -280,6 +280,19 @@ div::-webkit-scrollbar {
   cursor: pointer;
 }
 
+.game-item .team-item input {
+  /* custom radio button */
+  /* make bigger */
+  width: 1.2rem;
+  height: 1.2rem;
+
+}
+
+.game-item .team-item.winner .team-result {
+  color: var(--ios-green) !important;
+  /* font-weight: 700 !important; */
+}
+
 /* ---------------------------------- */
 
 .game-item .team-id {
@@ -292,13 +305,18 @@ div::-webkit-scrollbar {
 
 .game-item .team-name {
   color: var(--ios-text2);
-  font-size: 1.1rem !important;
+  font-size: 1rem !important;
   font-weight: 300 !important;
 }
 
 .game-item .team-record {
   color: var(--ios-text4) !important;
-  font-size: .9rem !important;
+  font-size: .8rem !important;
+}
+
+.game-item .team-result {
+  color: var(--ios-text4);
+  font-size: 1.2rem !important;
 }
 
 .game-item .game-time {

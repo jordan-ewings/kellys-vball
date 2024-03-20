@@ -137,8 +137,11 @@ function makeSchedule(data, groupField = 'time') {
 function makeGameItem(d) {
 
   let gameItem = util.createFromTemplate('game-item-template');
-  let items = gameItem.querySelectorAll('span[data-item]');
+  gameItem.id = 'game-' + d.game_id;
+  gameItem.setAttribute('data-game_id', d.game_id);
+  gameItem.setAttribute('data-winner_id', d.winner_id);
 
+  let items = gameItem.querySelectorAll('span[data-item]');
   items.forEach(item => {
     let dataItem = item.getAttribute('data-item');
     let text = d[dataItem];
@@ -148,74 +151,129 @@ function makeGameItem(d) {
 
   let teamItems = gameItem.querySelectorAll('.team-item');
   teamItems.forEach(teamItem => {
-    teamItem.addEventListener('click', handleTeamSelection);
-    teamItem.addEventListener('mouseover', handleTeamHover);
-    teamItem.addEventListener('mouseleave', resetTeamSelection);
-
+    let teamId = teamItem.querySelector('.team-id').textContent;
     let teamName = teamItem.querySelector('.team-name').textContent;
+    teamItem.setAttribute('data-team_id', teamId);
     teamItem.setAttribute('data-team_name', teamName);
+
+    let teamResult = teamItem.querySelector('.team-result');
+    if (d.winner_id == teamId) {
+      teamResult.classList.add('fa-solid', 'fa-circle-check');
+      teamItem.classList.add('winner');
+    } else {
+      teamResult.classList.add('fa-regular', 'fa-circle');
+    }
+
+    teamItem.addEventListener('click', (e) => {
+      let focusedTeam = (APP.get('focusedTeam') == teamName) ? null : teamName;
+      APP.set('focusedTeam', focusedTeam);
+      handleTeamSelection();
+    });
   });
+
+  if (d.winner_id) {
+    let winner = gameItem.querySelector('.team-item[data-team_id="' + d.winner_id + '"]');
+    let teamResult = winner.querySelector('.team-result');
+    teamResult.classList.replace('fa-regular', 'fa-solid');
+    teamResult.classList.replace('fa-circle', 'fa-circle-check');
+    winner.classList.add('winner');
+  }
+
+  let statCol = gameItem.querySelector('.stat-col');
+  statCol.addEventListener('click', (e) => {
+    let gameItemForm = gameItemToForm(gameItem);
+    gameItem.replaceWith(gameItemForm);
+  });
+
+
+  // set up expand button
+  // let expandBtn = gameItem.querySelector('.expand-btn');
+  // expandBtn.addEventListener('click', () => {
+
+  //   let gameItemForm = gameItem.cloneNode(true);
+  //   let expandBtnForm = gameItemForm.querySelector('.expand-btn');
+  //   let expandBtnFormIcon = expandBtnForm.querySelector('i');
+  //   expandBtnFormIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+  //   expandBtnForm.addEventListener('click', () => {
+  //     gameItemForm.replaceWith(gameItem);
+  //   });
+
+  //   let submitBtn = document.createElement('button');
+  //   submitBtn.type = 'button';
+  //   submitBtn.classList.add('btn', 'btn-sm', 'btn-primary', 'w-75');
+  //   submitBtn.innerHTML = '<i class="fas fa-check"></i>';
+  //   submitBtn.addEventListener('click', () => {
+  //     let winner = gameItemForm.querySelector('input[name="' + d.game_id + '"]:checked');
+  //     if (!winner) {
+  //       createAlert('danger', 'Please select a winner');
+  //       return;
+  //     }
+
+  //     let winnerId = winner.value;
+  //     let game = DB.get('Schedule').find(g => g.game_id == d.game_id);
+  //     game.winner_id = winnerId;
+  //     let newGameItem = makeGameItem(game);
+  //     gameItemForm.replaceWith(newGameItem);
+  //   });
+
+  //   let statCol = gameItemForm.querySelector('.stat-col');
+  //   statCol.classList.add('d-flex', 'align-items-center');
+  //   statCol.innerHTML = '';
+  //   statCol.appendChild(submitBtn);
+  //   // let statColContent = statCol.querySelector('div');
+  //   // statColContent.innerHTML = '';
+  //   // statColContent.appendChild(submitBtn);
+
+  //   // make the team items selectable
+  //   let teams = gameItemForm.querySelectorAll('.team-item');
+  //   teams.forEach(team => {
+
+  //     let teamId = team.querySelector('.team-id').textContent;
+
+  //     let teamCopy = team.cloneNode(true);
+  //     //
+  //     let isWinner = team.classList.contains('winner');
+
+  //     let input = document.createElement('input');
+  //     input.classList.add('ms-auto');
+  //     input.setAttribute('type', 'radio');
+  //     input.setAttribute('name', d.game_id);
+  //     input.setAttribute('id', teamId);
+  //     input.setAttribute('value', teamId);
+  //     if (isWinner) input.setAttribute('checked', true);
+
+  //     let teamResult = teamCopy.querySelector('.team-result');
+  //     teamResult.replaceWith(input);
+
+  //     let label = document.createElement('label');
+  //     label.setAttribute('for', teamId);
+  //     label.appendChild(teamCopy);
+
+  //     team.replaceWith(label);
+  //   });
+
+  //   gameItem.replaceWith(gameItemForm);
+  // });
 
   return gameItem;
 }
 
 /* ------------------------------------------------ */
 
-function resetTeamSelection(e, force = false) {
-
-  if (APP.get('focusedTeam') && !force) return;
-
-  let teamItems = document.querySelectorAll('.team-item');
-  let statCols = document.querySelectorAll('.stat-col');
-  teamItems.forEach(ti => {
-    ti.classList.remove('selected');
-  });
-  statCols.forEach(sc => {
-    sc.classList.remove('selected');
-  });
-}
-
-/* ------------------------------------------------ */
-
 function handleTeamSelection(e) {
 
-  resetTeamSelection(e, true);
   let team = APP.get('focusedTeam');
-  if (e) {
-    let clickedTeam = e.target.dataset.team_name;
-    if (clickedTeam == team) {
-      APP.set('focusedTeam', null);
-      return;
+  let teamItem1 = document.querySelector('.team-item[data-team_name="' + team + '"]');
+  document.querySelectorAll('.team-item').forEach(ti => {
+    if (ti.getAttribute('data-team_name') == team) {
+      ti.classList.add('selected');
+      if (ti == teamItem1) {
+        let gameGroup = ti.closest('.game-group');
+        scrollIntoView(gameGroup);
+      }
+    } else {
+      ti.classList.remove('selected');
     }
-    APP.set('focusedTeam', clickedTeam);
-    team = clickedTeam;
-  }
-
-  let teamItems = document.querySelectorAll('.team-item[data-team_name="' + team + '"]');
-  teamItems.forEach((ti, index) => {
-    ti.classList.add('selected');
-    let gameItem = ti.closest('.game-item');
-    let statCol = gameItem.querySelector('.stat-col');
-    statCol.classList.add('selected');
-
-    if (index == 0) {
-      let gameGroup = gameItem.closest('.game-group');
-      scrollIntoView(gameGroup);
-    }
-  });
-}
-
-/* ------------------------------------------------ */
-
-function handleTeamHover(e) {
-
-  if (APP.get('focusedTeam')) return;
-  resetTeamSelection(e);
-
-  let team = e.target.dataset.team_name;
-  let teamItems = document.querySelectorAll('.team-item[data-team_name="' + team + '"]');
-  teamItems.forEach(ti => {
-    ti.classList.add('selected');
   });
 }
 
