@@ -111,7 +111,7 @@ div::-webkit-scrollbar {
 
 #main-header {
   position: sticky;
-  top: 0;
+  top: env(safe-area-inset-top);
   z-index: 1000;
   background-color: var(--ios-bg-black);
   border-bottom: 1px solid var(--ios-separator-dark);
