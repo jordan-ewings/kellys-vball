@@ -3,58 +3,59 @@
 
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kelly's Volleyball</title>
+  <meta name="description" content="Kelly's Volleyball">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="rgb(14, 14, 15)">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="rgb(14, 14, 15)">
-  <meta name="description" content="Kelly's Volleyball">
-  <title>Kelly's Volleyball</title>
-  <!-- <link rel="icon" href="img/logo-512.png" type="image/png"> -->
-  <!-- <link rel="apple-touch-icon" href="img/logo-512.png"> -->
-
-  <!-- <link rel="manifest" href="manifest.json"> -->
+  <meta name="apple-mobile-web-app-title" content="Kelly's Volleyball">
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="img/favicon-32.png" sizes="32x32">
+  <link rel="icon" type="image/png" href="img/favicon-16.png" sizes="16x16">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-  <link rel="stylesheet" href="css/index.css">
+  <link rel="stylesheet" href="css/style.css">
   <script src="js/jquery/jquery-3.7.1.min.js"></script>
+  <!-- <script>
+    $(document).ready(function () {
+      $("#components").load("components/standings.html");
+    });
+  </script> -->
 </head>
 
 <body>
   <div id="nav-wrapper">
     <nav id="navCont" class="navbar">
       <div class="container-fluid">
-        <div class="navbar-nav d-flex flex-row w-100 nav-underline justify-content-evenly">
+        <div class="navbar-nav flex-grow-1 nav-underline">
           <a id="nav-standings" class="nav-link flex-fill" href="standings.html">STANDINGS</a>
+          <a id="nav-index" class="nav-link active" href="index.html">
+            <img src="img/logo-512.png" alt="Kelly's Volleyball" width="25" height="25" class="d-inline-block align-text-top">
+          </a>
           <a id="nav-schedule" class="nav-link flex-fill" href="schedule.html">SCHEDULE</a>
         </div>
       </div>
     </nav>
   </div>
+
   <div id="alert-container" class="alert-container"></div>
-
-
-
   <div id="main" class="container-fluid g-0">
-    <div id="main-header" class="mb-3 mt-1">
-      <!-- <div id="filter-container" class="btn-group d-flex flex-nowrap overflow-x-scroll" role="group"> -->
-      <!-- filter buttons -->
-      <!-- </div> -->
-    </div>
+    <!-- <div id="main-header" class="mb-3 mt-1"></div> -->
     <div id="main-body">
-      <div id="annoucement-container" class="px-0">
-        <!-- schedule items -->
+      <div id="announcement-container" class="px-0">
+        <!-- announcement content -->
       </div>
     </div>
   </div>
 
-  <!-- loading spinner -->
   <div id="loading" class="d-flex justify-content-center align-items-center">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
   </div>
-
-  <div id="templates" class="d-none"></div>
+  <div id="components" class="d-none"></div>
   <script src="js/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="js/index.js" type="module"></script>
 </body>

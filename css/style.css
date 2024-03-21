@@ -84,13 +84,23 @@ body {
   max-width: 700px;
 }
 
-html::-webkit-scrollbar,
+/* html::-webkit-scrollbar,
 body::-webkit-scrollbar,
 div::-webkit-scrollbar {
   display: none;
+} */
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 /* ---------------------------------- */
+
+.navbar .navbar-nav {
+  flex-direction: row !important;
+  justify-content: space-around;
+}
 
 .navbar a {
   font-weight: 500 !important;

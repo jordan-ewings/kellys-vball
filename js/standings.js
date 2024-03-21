@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', init);
 async function init() {
 
   await initDB();
-  initAPPDATA();
+  // initAPPDATA();
   initPage();
 }
 
@@ -17,7 +17,7 @@ async function init() {
 async function initDB() {
 
   await DB.load('Teams');
-  await DB.load('Schedule');
+  // await DB.load('Schedule');
 }
 
 /* ------------------------------------------------ */
@@ -96,10 +96,10 @@ function makeStandings() {
     });
   }
 
-  let standingsContainer = document.querySelector('#standings-container');
-  let standingsTable = standingsContainer.querySelector('table');
-  let standingsHead = standingsTable.querySelector('thead');
-  let standingsBody = standingsTable.querySelector('tbody');
+  makeStandingsStructure();
+
+  let standingsHead = document.querySelector('#standings-container thead');
+  let standingsBody = document.querySelector('#standings-container tbody');
 
   data.forEach((team, index) => {
 
@@ -127,5 +127,37 @@ function makeStandings() {
 
     standingsBody.appendChild(standingsItem);
   });
+}
+
+/* ------------------------------------------------ */
+
+function makeStandingsStructure() {
+
+  let standingsContainer = document.querySelector('#standings-container');
+
+  let contCardTitle = document.createElement('div');
+  contCardTitle.classList.add('cont-card-title');
+  let contCardTitleContent = document.createElement('span');
+  contCardTitleContent.textContent = 'LEADERBOARD';
+
+  contCardTitle.appendChild(contCardTitleContent);
+
+  let contCardBody = document.createElement('div');
+  contCardBody.classList.add('cont-card-body');
+  let tableResponsive = document.createElement('div');
+  tableResponsive.classList.add('table-responsive');
+  let table = document.createElement('table');
+  table.classList.add('table', 'table-borderless', 'align-middle', 'text-nowrap', 'm-0');
+  let thead = document.createElement('thead');
+  let tbody = document.createElement('tbody');
+  table.appendChild(thead);
+  table.appendChild(tbody);
+
+  tableResponsive.appendChild(table);
+  contCardBody.appendChild(tableResponsive);
+
+  standingsContainer.appendChild(contCardTitle);
+  standingsContainer.appendChild(contCardBody);
+
 }
 
