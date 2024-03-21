@@ -1,6 +1,6 @@
 {
   "name": "Kelly's V-BALL",
-  "short_name": "V-BALL",
+  "short_name": "Kelly's V-Ball",
   "display": "standalone",
   "start_url": "standings.html",
   "background_color": "rgb(14, 14, 15)",
