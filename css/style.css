@@ -371,3 +371,9 @@ div::-webkit-scrollbar {
   color: var(--ios-text1);
   font-weight: 500;
 }
+
+/* disable any clicking/pointer events children of a pending game item */
+.game-item.pending {
+  pointer-events: none !important;
+  opacity: .5;
+}

@@ -300,7 +300,13 @@ function gameItemToForm(gameItem) {
   cancelBtn.classList.add('btn', 'btn-secondary');
   cancelBtn.textContent = 'Cancel';
   cancelBtn.addEventListener('click', (e) => {
-    gameItemForm.replaceWith(gameItem);
+    let gameItemForms = document.querySelectorAll('.game-item-form');
+    gameItemForms.forEach(gif => {
+      let gameId = gif.dataset.game_id;
+      let game = DB.get('Schedule').find(g => g.game_id === gameId);
+      let gameItem = makeGameItem(game);
+      gif.replaceWith(gameItem);
+    });
   });
 
   // help text
@@ -318,74 +324,7 @@ function gameItemToForm(gameItem) {
   return gameItemForm;
 }
 
-function pendingChanges() {
-  let gameItems = document.querySelectorAll('.game-item-form');
-  let changes = false;
-  gameItems.forEach(gif => {
-    let winnerId = gif.dataset.winner_id;
-    let formWinnerId = gif.dataset.form_winner_id;
-    if (winnerId != formWinnerId) {
-      changes = true;
-    }
-  });
-  return changes;
-}
 
-function setSaveCancelButtons(mode, saveEnabled = false) {
-
-  if (mode != 'show') {
-    let formActionButtons = document.querySelector('#form-action-buttons');
-    if (formActionButtons) {
-      formActionButtons.remove();
-    }
-    return;
-  }
-
-  let formActionButtons = document.querySelector('#form-action-buttons');
-  if (formActionButtons) {
-    let saveBtn = formActionButtons.querySelector('#saveBtn');
-    saveBtn.disabled = !saveEnabled;
-    return;
-  }
-
-  // save button
-  let saveBtn = document.createElement('button');
-  saveBtn.id = 'saveBtn';
-  saveBtn.type = 'button';
-  saveBtn.classList.add('btn', 'btn-sm', 'btn-primary');
-  saveBtn.textContent = 'Save';
-  saveBtn.addEventListener('click', handleGameItemFormSave);
-  saveBtn.disabled = !saveEnabled;
-
-
-  // cancel button
-  let cancelBtn = document.createElement('button');
-  cancelBtn.id = 'cancelBtn';
-  cancelBtn.type = 'button';
-  cancelBtn.classList.add('btn', 'btn-sm', 'btn-secondary');
-  cancelBtn.textContent = 'Cancel';
-  cancelBtn.addEventListener('click', (e) => {
-    let gameItemForms = document.querySelectorAll('.game-item-form');
-    gameItemForms.forEach(gif => {
-      let gameId = gif.dataset.game_id;
-      let game = DB.get('Schedule').find(g => g.game_id === gameId);
-      let gameItem = makeGameItem(game);
-      gif.replaceWith(gameItem);
-    });
-  });
-
-  // div for cancel and save buttons
-  let btnDiv = document.createElement('div');
-  btnDiv.id = 'form-action-buttons';
-  btnDiv.classList.add('d-flex', 'justify-content-end', 'm-3', 'column-gap-2');
-  btnDiv.appendChild(cancelBtn);
-  btnDiv.appendChild(saveBtn);
-
-  // append btnDiv to main-header
-  let mainHeader = document.querySelector('#main-header');
-  mainHeader.appendChild(btnDiv);
-
-}
 
 /* ------------------------------------------------ */
 
@@ -408,15 +347,26 @@ function handleGameItemFormSave(e) {
 
   // temporarily disable buttons
   let saveBtn = gameItemForm.querySelector('#saveBtn');
-  let saveBtnOriginalHTML = saveBtn.innerHTML;
   saveBtn.disabled = true;
-  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
   let cancelBtn = gameItemForm.querySelector('#cancelBtn');
   cancelBtn.disabled = true;
 
   let gameId = gameItemForm.dataset.game_id;
   let winnerId = gameItemForm.dataset.form_winner_id;
-  // winnerId = (winnerId == '') ? 'NONE' : winnerId;
+
+  // before posting data, update the DB with the new winner_id and premptively update the game item
+  let game = DB.get('Schedule').find(g => g.game_id === gameId);
+  game.winner_id = winnerId;
+  game.status = (winnerId != '') ? 'POST' : 'PRE';
+  let gameItem = makeGameItem(game);
+
+  gameItem.classList.add('pending');
+  let editIcon = gameItem.querySelector('.stat-col i');
+  let newIcon = document.createElement('span');
+  newIcon.classList.add('spinner-border', 'spinner-border-sm', 'text-danger');
+  editIcon.replaceWith(newIcon);
+  gameItemForm.replaceWith(gameItem);
 
   let data = {
     game_id: gameId,
@@ -426,7 +376,6 @@ function handleGameItemFormSave(e) {
   let urlRoot = 'https://script.google.com/macros/s/AKfycbxMeB_AspCRyeO7C5Y_cZl5b3_h6DJJv3OPX1-RiVZBJJx6Fo3x4PSf6vqNVpu_0Dssqw/exec';
   let urlParams = new URLSearchParams(data);
   let url = urlRoot + '?' + urlParams;
-
   let options = {
     method: 'POST',
     redirect: 'follow'
@@ -438,7 +387,12 @@ function handleGameItemFormSave(e) {
     .then(response => response.json())
     .then(result => {
       console.log('Success:', result);
-
+    })
+    .catch(error => {
+      createAlert('danger', error);
+      console.error('Error:', error);
+    })
+    .finally(() => {
       DB.load('Schedule')
         .then(() => {
           let gameItems = document.querySelectorAll('.game-item');
@@ -446,22 +400,37 @@ function handleGameItemFormSave(e) {
             let game_id = gi.dataset.game_id;
             let game = DB.get('Schedule').find(g => g.game_id === game_id);
             let gameItem = makeGameItem(game);
-            gi.replaceWith(gameItem);
+
+            // check if gi is one that is still pending (if, e.g., user clicked save, then:
+            // - clicked another game's stat column before the fetch() was complete, and possibly
+            // - submitted another game's form before the fetch() was complete
+
+            // so, if gi has class 'pending':
+            // - if gi is the same game as the one that was just posted, replace it
+            // - if gi is a different game, don't replace it
+            // but if gi has class 'game-item-form', don't replace it
+
+            let isPostedGame = data.game_id == game_id;
+
+            let replace = false;
+            if (gi.classList.contains('pending')) {
+              if (isPostedGame) {
+                replace = true;
+              }
+            } else {
+              if (gi.classList.contains('game-item-form')) {
+                replace = false;
+              } else {
+                replace = true;
+              }
+            }
+
+            if (replace) {
+              gi.replaceWith(gameItem);
+            }
+
           });
         });
-    })
-    .catch(error => {
-      cancelBtn.disabled = false;
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
-      saveBtn.classList.replace('btn-primary', 'btn-danger');
-      createAlert('danger', error);
-      console.error('Error:', error);
-
-      setTimeout(() => {
-        saveBtn.innerHTML = saveBtnOriginalHTML;
-        saveBtn.classList.replace('btn-danger', 'btn-primary');
-      }, 3000);
     });
 
 
