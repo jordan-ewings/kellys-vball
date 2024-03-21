@@ -429,20 +429,16 @@ function handleGameItemFormSave(e) {
 
   let options = {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
     redirect: 'follow'
   };
 
   console.log('Posting:', url);
-  // return;
+
   fetch(url, options)
     .then(response => response.json())
     .then(result => {
       console.log('Success:', result);
-      // createAlert('success', JSON.stringify(result));
-      // reload DB
+
       DB.load('Schedule')
         .then(() => {
           let gameItems = document.querySelectorAll('.game-item');
@@ -455,8 +451,17 @@ function handleGameItemFormSave(e) {
         });
     })
     .catch(error => {
-      // createAlert('danger', error.message);
+      cancelBtn.disabled = false;
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+      saveBtn.classList.replace('btn-primary', 'btn-danger');
+      createAlert('danger', error);
       console.error('Error:', error);
+
+      setTimeout(() => {
+        saveBtn.innerHTML = saveBtnOriginalHTML;
+        saveBtn.classList.replace('btn-danger', 'btn-primary');
+      }, 3000);
     });
 
 
