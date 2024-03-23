@@ -38,6 +38,8 @@ function makeStandings(data) {
     if (a.winPct > b.winPct) return -1;
     if (a.losses > b.losses) return 1;
     if (a.losses < b.losses) return -1;
+    if (a.wins < b.wins) return 1;
+    if (a.wins > b.wins) return -1;
 
     return 0;
   });

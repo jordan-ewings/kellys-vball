@@ -1,7 +1,7 @@
 import * as util from './util.js';
 import * as gest from './gestures.js';
 import { db, APP } from './firebase.js';
-import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+import { ref, get, query, equalTo, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
 /* ------------------------------------------------ */
 
@@ -47,8 +47,11 @@ function makeFilters(data) {
     btn.setAttribute('data-week', value);
     btn.addEventListener('click', (e) => {
       let week = e.target.getAttribute('data-week');
-      let schedule = data.filter(d => d.week === week);
-      makeSchedule(schedule);
+      // get games for week from firebase
+      onValue(ref(db, 'games'), (snapshot) => {
+        let games = Object.values(snapshot.val()).filter(g => g.week == week);
+        makeSchedule(games);
+      }, { onlyOnce: true });
 
       let active = filterContainer.querySelector('.active');
       if (active) {
