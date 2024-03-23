@@ -1,5 +1,5 @@
 
-export const DB = {
+export const DBold = {
 
   data: {
     sheets: {}
@@ -36,23 +36,23 @@ export const DB = {
   }
 };
 
-export const APP = {
+// export const APP = {
 
-  data: {},
+//   data: {},
 
-  get: function (key) {
-    return this.data[key];
-  },
+//   get: function (key) {
+//     return this.data[key];
+//   },
 
-  set: function (key, value) {
-    this.data[key] = value;
-  },
+//   set: function (key, value) {
+//     this.data[key] = value;
+//   },
 
-  reset: function () {
-    this.data = {};
-  }
+//   reset: function () {
+//     this.data = {};
+//   }
 
-};
+// };
 
 //   async reload() {
 //   if (this.data.sheets == {}) {
@@ -73,6 +73,7 @@ async function getSheet(sheet) {
 
 
   const table = JSON.parse(raw.substring(47).slice(0, -2))['table'];
+  // console.log(table);
   let headers;
   let data;
 
@@ -91,6 +92,9 @@ async function getSheet(sheet) {
     });
     data = table.rows.filter((x, index) => index >= 1);
   }
+
+  headers = headers.filter((x) => x != '');
+  // console.log(headers, data);
 
   data = data.map((row) => {
     let d = {};
@@ -111,6 +115,7 @@ async function getSheet(sheet) {
   });
 
   console.log(sheet + ' loaded', data);
+  // console.log(JSON.stringify(data));
 
   return data;
 }

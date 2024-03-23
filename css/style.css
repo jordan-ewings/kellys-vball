@@ -203,7 +203,7 @@ div::-webkit-scrollbar {
   font-size: .9rem;
 }
 
-#standings-container td.team span[data-item="id"] {
+#standings-container td.team span[data-item="nbr"] {
   color: var(--ios-blue) !important;
   /* font-weight: 400 !important; */
   /* font-size: 1rem !important; */
@@ -294,7 +294,7 @@ div::-webkit-scrollbar {
 
 /* ---------------------------------- */
 
-.game-item .team-id {
+.game-item .team-nbr {
   color: var(--ios-blue);
   font-weight: 500;
   font-size: 1rem;

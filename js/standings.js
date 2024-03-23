@@ -1,59 +1,27 @@
 import * as util from './util.js';
-import { DB, APP } from './data.js';
+import { db } from './firebase.js';
+import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
 /* ------------------------------------------------ */
 
 document.addEventListener('DOMContentLoaded', init);
 
-async function init() {
+function init() {
 
-  await initDB();
-  // initAPPDATA();
-  initPage();
-}
+  // get teams and makeStandings
+  let teamsRef = ref(db, 'teams');
 
-/* ------------------------------------------------ */
-
-async function initDB() {
-
-  await DB.load('Teams');
-  // await DB.load('Schedule');
-}
-
-/* ------------------------------------------------ */
-
-function initAPPDATA() {
-
-  let data = DB.get('Schedule');
-  let weeks = data.map(d => d.week).filter((v, i, a) => a.findIndex(t => (t === v)) === i);
-  let currentWeek = weeks[0];
-  weeks.forEach(w => {
-    let week = data.filter(d => d.week === w);
-    let games = week.filter(d => d.status === 'POST');
-    if (games.length > 0) {
-      currentWeek = w;
-    }
+  onValue(teamsRef, (snapshot) => {
+    let data = snapshot.val();
+    makeStandings(Object.values(data));
   });
 
-  APP.set('currentWeek', currentWeek);
-  // APP.set('focusedTeam', null);
+
 }
 
 /* ------------------------------------------------ */
 
-function initPage() {
-
-  makeStandings();
-
-  let loading = document.querySelector('#loading');
-  loading.classList.add('d-none');
-}
-
-/* ------------------------------------------------ */
-
-function makeStandings() {
-
-  let data = DB.get('Teams');
+function makeStandings(data) {
 
   // process data
   data.forEach(team => {
@@ -73,8 +41,6 @@ function makeStandings() {
 
     return 0;
   });
-
-  console.log(data);
 
   // add rank
   let rank = 1;
@@ -118,6 +84,7 @@ function makeStandings() {
     }
 
     team.winPct = util.formatNumber(team.winPct, '0.000');
+    team.id = parseInt(team.id);
 
     let dataItems = standingsItem.querySelectorAll('[data-item]');
     dataItems.forEach(item => {

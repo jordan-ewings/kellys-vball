@@ -1,58 +1,32 @@
 import * as util from './util.js';
 import * as gest from './gestures.js';
-import { DB, APP } from './data.js';
+// import { db } from './firebase.js';
+// import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+// import { DBold } from './data.js';
 
-/* ------------------------------------------------ */
+// /* ------------------------------------------------ */
 
-document.addEventListener('DOMContentLoaded', init);
+// newDB();
 
-async function init() {
+// async function newDB() {
 
-  await initDB();
-  initAPPDATA();
-  initPage();
-}
+//   await DBold.load('Schedule2');
+//   await DBold.load('Teams2');
 
-/* ------------------------------------------------ */
+//   let newDB = {
+//     games: {},
+//     teams: {}
+//   };
 
-async function initDB() {
+//   DBold.get('Schedule2').forEach(g => {
+//     newDB.games[g.game_id] = g;
+//   });
 
-  await DB.load('Teams');
-  await DB.load('Schedule');
-}
+//   DBold.get('Teams2').forEach(t => {
+//     newDB.teams[t.id] = t;
+//   });
 
-/* ------------------------------------------------ */
-
-function initAPPDATA() {
-
-  let data = DB.get('Schedule');
-  let weeks = data.map(d => d.week).filter((v, i, a) => a.findIndex(t => (t === v)) === i);
-  let currentWeek = weeks[0];
-  weeks.forEach(w => {
-    let week = data.filter(d => d.week === w);
-    let games = week.filter(d => d.status === 'POST');
-    if (games.length > 0) {
-      currentWeek = w;
-    }
-  });
-
-  APP.set('currentWeek', currentWeek);
-  // APP.set('focusedTeam', null);
-}
-
-/* ------------------------------------------------ */
-
-function initPage() {
-
-  makePage();
-
-  let loading = document.querySelector('#loading');
-  loading.classList.add('d-none');
-}
-
-/* ------------------------------------------------ */
-
-function makePage() {
-
-}
+//   console.log('newDB', newDB);
+//   console.log(JSON.stringify(newDB));
+// }
 

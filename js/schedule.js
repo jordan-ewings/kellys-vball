@@ -1,63 +1,35 @@
 import * as util from './util.js';
 import * as gest from './gestures.js';
-import { DB, APP } from './data.js';
+import { db, APP } from './firebase.js';
+import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
 /* ------------------------------------------------ */
 
 document.addEventListener('DOMContentLoaded', init);
 
-async function init() {
+function init() {
 
-  await initDB();
-  initAPPDATA();
-  initPage();
+  let gamesRef = ref(db, 'games');
+  onValue(gamesRef, (snapshot) => {
+
+    let games = Object.values(snapshot.val());
+    let nextGame = games.find(g => g.status === 'PRE');
+    let currentWeek = nextGame.week;
+    APP.currentWeek = currentWeek;
+
+    makeFilters(games);
+    let currentWeekButton = document.querySelector('#filter-container button[data-week="' + currentWeek + '"]');
+    currentWeekButton.click();
+
+    document.querySelector('#loading').remove();
+
+  }, { onlyOnce: true });
 }
 
 /* ------------------------------------------------ */
 
-async function initDB() {
+function makeFilters(data) {
 
-  await DB.load('Schedule');
-}
-
-/* ------------------------------------------------ */
-
-function initAPPDATA() {
-
-  let data = DB.get('Schedule');
-  let weeks = data.map(d => d.week).filter((v, i, a) => a.findIndex(t => (t === v)) === i);
-  let currentWeek = weeks[0];
-  weeks.forEach(w => {
-    let week = data.filter(d => d.week === w);
-    let games = week.filter(d => d.status === 'POST');
-    if (games.length > 0) {
-      currentWeek = w;
-    }
-  });
-
-  APP.set('currentWeek', currentWeek);
-  APP.set('focusedTeam', null);
-}
-
-/* ------------------------------------------------ */
-
-function initPage() {
-
-  makeFilters();
-
-  let currentWeek = APP.get('currentWeek');
-  let currentWeekBtn = document.querySelector('#filter-container button[data-week="' + currentWeek + '"]');
-  currentWeekBtn.click();
-
-  let loading = document.querySelector('#loading');
-  loading.classList.add('d-none');
-}
-
-/* ------------------------------------------------ */
-
-function makeFilters() {
-
-  let data = DB.get('Schedule');
   let filterContainer = document.querySelector('#filter-container');
 
   let weeks = data.map(d => {
@@ -96,16 +68,16 @@ function makeFilters() {
 
 /* ------------------------------------------------ */
 
-function makeSchedule(data, groupField = 'time') {
+function makeSchedule(data) {
 
   let scheduleContainer = document.querySelector('#schedule-container');
   scheduleContainer.innerHTML = '';
 
-  let groups = data.map(d => d[groupField]).filter((v, i, a) => a.findIndex(t => (t === v)) === i);
-  groups.forEach(g => {
+  let timeSlots = data.map(d => d.time).filter((v, i, a) => a.findIndex(t => (t === v)) === i);
+  timeSlots.forEach(timeSlot => {
     let gameCard = util.createFromTemplate('game-group-template');
     let gameGroup = gameCard.querySelector('.cont-card-body');
-    let games = data.filter(d => d[groupField] === g);
+    let games = data.filter(d => d.time === timeSlot);
     games.forEach((game, index) => {
       let gameItem = makeGameItem(game);
       gameGroup.appendChild(gameItem);
@@ -120,17 +92,75 @@ function makeSchedule(data, groupField = 'time') {
     scheduleContainer.appendChild(gameCard);
   });
 
+  let gamesRef = ref(db, 'games');
+  onChildChanged(gamesRef, (snapshot) => {
+    let game = snapshot.val();
+    console.log('game changed', game);
+    let gameItem = document.querySelector('#game-' + game.game_id);
+    let gameItemForm = document.querySelector('.game-item-form[data-game_id="' + game.game_id + '"]');
+    if (gameItemForm) {
+      gameItemForm.remove();
+    }
 
-  // setTimeout(() => {
-  //   let focusedTeam = APP.get('focusedTeam');
-  //   if (focusedTeam) {
-  //     handleTeamSelection();
-  //   }
-  //   // if (!focusedTeam) {
-  //   //   let gameGroup = scheduleContainer.querySelector('.game-group');
-  //   //   scrollIntoView(gameGroup);
-  //   // }
-  // }, 250);
+    if (gameItem) {
+      let newGameItem = makeGameItem(game);
+      gameItem.replaceWith(newGameItem);
+    }
+  });
+}
+
+function updateRecords(teams, games) {
+
+  let standings = [];
+
+  for (let teamId in teams) {
+    let team = teams[teamId];
+    team.wins = 0;
+    team.losses = 0;
+    standings.push(team);
+  }
+
+  for (let gameId in games) {
+    let game = games[gameId];
+    let team1 = standings.find(t => t.id == game.team1_id);
+    let team2 = standings.find(t => t.id == game.team2_id);
+    if (game.winner_id == '') continue;
+
+    if (game.winner_id == game.team1_id) {
+      team1.wins++;
+      team2.losses++;
+    } else if (game.winner_id == game.team2_id) {
+      team2.wins++;
+      team1.losses++;
+    }
+  }
+
+  // update teams with wins and losses
+  standings.forEach(team => {
+    let teamRef = ref(db, 'teams/' + team.id);
+    update(teamRef, {
+      wins: team.wins,
+      losses: team.losses
+    });
+  });
+
+  // update games with wins and losses
+  for (let gameId in games) {
+    let game = games[gameId];
+    let gameRef = ref(db, 'games/' + game.game_id);
+    let team1 = standings.find(t => t.id == game.team1_id);
+    let team2 = standings.find(t => t.id == game.team2_id);
+    let team1_record = team1.wins + '-' + team1.losses;
+    let team2_record = team2.wins + '-' + team2.losses;
+
+    if (team1_record != game.team1_record || team2_record != game.team2_record) {
+      update(gameRef, {
+        team1_record: team1_record,
+        team2_record: team2_record
+      });
+    }
+  }
+
 }
 
 /* ------------------------------------------------ */
@@ -143,8 +173,8 @@ function makeGameItem(d) {
 
   let gameItem = util.createFromTemplate('game-item-template');
   gameItem.id = 'game-' + d.game_id;
-  gameItem.setAttribute('data-game_id', d.game_id);
-  gameItem.setAttribute('data-winner_id', d.winner_id);
+  gameItem.dataset.game_id = d.game_id;
+  gameItem.dataset.winner_id = d.winner_id;
 
   let items = gameItem.querySelectorAll('span[data-item]');
   items.forEach(item => {
@@ -156,10 +186,13 @@ function makeGameItem(d) {
 
   let teamItems = gameItem.querySelectorAll('.team-item');
   teamItems.forEach(teamItem => {
-    let teamId = teamItem.querySelector('.team-id').textContent;
-    let teamName = teamItem.querySelector('.team-name').textContent;
-    teamItem.setAttribute('data-team_id', teamId);
-    teamItem.setAttribute('data-team_name', teamName);
+    let num = (teamItem.classList.contains('team-item-1')) ? 1 : 2;
+    let teamId = d['team' + num + '_id'];
+    let teamNbr = d['team' + num + '_nbr'];
+    let teamName = d['team' + num + '_name'];
+    teamItem.dataset.team_id = teamId;
+    teamItem.dataset.team_nbr = teamNbr;
+    teamItem.dataset.team_name = teamName;
 
     let teamResult = teamItem.querySelector('.team-result');
     if (d.winner_id == teamId) {
@@ -167,8 +200,8 @@ function makeGameItem(d) {
       teamItem.classList.add('winner');
     }
 
-    if (APP.get('focusedTeam')) {
-      if (APP.get('focusedTeam') == teamName) {
+    if (APP.focusedTeam) {
+      if (APP.focusedTeam == teamName) {
         teamItem.classList.add('selected');
       } else {
         teamItem.classList.add('unselected');
@@ -177,28 +210,26 @@ function makeGameItem(d) {
 
     let teamNameSpan = teamItem.querySelector('.team-name');
     teamNameSpan.addEventListener('click', (e) => {
-      let focusedTeam = (APP.get('focusedTeam') == teamName) ? null : teamName;
-      APP.set('focusedTeam', focusedTeam);
+      let focusedTeam = (APP.focusedTeam == teamName) ? null : teamName;
+      APP.focusedTeam = focusedTeam;
       handleTeamSelection();
     });
   });
 
   let statCol = gameItem.querySelector('.stat-col');
   statCol.addEventListener('click', (e) => {
-    // clear focused team
-    APP.set('focusedTeam', null);
+
+    APP.focusedTeam = null;
     handleTeamSelection();
-    // replace all existing game item forms with game items beforehand
-    // only one game item form can be open at a time
     let gameItemForms = document.querySelectorAll('.game-item-form');
-    gameItemForms.forEach(gif => {
-      let gameId = gif.dataset.game_id;
-      let game = DB.get('Schedule').find(g => g.game_id === gameId);
-      let gameItem = makeGameItem(game);
-      gif.replaceWith(gameItem);
+    gameItemForms.forEach((gif) => {
+      let gifStatCol = gif.querySelector('.stat-col');
+      gifStatCol.click();
     });
+
     let gameItemForm = gameItemToForm(gameItem);
-    gameItem.replaceWith(gameItemForm);
+    gameItem.classList.add('d-none');
+    gameItem.insertAdjacentElement('afterend', gameItemForm);
   });
 
   return gameItem;
@@ -211,10 +242,7 @@ function gameItemToForm(gameItem) {
   let gameItemForm = gameItem.cloneNode(true);
   gameItemForm.classList.add('game-item-form');
   gameItemForm.removeAttribute('id');
-  gameItemForm.setAttribute('data-form_winner_id', gameItemForm.dataset.winner_id);
-
-  // let teamCol = gameItemForm.querySelector('.team-col');
-  // teamCol.classList.add('row-gap-2');
+  gameItemForm.dataset.form_winner_id = gameItem.dataset.winner_id;
 
   const selectTeam = (teamItem) => {
     let teamResult = teamItem.querySelector('.team-result');
@@ -230,7 +258,6 @@ function gameItemToForm(gameItem) {
     teamResult.classList.add(...formLoseTeamClass);
   };
 
-
   let teamItems = gameItemForm.querySelectorAll('.team-item');
   teamItems.forEach(ti => {
     let tiForm = ti.cloneNode(true);
@@ -243,11 +270,8 @@ function gameItemToForm(gameItem) {
     let winnerId = gameItem.dataset.winner_id;
 
     deselectTeam(tiForm);
-    if (winnerId == teamId) {
-      selectTeam(tiForm);
-    }
+    if (winnerId == teamId) selectTeam(tiForm);
 
-    // make tiForm the label for input
     tiForm.addEventListener('click', (e) => {
 
       let isSelected = tiForm.classList.contains('winner');
@@ -256,9 +280,7 @@ function gameItemToForm(gameItem) {
         gameItemForm.dataset.form_winner_id = '';
       } else {
         let tiForms = gameItemForm.querySelectorAll('.team-item-form');
-        tiForms.forEach(tif => {
-          deselectTeam(tif);
-        });
+        tiForms.forEach(tif => deselectTeam(tif));
         selectTeam(tiForm);
         gameItemForm.dataset.form_winner_id = teamId;
       }
@@ -275,13 +297,11 @@ function gameItemToForm(gameItem) {
     ti.replaceWith(tiForm);
   });
 
-  // switch chevron to down
+  // add event listener to stat col to replace form with game item
   let statCol = gameItemForm.querySelector('.stat-col');
-  // let statColChevron = statCol.querySelector('.fa-chevron-right');
-  // statColChevron.classList.remove('fa-chevron-right');
-  // statColChevron.classList.add('fa-chevron-down');
   statCol.addEventListener('click', (e) => {
-    gameItemForm.replaceWith(gameItem);
+    gameItem.classList.remove('d-none');
+    gameItemForm.remove();
   });
 
   // save button
@@ -300,23 +320,12 @@ function gameItemToForm(gameItem) {
   cancelBtn.classList.add('btn', 'btn-secondary');
   cancelBtn.textContent = 'Cancel';
   cancelBtn.addEventListener('click', (e) => {
-    let gameItemForms = document.querySelectorAll('.game-item-form');
-    gameItemForms.forEach(gif => {
-      let gameId = gif.dataset.game_id;
-      let game = DB.get('Schedule').find(g => g.game_id === gameId);
-      let gameItem = makeGameItem(game);
-      gif.replaceWith(gameItem);
-    });
+    gameItem.classList.remove('d-none');
+    gameItemForm.remove();
   });
-
-  // help text
-  let helpText = document.createElement('div');
-  helpText.textContent = 'Select the winning team';
-  helpText.classList.add('help-text', 'me-auto');
 
   let footer = document.createElement('div');
   footer.classList.add('d-flex', 'justify-content-end', 'mt-4', 'mb-2', 'column-gap-2');
-  // footer.appendChild(helpText);
   footer.appendChild(cancelBtn);
   footer.appendChild(saveBtn);
   gameItemForm.appendChild(footer);
@@ -324,172 +333,43 @@ function gameItemToForm(gameItem) {
   return gameItemForm;
 }
 
-
-
 /* ------------------------------------------------ */
-
-// handleGameItemFormSave
-// this will:
-// - get data from form
-// - post data to server
-// - get response from server
-// - update DB with response
-// - replace all game items with new game items (don't want to destory any elements, just update/replace them)
-//   - this will also replace the form with the new game item (i.e. the form will be destroyed)
-// the final result will be exactly the same view the user had before clicking the stat column, but with the updated data
-// keep in mind that posting data via fetch() is asynchronous, so we need to handle the response in a promise
-
 
 function handleGameItemFormSave(e) {
 
   console.log('Start: handleGameItemFormSave()');
   let gameItemForm = e.target.closest('.game-item-form');
-
-  // temporarily disable buttons
-  let saveBtn = gameItemForm.querySelector('#saveBtn');
-  saveBtn.disabled = true;
-  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-  let cancelBtn = gameItemForm.querySelector('#cancelBtn');
-  cancelBtn.disabled = true;
-
   let gameId = gameItemForm.dataset.game_id;
   let winnerId = gameItemForm.dataset.form_winner_id;
 
-  // before posting data, update the DB with the new winner_id and premptively update the game item
-  let game = DB.get('Schedule').find(g => g.game_id === gameId);
-  game.winner_id = winnerId;
-  game.status = (winnerId != '') ? 'POST' : 'PRE';
-  let gameItem = makeGameItem(game);
-
-  gameItem.classList.add('pending');
-  let editIcon = gameItem.querySelector('.stat-col i');
-  let newIcon = document.createElement('span');
-  newIcon.classList.add('spinner-border', 'spinner-border-sm', 'text-danger');
-  editIcon.replaceWith(newIcon);
-  gameItemForm.replaceWith(gameItem);
-
-  let data = {
-    game_id: gameId,
-    winner_id: winnerId
+  // Update the game record with the new winner and status
+  // also need to update the team records
+  let gameRef = ref(db, 'games/' + gameId);
+  let gameData = {
+    winner_id: winnerId,
+    status: (winnerId == '') ? 'PRE' : 'POST'
   };
 
-  let urlRoot = 'https://script.google.com/macros/s/AKfycbxMeB_AspCRyeO7C5Y_cZl5b3_h6DJJv3OPX1-RiVZBJJx6Fo3x4PSf6vqNVpu_0Dssqw/exec';
-  let urlParams = new URLSearchParams(data);
-  let url = urlRoot + '?' + urlParams;
-  let options = {
-    method: 'POST',
-    redirect: 'follow'
-  };
-
-  console.log('Posting:', url);
-
-  fetch(url, options)
-    .then(response => response.json())
-    .then(result => {
-      console.log('Success:', result);
+  update(gameRef, gameData)
+    .then(() => {
+      onValue(ref(db, 'teams'), (snapshot) => {
+        let teams = snapshot.val();
+        onValue(ref(db, 'games'), (snapshot) => {
+          let games = snapshot.val();
+          updateRecords(teams, games);
+        }, { onlyOnce: true });
+      }, { onlyOnce: true });
     })
-    .catch(error => {
-      createAlert('danger', error);
-      console.error('Error:', error);
-    })
-    .finally(() => {
-      DB.load('Schedule')
-        .then(() => {
-          let gameItems = document.querySelectorAll('.game-item');
-          gameItems.forEach(gi => {
-            let game_id = gi.dataset.game_id;
-            let game = DB.get('Schedule').find(g => g.game_id === game_id);
-            let gameItem = makeGameItem(game);
-
-            // check if gi is one that is still pending (if, e.g., user clicked save, then:
-            // - clicked another game's stat column before the fetch() was complete, and possibly
-            // - submitted another game's form before the fetch() was complete
-
-            // so, if gi has class 'pending':
-            // - if gi is the same game as the one that was just posted, replace it
-            // - if gi is a different game, don't replace it
-            // but if gi has class 'game-item-form', don't replace it
-
-            let isPostedGame = data.game_id == game_id;
-
-            let replace = false;
-            if (gi.classList.contains('pending')) {
-              if (isPostedGame) {
-                replace = true;
-              }
-            } else {
-              if (gi.classList.contains('game-item-form')) {
-                replace = false;
-              } else {
-                replace = true;
-              }
-            }
-
-            if (replace) {
-              gi.replaceWith(gameItem);
-            }
-
-          });
-        });
+    .catch((error) => {
+      console.error('Error updating game record:', error);
     });
-
-
 }
-
-/* ------------------------------------------------ */
-
-// google appscript function to handle POST request
-// this is for illustration purposes only, won't actually be used in the app
-// function doPost(e) {
-
-//   let data = e.parameter;
-//   let game_id = data.game_id;
-//   let winner_id = data.winner_id;
-
-//   // getSheet() is a function that returns json data from a google sheet
-//   // the result looks the same as DB.get('Schedule') in this app
-//   let schedule = getSheet('Schedule');
-//   let game = schedule.find(g => g.game_id === game_id);
-//   game.winner_id = winner_id;
-//   schedule.forEach(g => {
-//     g.status = (g.winner_id != '') ? 'POST' : 'PRE';
-//   });
-
-//   // re-calculate team records
-//   let teams = getSheet('Teams');
-//   teams.forEach(team => {
-//     let games = schedule.filter(g => g.team1_id === team.team_id || g.team2_id === team.team_id);
-//     let completedGames = games.filter(g => g.status === 'POST');
-//     if (completedGames.length > 0) {
-//       let wins = completedGames.filter(g => g.winner_id === team.team_id);
-//       team.wins = wins.length;
-//       team.losses = completedGames.length - wins.length;
-//     } else {
-//       team.wins = 0;
-//       team.losses = 0;
-//     }
-
-//     let teamRecord = team.wins + '-' + team.losses;
-//     games.forEach(g => {
-//       let teamNum = (g.team1_id === team.team_id) ? 1 : 2;
-//       g['team' + teamNum + '_record'] = teamRecord;
-//     });
-//   });
-
-//   // need to update the 'Teams' and 'Schedule' sheets in the google sheet
-//   // this is done by calling another google appscript function
-//   setSheet('Teams', teams);
-//   setSheet('Schedule', schedule);
-
-//   return ContentService.createTextOutput(JSON.stringify(game)).setMimeType(ContentService.MimeType.JSON);
-// }
-
 
 /* ------------------------------------------------ */
 
 function handleTeamSelection(e) {
 
-  let team = APP.get('focusedTeam');
+  let team = APP.focusedTeam;
   let allTeamItems = document.querySelectorAll('.team-item');
   if (!team) {
     allTeamItems.forEach(ti => {
