@@ -9,13 +9,22 @@ document.addEventListener('DOMContentLoaded', init);
 
 function init() {
 
-  let gamesRef = ref(db, 'games');
+  let season = localStorage.getItem('season');
+  let session = localStorage.getItem('session');
+  let league = localStorage.getItem('league');
+  let gamesRef = ref(db, 'games/' + season + '/' + session + '/' + league);
+
   onValue(gamesRef, (snapshot) => {
 
     let games = Object.values(snapshot.val());
     let nextGame = games.find(g => g.status === 'PRE');
     let currentWeek = nextGame.week;
     APP.currentWeek = currentWeek;
+    APP.season = season;
+    APP.session = session;
+    APP.league = league;
+
+    APP.listeningFirebaseRefs = [];
 
     makeFilters(games);
     let currentWeekButton = document.querySelector('#filter-container button[data-week="' + currentWeek + '"]');
@@ -47,8 +56,8 @@ function makeFilters(data) {
     btn.setAttribute('data-week', value);
     btn.addEventListener('click', (e) => {
       let week = e.target.getAttribute('data-week');
-      // get games for week from firebase
-      onValue(ref(db, 'games'), (snapshot) => {
+      let gamesRef = ref(db, 'games/' + APP.season + '/' + APP.session + '/' + APP.league);
+      onValue(gamesRef, (snapshot) => {
         let games = Object.values(snapshot.val()).filter(g => g.week == week);
         makeSchedule(games);
       }, { onlyOnce: true });
@@ -76,6 +85,12 @@ function makeSchedule(data) {
   let scheduleContainer = document.querySelector('#schedule-container');
   scheduleContainer.innerHTML = '';
 
+  // reset any existing listeners
+  // APP.listeningFirebaseRefs.forEach(ref => {
+  //   off(ref);
+  // });
+  APP.listeningFirebaseRefs = [];
+
   let timeSlots = data.map(d => d.time).filter((v, i, a) => a.findIndex(t => (t === v)) === i);
   timeSlots.forEach(timeSlot => {
     let gameCard = util.createFromTemplate('game-group-template');
@@ -95,7 +110,7 @@ function makeSchedule(data) {
     scheduleContainer.appendChild(gameCard);
   });
 
-  let gamesRef = ref(db, 'games');
+  let gamesRef = ref(db, 'games/' + APP.season + '/' + APP.session + '/' + APP.league);
   onChildChanged(gamesRef, (snapshot) => {
     let game = snapshot.val();
     console.log('game changed', game);
@@ -140,7 +155,7 @@ function updateRecords(teams, games) {
 
   // update teams with wins and losses
   standings.forEach(team => {
-    let teamRef = ref(db, 'teams/' + team.id);
+    let teamRef = ref(db, 'teams/' + APP.season + '/' + APP.session + '/' + APP.league + '/' + team.id);
     update(teamRef, {
       wins: team.wins,
       losses: team.losses
@@ -150,7 +165,7 @@ function updateRecords(teams, games) {
   // update games with wins and losses
   for (let gameId in games) {
     let game = games[gameId];
-    let gameRef = ref(db, 'games/' + game.game_id);
+    let gameRef = ref(db, 'games/' + APP.season + '/' + APP.session + '/' + APP.league + '/' + game.game_id);
     let team1 = standings.find(t => t.id == game.team1_id);
     let team2 = standings.find(t => t.id == game.team2_id);
     let team1_record = team1.wins + '-' + team1.losses;
@@ -235,6 +250,16 @@ function makeGameItem(d) {
     gameItem.insertAdjacentElement('afterend', gameItemForm);
   });
 
+  // let gameRef = ref(db, 'games/' + d.game_id);
+  // onValue(gameRef, (snapshot) => {
+  //   let game = snapshot.val();
+  //   // replace game item with updated game item
+  //   let newGameItem = makeGameItem(game);
+  //   gameItem.replaceWith(newGameItem);
+  // });
+
+  // APP.listeningFirebaseRefs.push(gameRef);
+
   return gameItem;
 }
 
@@ -313,7 +338,11 @@ function gameItemToForm(gameItem) {
   saveBtn.type = 'button';
   saveBtn.classList.add('btn', 'btn-outline-primary');
   saveBtn.textContent = 'Submit';
-  saveBtn.addEventListener('click', handleGameItemFormSave);
+  saveBtn.addEventListener('click', (e) => {
+    handleGameItemFormSave(e);
+    gameItem.classList.remove('d-none');
+    gameItemForm.remove();
+  });
   saveBtn.disabled = true;
 
   // cancel button
@@ -347,7 +376,7 @@ function handleGameItemFormSave(e) {
 
   // Update the game record with the new winner and status
   // also need to update the team records
-  let gameRef = ref(db, 'games/' + gameId);
+  let gameRef = ref(db, 'games/' + APP.season + '/' + APP.session + '/' + APP.league + '/' + gameId);
   let gameData = {
     winner_id: winnerId,
     status: (winnerId == '') ? 'PRE' : 'POST'
@@ -355,9 +384,11 @@ function handleGameItemFormSave(e) {
 
   update(gameRef, gameData)
     .then(() => {
-      onValue(ref(db, 'teams'), (snapshot) => {
+      let teamsRef = ref(db, 'teams/' + APP.season + '/' + APP.session + '/' + APP.league);
+      onValue(teamsRef, (snapshot) => {
         let teams = snapshot.val();
-        onValue(ref(db, 'games'), (snapshot) => {
+        let gamesRef = ref(db, 'games/' + APP.season + '/' + APP.session + '/' + APP.league);
+        onValue(gamesRef, (snapshot) => {
           let games = snapshot.val();
           updateRecords(teams, games);
         }, { onlyOnce: true });

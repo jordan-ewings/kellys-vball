@@ -8,13 +8,18 @@ document.addEventListener('DOMContentLoaded', init);
 
 function init() {
 
-  // get teams and makeStandings
-  let teamsRef = ref(db, 'teams');
+  let season = localStorage.getItem('season');
+  let session = localStorage.getItem('session');
+  let league = localStorage.getItem('league');
+  let teamsRef = ref(db, 'teams/' + season + '/' + session + '/' + league);
 
-  onValue(teamsRef, (snapshot) => {
+  onValue(teamsRef, snapshot => {
+
     let data = snapshot.val();
     makeStandings(Object.values(data));
-  });
+
+    document.querySelector('#loading').remove();
+  }, { onlyOnce: true });
 
 
 }
@@ -65,7 +70,6 @@ function makeStandings(data) {
   }
 
   makeStandingsStructure();
-
   let standingsHead = document.querySelector('#standings-container thead');
   let standingsBody = document.querySelector('#standings-container tbody');
 
