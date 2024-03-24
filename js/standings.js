@@ -1,5 +1,5 @@
 import * as util from './util.js';
-import { db } from './firebase.js';
+import { db, APP } from './firebase.js';
 import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
 /* ------------------------------------------------ */
@@ -8,12 +8,12 @@ document.addEventListener('DOMContentLoaded', init);
 
 function init() {
 
-  let season = localStorage.getItem('season');
-  let session = localStorage.getItem('session');
-  let league = localStorage.getItem('league');
-  let teamsRef = ref(db, 'teams/' + season + '/' + session + '/' + league);
+  let season = localStorage.getItem('season') || '2024';
+  let session = localStorage.getItem('session') || '01';
+  let league = localStorage.getItem('league') || 'MONDAY';
+  APP.leaguePath = season + '/' + session + '/' + league;
 
-  onValue(teamsRef, snapshot => {
+  onValue(ref(db, 'teams/' + APP.leaguePath), snapshot => {
 
     let data = snapshot.val();
     makeStandings(Object.values(data));

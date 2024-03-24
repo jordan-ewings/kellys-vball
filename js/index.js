@@ -70,7 +70,7 @@ function makeLeaguePicker(data) {
     selectDiv.appendChild(select);
 
 
-    document.querySelector('#main-body').appendChild(selectDiv);
+    document.querySelector('#league-select-container').appendChild(selectDiv);
   });
 
 

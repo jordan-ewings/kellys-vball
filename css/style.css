@@ -184,6 +184,35 @@ div::-webkit-scrollbar {
 }
 
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* INDEX/HOME */
+
+#league-select-container {
+  display: flex;
+  justify-content: center;
+  padding: 0 1rem;
+}
+
+#league-select-container .form-group {
+  margin: .8rem .5rem;
+  text-align: center;
+}
+
+#league-select-container select {
+  background-color: var(--ios-bg2);
+  color: var(--ios-text);
+  padding: .5rem 3rem .5rem 1rem;
+  border: none;
+  border-radius: 12px;
+}
+
+#league-select-container label {
+  color: var(--ios-text1);
+  font-size: .8rem;
+  font-weight: 500;
+  padding-bottom: .3rem;
+}
+
+/* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* STANDINGS */
 
 /* ---------------------------------- */
