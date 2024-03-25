@@ -35,12 +35,8 @@ function init() {
 function makeFilters(data) {
 
   let filterContainer = document.querySelector('#filter-container');
-
   let weeks = data.map(d => {
-    return {
-      value: d.week,
-      label: d.week_label
-    };
+    return { value: d.week, label: 'Week ' + d.week };
   }).filter((v, i, a) => a.findIndex(t => (t.value === v.value)) === i);
 
   weeks.forEach(w => {
@@ -49,6 +45,9 @@ function makeFilters(data) {
     let btn = document.createElement('button');
     btn.type = 'button';
     btn.setAttribute('data-week', value);
+    btn.classList.add('btn', 'text-dim2', 'fw-medium', 'text-nowrap');
+    btn.innerHTML = label;
+
     btn.addEventListener('click', (e) => {
       let week = e.target.getAttribute('data-week');
       onValue(ref(db, 'games/' + APP.leaguePath), (snapshot) => {
@@ -57,17 +56,11 @@ function makeFilters(data) {
       }, { onlyOnce: true });
 
       let active = filterContainer.querySelector('.active');
-      if (active) {
-        active.classList.remove('active');
-      }
+      if (active) active.classList.remove('active');
       e.target.classList.add('active');
-
-      // scroll into view of button
       e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     });
 
-    btn.classList.add('btn', 'text-dim2', 'fw-medium', 'text-nowrap');
-    btn.innerHTML = label;
     filterContainer.appendChild(btn);
   });
 }
@@ -100,83 +93,67 @@ function makeSchedule(data) {
 
   onChildChanged(ref(db, 'games/' + APP.leaguePath), (snapshot) => {
     let game = snapshot.val();
-    console.log('game changed', game);
     let gameItem = document.querySelector('#game-' + game.game_id);
     let gameItemForm = document.querySelector('.game-item-form[data-game_id="' + game.game_id + '"]');
+    if (!gameItem) return;
+
+    let newGameItem = makeGameItem(game);
+    if (gameItemForm) newGameItem.classList.add('d-none');
+    gameItem.replaceWith(newGameItem);
+
+    let winnerChanged = newGameItem.dataset.winner_id != gameItem.dataset.winner_id;
+    if (!winnerChanged) return;
+
+    if (!gameItemForm) {
+      newGameItem.classList.add('flash-update');
+      let caret = newGameItem.querySelector('.team-result.fa-caret-left');
+      caret.classList.add('fa-beat-fade');
+      setTimeout(() => {
+        newGameItem.classList.remove('flash-update');
+        caret.classList.remove('fa-beat-fade');
+      }, 2000);
+      return;
+    }
+
+
     if (gameItemForm) {
-      gameItemForm.remove();
-    }
 
-    if (gameItem) {
-      let newGameItem = makeGameItem(game);
-      gameItem.replaceWith(newGameItem);
-    }
-  });
-}
+      let teamCol = gameItemForm.querySelector('.team-col');
+      teamCol.style.pointerEvents = 'none';
+      teamCol.style.opacity = '0.5';
 
-function updateRecords(teams, games) {
+      let formFooter = gameItemForm.querySelector('.form-footer');
+      formFooter.innerHTML = '';
+      let alert = createAlert('danger', 'This game has been updated by another user. Close this form to see the changes.');
+      alert.querySelector('.btn-close').remove();
+      let alertMsg = alert.querySelector('.me-auto');
+      alertMsg.style.fontSize = '0.9rem';
+      alertMsg.style.fontWeight = '400';
+      formFooter.appendChild(alert);
 
-  let standings = [];
+      let editIcon = gameItemForm.querySelector('.edit-icon');
+      editIcon.classList.add('text-danger', 'fa-fade');
 
-  for (let teamId in teams) {
-    let team = teams[teamId];
-    team.wins = 0;
-    team.losses = 0;
-    standings.push(team);
-  }
-
-  for (let gameId in games) {
-    let game = games[gameId];
-    let team1 = standings.find(t => t.id == game.team1_id);
-    let team2 = standings.find(t => t.id == game.team2_id);
-    if (game.winner_id == '') continue;
-
-    if (game.winner_id == game.team1_id) {
-      team1.wins++;
-      team2.losses++;
-    } else if (game.winner_id == game.team2_id) {
-      team2.wins++;
-      team1.losses++;
-    }
-  }
-
-  // update teams with wins and losses
-  standings.forEach(team => {
-    let teamRef = ref(db, 'teams/' + APP.leaguePath + '/' + team.id);
-    update(teamRef, {
-      wins: team.wins,
-      losses: team.losses
-    });
-  });
-
-  // update games with wins and losses
-  for (let gameId in games) {
-    let game = games[gameId];
-    let gameRef = ref(db, 'games/' + APP.leaguePath + '/' + game.game_id);
-    let team1 = standings.find(t => t.id == game.team1_id);
-    let team2 = standings.find(t => t.id == game.team2_id);
-    let team1_record = team1.wins + '-' + team1.losses;
-    let team2_record = team2.wins + '-' + team2.losses;
-
-    if (team1_record != game.team1_record || team2_record != game.team2_record) {
-      update(gameRef, {
-        team1_record: team1_record,
-        team2_record: team2_record
+      let statCol = gameItemForm.querySelector('.stat-col');
+      statCol.addEventListener('click', (e) => {
+        newGameItem.classList.add('flash-update');
+        let caret = newGameItem.querySelector('.team-result.fa-caret-left');
+        caret.classList.add('fa-beat-fade');
+        setTimeout(() => {
+          newGameItem.classList.remove('flash-update');
+          caret.classList.remove('fa-beat-fade');
+        }, 2000);
       });
     }
-  }
-
+  });
 }
 
 /* ------------------------------------------------ */
 
-let regWinTeamClass = ['fa-solid', 'fa-caret-left'];
-let formWinTeamClass = ['fa-solid', 'fa-circle-check'];
-let formLoseTeamClass = ['fa-regular', 'fa-circle'];
-
 function makeGameItem(d) {
 
   let gameItem = util.createFromTemplate('game-item-template');
+  gameItem.classList.add((d.status == 'PRE') ? 'pre' : 'post');
   gameItem.id = 'game-' + d.game_id;
   gameItem.dataset.game_id = d.game_id;
   gameItem.dataset.winner_id = d.winner_id;
@@ -185,7 +162,6 @@ function makeGameItem(d) {
   items.forEach(item => {
     let dataItem = item.getAttribute('data-item');
     let text = d[dataItem];
-    if (dataItem == 'court') text = text.replace('Court ', 'C');
     item.textContent = text;
   });
 
@@ -199,22 +175,19 @@ function makeGameItem(d) {
     teamItem.dataset.team_nbr = teamNbr;
     teamItem.dataset.team_name = teamName;
 
-    let teamResult = teamItem.querySelector('.team-result');
-    if (d.winner_id == teamId) {
-      teamResult.classList.add(...regWinTeamClass);
-      teamItem.classList.add('winner');
-    }
+    let isWinner = d.winner_id == teamId;
+    teamItem.classList.toggle('winner', isWinner);
+
+    let resultIcon = teamItem.querySelector('.team-result');
+    if (isWinner) resultIcon.classList.add('fa-solid', 'fa-caret-left');
 
     if (APP.focusedTeam) {
-      if (APP.focusedTeam == teamName) {
-        teamItem.classList.add('selected');
-      } else {
-        teamItem.classList.add('unselected');
-      }
+      let isFocused = (APP.focusedTeam == teamName);
+      teamItem.classList.toggle('selected', isFocused);
+      teamItem.classList.toggle('unselected', !isFocused);
     }
 
-    let teamNameSpan = teamItem.querySelector('.team-name');
-    teamNameSpan.addEventListener('click', (e) => {
+    teamItem.querySelector('.team-name').addEventListener('click', (e) => {
       let focusedTeam = (APP.focusedTeam == teamName) ? null : teamName;
       APP.focusedTeam = focusedTeam;
       handleTeamSelection();
@@ -244,83 +217,24 @@ function makeGameItem(d) {
 
 function gameItemToForm(gameItem) {
 
+  gameItem.classList.remove('flash-update');
+  let caret = gameItem.querySelector('.team-result.fa-caret-left');
+  if (caret) caret.classList.remove('fa-beat-fade');
+
   let gameItemForm = gameItem.cloneNode(true);
   gameItemForm.classList.add('game-item-form');
   gameItemForm.removeAttribute('id');
   gameItemForm.dataset.form_winner_id = gameItem.dataset.winner_id;
-
-  const selectTeam = (teamItem) => {
-    let teamResult = teamItem.querySelector('.team-result');
-    teamItem.classList.add('winner');
-    teamResult.classList.remove(...formLoseTeamClass);
-    teamResult.classList.add(...formWinTeamClass);
-  };
-
-  const deselectTeam = (teamItem) => {
-    let teamResult = teamItem.querySelector('.team-result');
-    teamItem.classList.remove('winner');
-    teamResult.classList.remove(...formWinTeamClass);
-    teamResult.classList.add(...formLoseTeamClass);
-  };
-
-  let teamItems = gameItemForm.querySelectorAll('.team-item');
-  teamItems.forEach(ti => {
-    let tiForm = ti.cloneNode(true);
-    tiForm.classList.add('team-item-form');
-    tiForm.classList.add('py-1');
-
-    let teamId = ti.dataset.team_id;
-    let teamName = ti.dataset.team_name;
-    let gameId = gameItem.dataset.game_id;
-    let winnerId = gameItem.dataset.winner_id;
-
-    deselectTeam(tiForm);
-    if (winnerId == teamId) selectTeam(tiForm);
-
-    tiForm.addEventListener('click', (e) => {
-
-      let isSelected = tiForm.classList.contains('winner');
-      if (isSelected) {
-        deselectTeam(tiForm);
-        gameItemForm.dataset.form_winner_id = '';
-      } else {
-        let tiForms = gameItemForm.querySelectorAll('.team-item-form');
-        tiForms.forEach(tif => deselectTeam(tif));
-        selectTeam(tiForm);
-        gameItemForm.dataset.form_winner_id = teamId;
-      }
-
-      let saveBtn = gameItemForm.querySelector('#saveBtn');
-      if (gameItemForm.dataset.form_winner_id != gameItemForm.dataset.winner_id) {
-        saveBtn.disabled = false;
-        saveBtn.classList.replace('btn-outline-primary', 'btn-primary');
-      } else {
-        saveBtn.disabled = true;
-        saveBtn.classList.replace('btn-primary', 'btn-outline-primary');
-      }
-    });
-    ti.replaceWith(tiForm);
-  });
+  let gameId = gameItem.dataset.game_id;
 
   // add event listener to stat col to replace form with game item
   let statCol = gameItemForm.querySelector('.stat-col');
+  let editIcon = statCol.querySelector('.edit-icon');
+  editIcon.classList.replace('fa-pen', 'fa-xmark');
   statCol.addEventListener('click', (e) => {
-    gameItem.classList.remove('d-none');
+    document.querySelector('#game-' + gameId).classList.remove('d-none');
     gameItemForm.remove();
   });
-
-  // save button
-  let saveBtn = document.createElement('button');
-  saveBtn.id = 'saveBtn';
-  saveBtn.type = 'button';
-  saveBtn.classList.add('btn', 'btn-outline-primary');
-  saveBtn.textContent = 'Submit';
-  saveBtn.addEventListener('click', (e) => {
-    handleGameItemFormSave(e);
-    gameItem.classList.remove('d-none');
-    gameItemForm.remove();
-  });
-  saveBtn.disabled = true;
 
   // cancel button
   let cancelBtn = document.createElement('button');
@@ -329,15 +243,70 @@ function gameItemToForm(gameItem) {
   cancelBtn.classList.add('btn', 'btn-secondary');
   cancelBtn.textContent = 'Cancel';
   cancelBtn.addEventListener('click', (e) => {
-    gameItem.classList.remove('d-none');
+    document.querySelector('#game-' + gameId).classList.remove('d-none');
     gameItemForm.remove();
   });
 
+  // save button
+  let saveBtn = document.createElement('button');
+  saveBtn.id = 'saveBtn';
+  saveBtn.type = 'button';
+  saveBtn.classList.add('btn', 'btn-outline-primary');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Submit';
+  saveBtn.addEventListener('click', (e) => {
+    document.querySelector('#game-' + gameId).classList.remove('d-none');
+    gameItemForm.remove();
+    handleGameItemFormSave(e);
+  });
+
   let footer = document.createElement('div');
-  footer.classList.add('d-flex', 'justify-content-end', 'mt-4', 'mb-2', 'column-gap-2');
+  footer.classList.add('d-flex', 'justify-content-end', 'mt-4', 'mb-2', 'column-gap-2', 'form-footer');
   footer.appendChild(cancelBtn);
   footer.appendChild(saveBtn);
   gameItemForm.appendChild(footer);
+
+  // replace team items with team item forms
+  let teamItems = gameItemForm.querySelectorAll('.team-item');
+  teamItems.forEach(ti => {
+
+    let tiForm = ti.cloneNode(true);
+    tiForm.classList.add('py-1');
+
+    let resultIcon = tiForm.querySelector('.team-result');
+    resultIcon.classList.remove('fa-caret-left', 'fa-solid');
+    resultIcon.classList.add('fa-regular', 'fa-circle-check');
+
+    let isWinner = ti.classList.contains('winner');
+    resultIcon.classList.toggle('fa-solid', isWinner);
+
+    ti.replaceWith(tiForm);
+  });
+
+  // handle team selections
+  let teamItemForms = gameItemForm.querySelectorAll('.team-item');
+  teamItemForms.forEach(tiForm => {
+
+    tiForm.addEventListener('click', (e) => {
+
+      let userClear = tiForm.classList.contains('winner');
+      let userSelect = !userClear;
+      let newWinnerId = (userSelect) ? tiForm.dataset.team_id : '';
+
+      teamItemForms.forEach(ti => {
+        let isNewWinner = ti.dataset.team_id == newWinnerId;
+        ti.classList.toggle('winner', isNewWinner);
+        ti.querySelector('.team-result').classList.toggle('fa-solid', isNewWinner);
+      });
+
+      gameItemForm.dataset.form_winner_id = newWinnerId;
+      let gameChanged = gameItemForm.dataset.form_winner_id != gameItemForm.dataset.winner_id;
+      gameItemForm.classList.toggle('changed', gameChanged);
+      saveBtn.disabled = !gameChanged;
+      saveBtn.classList.toggle('btn-outline-primary', !gameChanged);
+      saveBtn.classList.toggle('btn-primary', gameChanged);
+    });
+  });
 
   return gameItemForm;
 }
@@ -348,30 +317,101 @@ function handleGameItemFormSave(e) {
 
   console.log('Start: handleGameItemFormSave()');
   let gameItemForm = e.target.closest('.game-item-form');
-  let gameId = gameItemForm.dataset.game_id;
-  let winnerId = gameItemForm.dataset.form_winner_id;
+  let formGameId = gameItemForm.dataset.game_id;
+  let formWinnerId = gameItemForm.dataset.form_winner_id;
 
-  // Update the game record with the new winner and status
-  // also need to update the team records
-  let gameRef = ref(db, 'games/' + APP.leaguePath + '/' + gameId);
-  let gameData = {
-    winner_id: winnerId,
-    status: (winnerId == '') ? 'PRE' : 'POST'
-  };
+  // check if winner is different than the game-item winner
+  let gameItem = document.querySelector('#game-' + formGameId);
+  let gameItemWinnerId = gameItem.dataset.winner_id;
+  if (formWinnerId == gameItemWinnerId) {
+    console.log('Winner is the same, no need to update');
+    gameItem.classList.remove('d-none');
+    gameItemForm.remove();
+    return;
+  }
 
-  update(gameRef, gameData)
-    .then(() => {
-      onValue(ref(db, 'teams/' + APP.leaguePath), (snapshot) => {
-        let teams = snapshot.val();
-        onValue(ref(db, 'games/' + APP.leaguePath), (snapshot) => {
-          let games = snapshot.val();
-          updateRecords(teams, games);
-        }, { onlyOnce: true });
-      }, { onlyOnce: true });
-    })
-    .catch((error) => {
-      console.error('Error updating game record:', error);
-    });
+  onValue(ref(db, 'teams/' + APP.leaguePath), (snapshot) => {
+    let teams = snapshot.val();
+    onValue(ref(db, 'games/' + APP.leaguePath), (snapshot) => {
+      let games = snapshot.val();
+
+      let standings = [];
+      for (let teamId in teams) {
+        let team = teams[teamId];
+        team.wins_2 = 0;
+        team.losses_2 = 0;
+        standings.push(team);
+      }
+
+      for (let gameId in games) {
+        let game = games[gameId];
+
+        if (game.game_id == formGameId) {
+          game.winner_id = formWinnerId;
+          game.status = (formWinnerId == '') ? 'PRE' : 'POST';
+        }
+
+        if (game.winner_id == '') continue;
+        let team1 = standings.find(t => t.id == game.team1_id);
+        let team2 = standings.find(t => t.id == game.team2_id);
+        if (game.winner_id == game.team1_id) {
+          team1.wins_2++;
+          team2.losses_2++;
+        } else if (game.winner_id == game.team2_id) {
+          team2.wins_2++;
+          team1.losses_2++;
+        }
+      }
+
+      let teamUpdatesCount = 0;
+      let teamUpdates = {};
+      standings.forEach(team => {
+        team.record = team.wins_2 + '-' + team.losses_2;
+        team.recordOld = team.wins + '-' + team.losses;
+        let teamPath = '/teams/' + APP.leaguePath + '/' + team.id;
+        if (team.record != team.recordOld) {
+          teamUpdates[teamPath + '/wins'] = team.wins_2;
+          teamUpdates[teamPath + '/losses'] = team.losses_2;
+          teamUpdatesCount++;
+        }
+      });
+
+      let gameUpdatesCount = 0;
+      let gameUpdates = {};
+      for (let gameId in games) {
+        let game = games[gameId];
+        let gamePath = '/games/' + APP.leaguePath + '/' + game.game_id;
+        let team1 = standings.find(t => t.id == game.team1_id);
+        let team2 = standings.find(t => t.id == game.team2_id);
+        let team1Changed = team1.record != game.team1_record;
+        let team2Changed = team2.record != game.team2_record;
+        if (!team1Changed && !team2Changed) continue;
+
+        gameUpdatesCount++;
+        if (team1Changed) gameUpdates[gamePath + '/team1_record'] = team1.record;
+        if (team2Changed) gameUpdates[gamePath + '/team2_record'] = team2.record;
+      }
+
+      let updates = {};
+      // form game updates
+      updates['/games/' + APP.leaguePath + '/' + formGameId + '/winner_id'] = formWinnerId;
+      updates['/games/' + APP.leaguePath + '/' + formGameId + '/status'] = (formWinnerId == '') ? 'PRE' : 'POST';
+      // team updates
+      updates = { ...updates, ...teamUpdates };
+      // game updates
+      updates = { ...updates, ...gameUpdates };
+
+      console.log('updates', updates);
+      update(ref(db), updates)
+        .then(() => {
+          console.log(gameUpdatesCount + ' games, ' + teamUpdatesCount + ' teams updated');
+        })
+        .catch((error) => {
+          console.error('Error updating records:', error);
+        });
+
+    }, { onlyOnce: true });
+  }, { onlyOnce: true });
 }
 
 /* ------------------------------------------------ */
@@ -425,7 +465,6 @@ function scrollIntoView(element) {
 /* ------------------------------------------------ */
 
 // if user swipes left or right, change the week
-// if no week to change to, do nothing (e.g. if at the first or last week)
 let scheduleContainer = document.querySelector('#schedule-container');
 scheduleContainer.addEventListener('touchstart', gest.handleTouchStart, false);
 scheduleContainer.addEventListener('touchmove', (evt) => {
@@ -443,46 +482,24 @@ scheduleContainer.addEventListener('touchmove', (evt) => {
   }
 }, false);
 
-function changeWeek(dir) {
-
-  let active = document.querySelector('#filter-container .active');
-  let next = active.nextElementSibling;
-  let prev = active.previousElementSibling;
-
-  if (dir == 'next' && next) {
-    next.click();
-  } else if (dir == 'prev' && prev) {
-    prev.click();
-  }
-}
-
 /* ------------------------------------------------ */
 
 function createAlert(type, msg) {
 
-  let alertContainer = document.querySelector('#alert-container');
-
-  // destroy any existing alerts
-  let existingAlert = document.querySelector('.alert');
-  if (existingAlert) {
-    existingAlert.remove();
-  }
-
   let alert = document.createElement('div');
   alert.classList.add('alert', 'd-flex', 'align-items-center');
-  alert.classList.add('py-2', 'px-3', 'mb-2');
+  alert.classList.add('py-2', 'px-3', 'm-0');
   alert.classList.add('alert-' + type);
   alert.setAttribute('role', 'alert');
 
   let alertMsg = document.createElement('div');
-  alertMsg.classList.add('me-auto', 'fw-medium');
+  alertMsg.classList.add('me-auto');
   alertMsg.innerHTML = msg;
   alert.appendChild(alertMsg);
 
   let closeBtn = document.createElement('button');
   closeBtn.id = 'alertCloseBtn';
   closeBtn.classList.add('btn-close');
-  // closeBtn.classList.add('btn-' + type, 'align-middle', 'ms-2')
   closeBtn.classList.add('btn-sm');
   closeBtn.setAttribute('type', 'button');
   closeBtn.addEventListener('click', () => {
@@ -490,12 +507,7 @@ function createAlert(type, msg) {
   });
   alert.appendChild(closeBtn);
 
-  alertContainer.appendChild(alert);
+  return alert;
 }
 
 /* ------------------------------------------------ */
-// for testing swipe gestures on mobile device
-// would normally console.log(), but this is not possible on mobile
-// so we create an alert to display the swipe direction
-
-

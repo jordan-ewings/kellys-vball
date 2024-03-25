@@ -133,14 +133,14 @@ div::-webkit-scrollbar {
 .table td,
 .table th {
   background-color: transparent !important;
-  color: var(--ios-text1);
+  color: var(--ios-text);
   font-size: 1rem;
   padding: .5rem .4rem;
   text-align: center;
 }
 
 .table thead th {
-  color: var(--ios-text3);
+  color: var(--ios-text1);
   font-size: .8rem;
   font-weight: 600;
   padding-bottom: .6rem;
@@ -207,7 +207,7 @@ div::-webkit-scrollbar {
 
 #league-select-container label {
   color: var(--ios-text1);
-  font-size: .8rem;
+  font-size: .85rem;
   font-weight: 500;
   padding-bottom: .3rem;
 }
@@ -254,7 +254,7 @@ div::-webkit-scrollbar {
 /* SCHEDULE */
 
 #filter-container button {
-  color: var(--ios-text2);
+  color: var(--ios-text1);
   margin: .8rem .6rem;
   padding: .1rem 0rem;
   border: none;
@@ -293,16 +293,20 @@ div::-webkit-scrollbar {
   padding: 0 .1rem;
 }
 
+.game-item.flash-update .team-col {
+  border-right: 1px solid var(--ios-red) !important;
+}
+
+.game-item.flash-update .team-result {
+  color: var(--ios-red) !important;
+}
+
 .game-item:first-child {
   border-top: none;
 }
 
 .game-item .team-col {
   border-right: 1px solid var(--ios-separator);
-}
-
-.game-item .stat-col {
-  padding-right: 0;
 }
 
 .game-item .team-item:hover {
@@ -314,12 +318,19 @@ div::-webkit-scrollbar {
   cursor: pointer;
 }
 
-.game-item .stat-col i {
+.game-item .stat-col {
+  padding-right: 0;
+}
+
+.game-item .stat-col .edit-icon {
   color: var(--ios-blue);
   font-size: .8rem;
 }
 
-/* make the team items look like buttons when hovered (pointer is a finger, not just a cursor) */
+.game-item-form .stat-col .edit-icon {
+  /* color: var(--ios-red-lighter); */
+  font-size: 1.2rem;
+}
 
 /* ---------------------------------- */
 
@@ -331,41 +342,40 @@ div::-webkit-scrollbar {
   min-width: 1.1rem;
 }
 
-.game-item .team-name {
+/* .game-item.post .team-nbr {
   color: var(--ios-text2);
+}
+
+.game-item.post .team-item.winner .team-nbr {
+  color: var(--ios-blue);
+} */
+
+.game-item .team-name {
+  color: var(--ios-text1);
   font-size: 1rem;
   font-weight: 300;
 }
 
 .game-item .team-item.winner .team-name {
   color: var(--ios-text);
-  font-weight: 400;
-}
-
-/* .game-item-form .team-name {
   font-weight: 500;
-} */
-
-.game-item-form .team-item.winner .team-name {
-  color: var(--ios-text);
-  /* font-weight: 500; */
 }
 
-.game-item .team-record {
+.game-item .team-item .team-record {
   color: var(--ios-text3);
   font-size: .8rem;
 }
 
-.game-item-form .team-record {
+.game-item-form .team-item .team-record {
   display: none;
 }
 
-.game-item .team-result {
-  color: var(--ios-text);
+.game-item .team-item .team-result {
+  color: var(--ios-green);
   font-size: 1.1rem;
 }
 
-.game-item-form .team-result {
+.game-item-form .team-item .team-result {
   color: var(--ios-text3);
   font-size: 1.5rem;
 }
@@ -374,22 +384,16 @@ div::-webkit-scrollbar {
   color: var(--ios-green);
 }
 
-
 .game-item .game-time {
-  color: var(--ios-text1);
+  color: var(--ios-text);
   font-size: 1rem;
   font-weight: 400;
 }
 
-.game-item .game-court,
-.game-item .game-court-label {
-  color: var(--ios-text2);
+.game-item .game-court {
+  color: var(--ios-text1);
   font-size: .9rem !important;
   font-weight: 300;
-}
-
-.game-item .game-court {
-  font-weight: 400 !important;
 }
 
 /* ---------------------------------- */
@@ -409,10 +413,4 @@ div::-webkit-scrollbar {
 .game-item-form .help-text {
   color: var(--ios-text1);
   font-weight: 500;
-}
-
-/* disable any clicking/pointer events children of a pending game item */
-.game-item.pending {
-  pointer-events: none !important;
-  opacity: .5;
 }
