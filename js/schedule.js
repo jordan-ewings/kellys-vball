@@ -101,20 +101,19 @@ function makeSchedule(data) {
     if (gameItemForm) newGameItem.classList.add('d-none');
     gameItem.replaceWith(newGameItem);
 
+    let wasPending = gameItem.classList.contains('pending');
     let winnerChanged = newGameItem.dataset.winner_id != gameItem.dataset.winner_id;
-    if (!winnerChanged) return;
+    if (!winnerChanged || newGameItem.dataset.winner_id == '') return;
 
     if (!gameItemForm) {
-      newGameItem.classList.add('flash-update');
+      if (wasPending) return;
       let caret = newGameItem.querySelector('.team-result.fa-caret-left');
       caret.classList.add('fa-beat-fade');
       setTimeout(() => {
-        newGameItem.classList.remove('flash-update');
         caret.classList.remove('fa-beat-fade');
-      }, 2000);
+      }, 1200);
       return;
     }
-
 
     if (gameItemForm) {
 
@@ -127,23 +126,12 @@ function makeSchedule(data) {
       let alert = createAlert('danger', 'This game has been updated by another user. Close this form to see the changes.');
       alert.querySelector('.btn-close').remove();
       let alertMsg = alert.querySelector('.me-auto');
-      alertMsg.style.fontSize = '0.9rem';
+      alertMsg.style.fontSize = '0.95rem';
       alertMsg.style.fontWeight = '400';
       formFooter.appendChild(alert);
 
       let editIcon = gameItemForm.querySelector('.edit-icon');
       editIcon.classList.add('text-danger', 'fa-fade');
-
-      let statCol = gameItemForm.querySelector('.stat-col');
-      statCol.addEventListener('click', (e) => {
-        newGameItem.classList.add('flash-update');
-        let caret = newGameItem.querySelector('.team-result.fa-caret-left');
-        caret.classList.add('fa-beat-fade');
-        setTimeout(() => {
-          newGameItem.classList.remove('flash-update');
-          caret.classList.remove('fa-beat-fade');
-        }, 2000);
-      });
     }
   });
 }
@@ -176,10 +164,10 @@ function makeGameItem(d) {
     teamItem.dataset.team_name = teamName;
 
     let isWinner = d.winner_id == teamId;
-    teamItem.classList.toggle('winner', isWinner);
-
-    let resultIcon = teamItem.querySelector('.team-result');
-    if (isWinner) resultIcon.classList.add('fa-solid', 'fa-caret-left');
+    if (d.status == 'POST') {
+      if (isWinner) teamItem.classList.add('winner');
+      if (!isWinner) teamItem.classList.add('loser');
+    }
 
     if (APP.focusedTeam) {
       let isFocused = (APP.focusedTeam == teamName);
@@ -217,9 +205,9 @@ function makeGameItem(d) {
 
 function gameItemToForm(gameItem) {
 
-  gameItem.classList.remove('flash-update');
-  let caret = gameItem.querySelector('.team-result.fa-caret-left');
-  if (caret) caret.classList.remove('fa-beat-fade');
+  // gameItem.classList.remove('flash-update');
+  // let caret = gameItem.querySelector('.team-result.fa-caret-left');
+  // if (caret) caret.classList.remove('fa-beat-fade');
 
   let gameItemForm = gameItem.cloneNode(true);
   gameItemForm.classList.add('game-item-form');
@@ -255,7 +243,9 @@ function gameItemToForm(gameItem) {
   saveBtn.disabled = true;
   saveBtn.textContent = 'Submit';
   saveBtn.addEventListener('click', (e) => {
-    document.querySelector('#game-' + gameId).classList.remove('d-none');
+    let gi = document.querySelector('#game-' + gameId);
+    gi.classList.remove('d-none');
+    gi.classList.add('pending');
     gameItemForm.remove();
     handleGameItemFormSave(e);
   });
@@ -272,13 +262,13 @@ function gameItemToForm(gameItem) {
 
     let tiForm = ti.cloneNode(true);
     tiForm.classList.add('py-1');
+    tiForm.querySelector('.team-record').classList.add('d-none');
 
     let resultIcon = tiForm.querySelector('.team-result');
-    resultIcon.classList.remove('fa-caret-left', 'fa-solid');
-    resultIcon.classList.add('fa-regular', 'fa-circle-check');
-
+    resultIcon.classList.remove('d-none')
     let isWinner = ti.classList.contains('winner');
-    resultIcon.classList.toggle('fa-solid', isWinner);
+    if (isWinner) resultIcon.classList.add('fa-solid', 'fa-circle-check');
+    if (!isWinner) resultIcon.classList.add('fa-regular', 'fa-circle');
 
     ti.replaceWith(tiForm);
   });
@@ -289,14 +279,22 @@ function gameItemToForm(gameItem) {
 
     tiForm.addEventListener('click', (e) => {
 
-      let userClear = tiForm.classList.contains('winner');
-      let userSelect = !userClear;
-      let newWinnerId = (userSelect) ? tiForm.dataset.team_id : '';
+      let teamId = tiForm.dataset.team_id;
+      let newWinnerId = (gameItemForm.dataset.form_winner_id == teamId) ? '' : teamId;
 
-      teamItemForms.forEach(ti => {
-        let isNewWinner = ti.dataset.team_id == newWinnerId;
-        ti.classList.toggle('winner', isNewWinner);
-        ti.querySelector('.team-result').classList.toggle('fa-solid', isNewWinner);
+      gameItemForm.querySelectorAll('.team-item').forEach(ti => {
+        ti.classList.remove('winner', 'loser');
+        ti.querySelector('.team-result').classList.remove('fa-solid', 'fa-circle-check');
+        ti.querySelector('.team-result').classList.add('fa-regular', 'fa-circle');
+        if (newWinnerId == '') return;
+
+        if (ti.dataset.team_id == newWinnerId) {
+          ti.classList.add('winner');
+          ti.querySelector('.team-result').classList.remove('fa-regular', 'fa-circle');
+          ti.querySelector('.team-result').classList.add('fa-solid', 'fa-circle-check');
+        } else {
+          ti.classList.add('loser');
+        }
       });
 
       gameItemForm.dataset.form_winner_id = newWinnerId;
