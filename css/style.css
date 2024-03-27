@@ -110,6 +110,11 @@ div::-webkit-scrollbar {
   text-align: center !important;
 }
 
+.navbar a.direct-user {
+  border-bottom: 2px solid var(--ios-red) !important;
+  transition: border-bottom 1s;
+}
+
 /* ---------------------------------- */
 
 #loading {
@@ -119,13 +124,28 @@ div::-webkit-scrollbar {
   background-color: var(--ios-bg-black);
 }
 
-#main-header {
+/* only style main-header if it has a child element in it */
+#main-header:has(> *) {
   position: sticky;
   top: env(safe-area-inset-top);
   z-index: 1000;
   background-color: var(--ios-bg-black);
   border-bottom: 1px solid var(--ios-separator-dark);
   box-shadow: 0 15px 10px -15px var(--ios-separator-dark);
+  padding: .8rem 0;
+}
+
+footer {
+  margin: 2rem 0;
+  padding: 2rem 0;
+  padding-bottom: 0;
+  border-top: 1px solid var(--ios-separator);
+  text-align: center;
+  color: var(--ios-text1);
+}
+
+footer #league-title {
+  color: var(--ios-text);
 }
 
 /* ---------------------------------- */
@@ -193,7 +213,7 @@ div::-webkit-scrollbar {
 }
 
 #league-select-container .form-group {
-  margin: .8rem .5rem;
+  margin: 0 .5rem;
   text-align: center;
 }
 
@@ -210,6 +230,11 @@ div::-webkit-scrollbar {
   font-size: .85rem;
   font-weight: 500;
   padding-bottom: .3rem;
+}
+
+#league-select-container select.invalid {
+  border: 1px solid var(--ios-red);
+  color: var(--ios-text2);
 }
 
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
@@ -255,7 +280,7 @@ div::-webkit-scrollbar {
 
 #filter-container button {
   color: var(--ios-text1);
-  margin: .8rem .6rem;
+  margin: 0rem .6rem;
   padding: .1rem 0rem;
   border: none;
   border-radius: 0;
@@ -292,18 +317,6 @@ div::-webkit-scrollbar {
   user-select: none;
   padding: 0 .1rem;
 }
-
-/* ease in and out red text color */
-/* .game-item.flash-update span {
-  color: var(--ios-red-lighter) !important;
-  transition: color .5s ease-out;
-} */
-
-/* .game-item.flash-update {
-  border-left: 10px solid var(--ios-red-lighter) !important;
-  transition: border-left .5s ease-out;
-
-} */
 
 .game-item.pending {
   pointer-events: none;

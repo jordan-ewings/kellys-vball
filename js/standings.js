@@ -16,11 +16,17 @@ function init() {
 
   onValue(ref(db, 'leagues/' + userLeagueId), snapshot => {
     let data = snapshot.val();
-    APP.league = data;
-    APP.gamesPath = data.refs.games;
-    APP.teamsPath = data.refs.teams;
-    console.log(APP);
-    initPageContent();
+    if (data) {
+      APP.league = data;
+      APP.gamesPath = data.refs.games;
+      APP.teamsPath = data.refs.teams;
+      console.log(APP);
+      initPageContent();
+
+    } else {
+      haltPageContent('Please select a league.');
+    }
+
   }, { onlyOnce: true });
 }
 
@@ -29,15 +35,28 @@ function init() {
 function initPageContent() {
 
   onValue(ref(db, APP.teamsPath), snapshot => {
-
     let teams = snapshot.val();
+    teams = Object.values(teams);
     makeStandings(teams);
-
-    // document.querySelector('#loading').remove();
   });
 
   document.querySelector('#loading').remove();
+  document.querySelector('#league-title').textContent = APP.league.title;
+}
 
+/* ------------------------------------------------ */
+
+function haltPageContent(msg) {
+
+  let alert = util.createAlert('danger', msg);
+  alert.querySelector('.btn-close').remove();
+
+  document.querySelector('#main-header').appendChild(alert);
+  document.querySelector('#loading').remove();
+  document.querySelector('footer').remove();
+
+  let brand = document.querySelector('#nav-index');
+  brand.classList.add('direct-user');
 }
 
 /* ------------------------------------------------ */
@@ -46,7 +65,6 @@ function makeStandings(teams) {
 
   // create array from object
   let data = JSON.parse(JSON.stringify(teams));
-  data = Object.values(data);
 
   // process data
   data.forEach(team => {

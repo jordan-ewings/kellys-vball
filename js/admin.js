@@ -117,7 +117,7 @@ async function loadNewData() {
     ['games/' + leaguePath]: games,
   };
 
-  APP.setMode = 'parent';
+  APP.setMode = 'child';
   APP.data = (APP.setMode == 'parent') ? APP.dataParentSet : APP.dataChildSet;
 
   console.log(APP);
@@ -166,14 +166,17 @@ function showData() {
     code.style.fontSize = '0.7rem';
     code.style.whiteSpace = 'pre-wrap';
     code.style.borderRadius = '12px';
+    code.style.border = '1px solid rgb(255, 255, 255, 0.2)';
     code.textContent = json;
     pre.appendChild(code);
 
     let title = document.createElement('h5');
     title.textContent = key;
-    // title.textContent = 'ref(db, \'' + node + '\')';
+    title.style.marginBottom = '0.5rem';
+    title.style.fontFamily = 'monospace';
 
     let block = document.createElement('div');
+    block.style.marginBottom = '1.5rem';
     block.appendChild(title);
     block.appendChild(pre);
 

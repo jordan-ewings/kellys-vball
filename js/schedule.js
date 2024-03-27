@@ -1,5 +1,4 @@
 import * as util from './util.js';
-import * as gest from './gestures.js';
 import { db, APP } from './firebase.js';
 import { ref, get, query, equalTo, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved, runTransaction } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
@@ -17,11 +16,17 @@ function init() {
 
   onValue(ref(db, 'leagues/' + userLeagueId), snapshot => {
     let data = snapshot.val();
-    APP.league = data;
-    APP.gamesPath = data.refs.games;
-    APP.teamsPath = data.refs.teams;
-    console.log(APP);
-    initPageContent();
+    if (data) {
+      APP.league = data;
+      APP.gamesPath = data.refs.games;
+      APP.teamsPath = data.refs.teams;
+      console.log(APP);
+      initPageContent();
+
+    } else {
+      haltPageContent('Please select a league.');
+    }
+
   }, { onlyOnce: true });
 }
 
@@ -44,6 +49,22 @@ function initPageContent() {
   }, { onlyOnce: true });
 
   document.querySelector('#loading').remove();
+  document.querySelector('#league-title').textContent = APP.league.title;
+}
+
+/* ------------------------------------------------ */
+
+function haltPageContent(msg) {
+
+  let alert = util.createAlert('danger', msg);
+  alert.querySelector('.btn-close').remove();
+
+  document.querySelector('#main-header').appendChild(alert);
+  document.querySelector('#loading').remove();
+  document.querySelector('footer').remove();
+
+  let brand = document.querySelector('#nav-index');
+  brand.classList.add('direct-user');
 }
 
 /* ------------------------------------------------ */

@@ -1,7 +1,7 @@
-import * as util from './util.js';
-import * as gest from './gestures.js';
 import { db, APP } from './firebase.js';
 import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+
+/* ------------------------------------------------ */
 
 /* ------------------------------------------------ */
 
@@ -17,12 +17,20 @@ function init() {
 
   onValue(ref(db, 'leagues/' + userLeagueId), snapshot => {
     let data = snapshot.val();
-    APP.league = data;
-    APP.season = data.season;
-    APP.session = data.session;
-    APP.league = data.league;
+    if (data) {
+      APP.userLeague = data;
+      APP.season = data.season;
+      APP.session = data.session;
+      APP.league = data.league;
+    } else {
+      APP.season = userLeagueId.slice(0, 4);
+      APP.session = userLeagueId.slice(4, 6);
+      APP.league = userLeagueId.slice(6);
+    }
+
     console.log(APP);
     initPageContent();
+
   }, { onlyOnce: true });
 }
 
@@ -32,6 +40,7 @@ function initPageContent() {
 
   onValue(ref(db, 'leagues'), snapshot => {
     let data = snapshot.val();
+    data = Object.values(data);
     makeLeaguePicker(data);
   }, { onlyOnce: true });
 
@@ -43,65 +52,51 @@ function initPageContent() {
 // allow user to pick the season, session, and league to view standings/schedule for (on other pages), save to local storage
 function makeLeaguePicker(data) {
 
-  let leagues = Object.values(data);
-  let season = APP.season;
-  let session = APP.session;
-  let league = APP.league;
+  console.log('makeLeaguePicker()');
 
-  let seasonOptions = leagues.map(l => l.season).filter((v, i, a) => a.indexOf(v) === i);
-  let sessionOptions = leagues.filter(l => l.season == season).map(l => l.session).filter((v, i, a) => a.indexOf(v) === i);
-  let leagueOptions = leagues.filter(l => l.season == season && l.session == session).map(l => l.league);
+  let selects = ['season', 'session', 'league'];
+  selects.forEach((s, i) => {
 
-  let seasonSelect = document.querySelector('#seasonSelect');
-  let sessionSelect = document.querySelector('#sessionSelect');
-  let leagueSelect = document.querySelector('#leagueSelect');
+    let selectElement = document.querySelector('#' + s + 'Select');
+    let select = selectElement.cloneNode(true);
+    selectElement.replaceWith(select);
+    select.innerHTML = '';
 
-  seasonSelect.innerHTML = '';
-  seasonSelect.value = season;
-  seasonOptions.forEach(s => {
-    let opt = document.createElement('option');
-    opt.value = s;
-    opt.innerHTML = s;
-    opt.selected = s == season;
-    seasonSelect.appendChild(opt);
+    let leagues = data;
+    selects.forEach((s2, i2) => {
+      if (i2 < i) leagues = leagues.filter(l => l[s2] == APP[s2]);
+    });
+
+    let availOptions = leagues.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
+    let options = data.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
+
+    options.forEach(o => {
+      let opt = document.createElement('option');
+      opt.value = o;
+      opt.innerHTML = o;
+      if (o == APP[s]) opt.setAttribute('selected', '');
+      if (!availOptions.includes(o)) opt.setAttribute('disabled', '');
+      select.appendChild(opt);
+    });
+
+    // validate user selection
+    let invalid = !availOptions.includes(APP[s]);
+    select.classList.toggle('invalid', invalid);
+
+    select.addEventListener('change', e => {
+      e.preventDefault();
+      APP[s] = e.target.value;
+      let leagueId = APP.season + APP.session + APP.league;
+      localStorage.setItem('userLeagueId', leagueId);
+
+      let leagueData = data.find(l => l.id == leagueId);
+      if (leagueData) {
+        console.log('new userLeagueId:', leagueId);
+      } else {
+        console.log('league not found, change selections');
+      }
+      makeLeaguePicker(data);
+    });
   });
-
-  sessionSelect.innerHTML = '';
-  sessionSelect.value = session;
-  sessionOptions.forEach(s => {
-    let opt = document.createElement('option');
-    opt.value = s;
-    opt.innerHTML = s;
-    opt.selected = s == session;
-    sessionSelect.appendChild(opt);
-  });
-
-
-  leagueSelect.innerHTML = '';
-  leagueSelect.value = league;
-  leagueOptions.forEach(l => {
-    let opt = document.createElement('option');
-    opt.value = l;
-    opt.innerHTML = l;
-    opt.selected = l == league;
-    leagueSelect.appendChild(opt);
-  });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }
-
