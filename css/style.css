@@ -119,7 +119,7 @@ div::-webkit-scrollbar {
   background-color: var(--ios-bg-black);
 }
 
-#main-header:has(> *) {
+.main-header:has(> *) {
   position: sticky;
   top: env(safe-area-inset-top);
   z-index: 1000;

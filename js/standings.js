@@ -4,33 +4,33 @@ import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildCha
 
 /* ------------------------------------------------ */
 
-document.addEventListener('DOMContentLoaded', init);
+// document.addEventListener('DOMContentLoaded', init);
 
-function init() {
+// function init() {
 
-  // ensure userLeagueId is set
-  let userLeagueId = localStorage.getItem('userLeagueId');
-  if (userLeagueId == null) {
-    userLeagueId = '202401MONDAY';
-    localStorage.setItem('userLeagueId', userLeagueId);
-  }
+//   // ensure userLeagueId is set
+//   let userLeagueId = localStorage.getItem('userLeagueId');
+//   if (userLeagueId == null) {
+//     userLeagueId = '202401MONDAY';
+//     localStorage.setItem('userLeagueId', userLeagueId);
+//   }
 
-  // load page if userLeagueId is valid
-  onValue(ref(db, 'leagues/' + userLeagueId), snapshot => {
-    let data = snapshot.val();
-    if (data) {
-      APP.league = data;
-      APP.gamesPath = data.refs.games;
-      APP.teamsPath = data.refs.teams;
-      console.log(APP);
-      initPageContent();
+//   // load page if userLeagueId is valid
+//   onValue(ref(db, 'leagues/' + userLeagueId), snapshot => {
+//     let data = snapshot.val();
+//     if (data) {
+//       APP.league = data;
+//       APP.gamesPath = data.refs.games;
+//       APP.teamsPath = data.refs.teams;
+//       console.log(APP);
+//       initPageContent();
 
-    } else {
-      haltPageContent('Please select a league.');
-    }
+//     } else {
+//       haltPageContent('Please select a league.');
+//     }
 
-  }, { onlyOnce: true });
-}
+//   }, { onlyOnce: true });
+// }
 
 /* ------------------------------------------------ */
 
