@@ -3,12 +3,11 @@ import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildCha
 
 /* ------------------------------------------------ */
 
-/* ------------------------------------------------ */
-
 document.addEventListener('DOMContentLoaded', init);
 
 function init() {
 
+  // ensure userLeagueId is set
   let userLeagueId = localStorage.getItem('userLeagueId');
   if (userLeagueId == null) {
     userLeagueId = '202401MONDAY';
@@ -58,15 +57,15 @@ function showPageContent() {
 }
 
 /* ------------------------------------------------ */
+// user league selector
 
-// allow user to pick the season, session, and league to view standings/schedule for (on other pages), save to local storage
 function makeLeaguePicker(data) {
 
-  console.log('makeLeaguePicker()');
-
   let selects = ['season', 'session', 'league'];
+
   selects.forEach((s, i) => {
 
+    // get select element (and remove event listeners)
     let selectElement = document.querySelector('#' + s + 'Select');
     let select = selectElement.cloneNode(true);
     selectElement.replaceWith(select);
@@ -76,14 +75,15 @@ function makeLeaguePicker(data) {
     if (s == 'session') {
       leagues = leagues.filter(l => l.season == APP.season);
     }
-
     if (s == 'league') {
       leagues = leagues.filter(l => l.season == APP.season && l.session == APP.session);
     }
 
+    // get options
     let availOptions = leagues.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
     let options = data.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
 
+    // add options
     options.forEach(o => {
       let opt = document.createElement('option');
       opt.value = o;
@@ -97,18 +97,21 @@ function makeLeaguePicker(data) {
     let invalid = !availOptions.includes(APP[s]);
     select.classList.toggle('invalid', invalid);
 
+    // update local storage on change
     select.addEventListener('change', e => {
+
       e.preventDefault();
       APP[s] = e.target.value;
       let leagueId = APP.season + APP.session + APP.league;
+      let leagueData = data.find(l => l.id == leagueId);
       localStorage.setItem('userLeagueId', leagueId);
 
-      let leagueData = data.find(l => l.id == leagueId);
       if (leagueData) {
         console.log('new userLeagueId:', leagueId);
       } else {
         console.log('league not found, change selections');
       }
+
       makeLeaguePicker(data);
     });
   });

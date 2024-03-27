@@ -84,15 +84,10 @@ body {
   max-width: 700px;
 }
 
-/* html::-webkit-scrollbar,
+html::-webkit-scrollbar,
 body::-webkit-scrollbar,
 div::-webkit-scrollbar {
   display: none;
-} */
-
-::-webkit-scrollbar {
-  width: 0;
-  height: 0;
 }
 
 /* ---------------------------------- */
@@ -124,7 +119,6 @@ div::-webkit-scrollbar {
   background-color: var(--ios-bg-black);
 }
 
-/* only style main-header if it has a child element in it */
 #main-header:has(> *) {
   position: sticky;
   top: env(safe-area-inset-top);
@@ -149,7 +143,6 @@ footer a span {
   font-weight: 500;
   text-decoration: underline;
   text-decoration-color: var(--ios-blue);
-  /* spacing between text and underline */
   text-underline-offset: .5rem;
 }
 
@@ -264,20 +257,12 @@ footer a span {
 
 #standings-container td.team span[data-item="nbr"] {
   color: var(--ios-blue) !important;
-  /* font-weight: 400 !important; */
-  /* font-size: 1rem !important; */
   text-align: right !important;
   min-width: 1.1rem;
 }
 
 #standings-container td.team span[data-item="name"] {
   color: var(--ios-text);
-  /* font-weight: 400 !important; */
-}
-
-#standings-container td.winPct {
-  /* color: var(--ios-text1); */
-  /* font-weight: 400 !important; */
 }
 
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
@@ -337,7 +322,6 @@ footer a span {
 }
 
 .game-item .team-item:hover {
-  /* color: var(--ios-blue); */
   cursor: pointer;
 }
 
@@ -358,12 +342,7 @@ footer a span {
   font-size: .8rem;
 }
 
-/* .game-item.post .stat-col .edit-icon {
-  color: var(--ios-text2);
-} */
-
 .game-item-form .stat-col .edit-icon {
-  /* color: var(--ios-red-lighter); */
   font-size: 1.2rem;
 }
 

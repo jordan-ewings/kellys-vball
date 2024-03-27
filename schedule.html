@@ -26,6 +26,8 @@
 </head>
 
 <body>
+
+  <!-- navigation -->
   <div id="nav-wrapper">
     <nav id="navCont" class="navbar">
       <div class="container-fluid">
@@ -39,26 +41,35 @@
       </div>
     </nav>
   </div>
+
+  <!-- loading spinner -->
   <div id="loading" class="d-flex justify-content-center align-items-center">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
   </div>
-  <div id="alert-container" class="alert-container"></div>
+
+  <!-- page content -->
   <div id="main" class="container-fluid g-0 d-none">
+
+    <!-- sub navigation -->
     <div id="main-header" class="mb-3 mt-1">
+
+      <!-- week select buttons -->
       <div id="filter-container" class="btn-group d-flex flex-nowrap overflow-x-scroll" role="group">
-        <!-- filter buttons -->
       </div>
     </div>
+
+    <!-- main content -->
     <div id="main-body">
+
+      <!-- schedule -->
       <div id="schedule-container">
-        <!-- schedule content -->
       </div>
     </div>
   </div>
 
-  <!-- show footer with league being displayed -->
+  <!-- footer with league/change link -->
   <footer class="footer d-none">
     <div class="container-fluid">
       <div>
@@ -68,6 +79,8 @@
       </div>
     </div>
   </footer>
+
+  <!-- hidden components / scripts -->
   <div id="components" class="d-none"></div>
   <script src="js/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="js/schedule.js" type="module"></script>

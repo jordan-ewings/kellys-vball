@@ -1,12 +1,9 @@
-
-
 /* ------------------------------------------------ */
 
 export function createAlert(type, msg) {
 
   let alert = document.createElement('div');
   alert.classList.add('alert', 'd-flex', 'align-items-center', 'm-0');
-  // alert.classList.add('py-2', 'px-3', 'm-0');
   alert.classList.add('alert-' + type);
   alert.setAttribute('role', 'alert');
 
@@ -107,8 +104,3 @@ export function formatRecord(record) {
   });
   return div;
 }
-
-
-
-
-
