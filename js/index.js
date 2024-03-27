@@ -52,6 +52,7 @@ function initPageContent() {
 function showPageContent() {
   document.querySelector('#loading').remove();
   document.querySelector('#main').classList.remove('d-none');
+  document.querySelector('footer').classList.remove('d-none');
 }
 
 /* ------------------------------------------------ */

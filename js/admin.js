@@ -10,9 +10,9 @@ document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
 
-  await loadNewData();
+  // await loadNewData();
   createActionButtons();
-  showData();
+  // showData();
 
 }
 
@@ -170,10 +170,11 @@ function showData() {
     code.textContent = json;
     pre.appendChild(code);
 
-    let title = document.createElement('h5');
+    let title = document.createElement('h6');
     title.textContent = key;
     title.style.marginBottom = '0.5rem';
     title.style.fontFamily = 'monospace';
+    title.classList.add(('text-' + (APP.setMode == 'parent' ? 'danger' : 'warning') + '-emphasis'));
 
     let block = document.createElement('div');
     block.style.marginBottom = '1.5rem';
@@ -184,6 +185,9 @@ function showData() {
 
     hljs.highlightElement(code);
   });
+
+  document.querySelector('#btn-set-mode').classList.remove('d-none');
+  document.querySelector('#btn-push').classList.remove('d-none');
 }
 
 /* ------------------------------------------------ */
@@ -195,7 +199,7 @@ function createActionButtons() {
   let btnLoad = document.createElement('button');
   btnLoad.id = "btn-load";
   btnLoad.type = 'button';
-  btnLoad.classList.add('btn', 'btn-primary');
+  btnLoad.classList.add('btn', 'btn-sm', 'btn-primary');
   btnLoad.textContent = 'Load Data';
   btnLoad.addEventListener('click', async () => {
     await loadNewData();
@@ -205,14 +209,14 @@ function createActionButtons() {
   let btnPush = document.createElement('button');
   btnPush.id = "btn-push";
   btnPush.type = 'button';
-  btnPush.classList = 'btn ' + (APP.setMode == 'parent' ? 'btn-danger' : 'btn-warning');
+  btnPush.classList = 'btn btn-sm ' + (APP.setMode == 'parent' ? 'btn-danger' : 'btn-warning');
   btnPush.textContent = 'Push Data';
   btnPush.addEventListener('click', () => {
     btnPush.disabled = true;
     pushNewData();
     btnPush.textContent = 'Data Pushed';
     let classList = btnPush.classList;
-    btnPush.classList = 'btn btn-success';
+    btnPush.classList = 'btn btn-sm btn-success';
 
     setTimeout(() => {
       btnPush.textContent = 'Push Data';
@@ -231,13 +235,16 @@ function createActionButtons() {
     APP.data = (APP.setMode == 'parent') ? APP.dataParentSet : APP.dataChildSet;
     setMode.textContent = 'MODE: replace ' + APP.setMode + ' nodes';
     setMode.classList = 'btn btn-sm ' + (APP.setMode == 'parent' ? 'btn-outline-danger' : 'btn-outline-warning');
-    btnPush.classList = 'btn ' + (APP.setMode == 'parent' ? 'btn-danger' : 'btn-warning');
+    btnPush.classList = 'btn btn-sm ' + (APP.setMode == 'parent' ? 'btn-danger' : 'btn-warning');
     showData();
   });
 
   abContainer.appendChild(btnLoad);
   abContainer.appendChild(setMode);
   abContainer.appendChild(btnPush);
+
+  setMode.classList.add('d-none');
+  btnPush.classList.add('d-none');
 
 
 }

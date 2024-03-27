@@ -139,14 +139,12 @@ footer {
   margin-top: 2rem;
   padding-top: 1rem;
   padding-bottom: 1.5rem;
-  /* background-color: black; */
-  /* background-color: var(--ios-bg1); */
   border-top: 1px solid var(--ios-separator-dark);
-  box-shadow: 0 0px 10px 0px var(--ios-separator-dark);
+  box-shadow: 0 -15px 10px -15px var(--ios-separator-dark);
   text-align: center;
 }
 
-footer #league-title {
+footer a span {
   color: var(--ios-text1);
   font-weight: 500;
   text-decoration: underline;
