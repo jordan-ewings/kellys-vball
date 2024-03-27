@@ -42,9 +42,16 @@ function initPageContent() {
     let data = snapshot.val();
     data = Object.values(data);
     makeLeaguePicker(data);
-  }, { onlyOnce: true });
+    showPageContent();
 
+  }, { onlyOnce: true });
+}
+
+/* ------------------------------------------------ */
+
+function showPageContent() {
   document.querySelector('#loading').remove();
+  document.querySelector('#main').classList.remove('d-none');
 }
 
 /* ------------------------------------------------ */

@@ -43,13 +43,19 @@ function initPageContent() {
 
     makeFilters(games);
 
-    let currentWeekButton = document.querySelector('#filter-container button[data-week="' + currentWeek + '"]');
-    currentWeekButton.click();
+    document.querySelector('#filter-container button[data-week="' + currentWeek + '"]').click();
+    document.querySelector('#league-title').textContent = APP.league.title;
+    showPageContent();
 
   }, { onlyOnce: true });
+}
 
+/* ------------------------------------------------ */
+
+function showPageContent() {
   document.querySelector('#loading').remove();
-  document.querySelector('#league-title').textContent = APP.league.title;
+  document.querySelector('#main').classList.remove('d-none');
+  document.querySelector('footer').classList.remove('d-none');
 }
 
 /* ------------------------------------------------ */

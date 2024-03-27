@@ -38,10 +38,17 @@ function initPageContent() {
     let teams = snapshot.val();
     teams = Object.values(teams);
     makeStandings(teams);
+    document.querySelector('#league-title').textContent = APP.league.title;
+    showPageContent();
   });
+}
 
+/* ------------------------------------------------ */
+
+function showPageContent() {
   document.querySelector('#loading').remove();
-  document.querySelector('#league-title').textContent = APP.league.title;
+  document.querySelector('#main').classList.remove('d-none');
+  document.querySelector('footer').classList.remove('d-none');
 }
 
 /* ------------------------------------------------ */

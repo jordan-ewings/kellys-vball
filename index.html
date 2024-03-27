@@ -40,8 +40,15 @@
     </nav>
   </div>
 
+  <!-- loading spinner -->
+  <div id="loading" class="d-flex justify-content-center align-items-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
   <!-- page content -->
-  <div id="main" class="container-fluid g-0">
+  <div id="main" class="container-fluid g-0 d-none">
 
     <!-- sub navigation -->
     <div id="main-header" class="mb-3 mt-1">
@@ -72,11 +79,6 @@
     </div>
   </div>
 
-  <div id="loading" class="d-flex justify-content-center align-items-center">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
   <div id="components" class="d-none"></div>
   <script src="js/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="js/index.js" type="module"></script>
