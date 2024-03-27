@@ -1,23 +1,41 @@
 import * as util from './util.js';
 import * as gest from './gestures.js';
-import { db } from './firebase.js';
+import { db, APP } from './firebase.js';
 import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
-import { DBold } from './data.js';
 
 /* ------------------------------------------------ */
-
 
 document.addEventListener('DOMContentLoaded', init);
 
 function init() {
 
-  onValue(ref(db, 'seasons'), snapshot => {
+  let userLeagueId = localStorage.getItem('userLeagueId');
+  if (userLeagueId == null) {
+    userLeagueId = '202401MONDAY';
+    localStorage.setItem('userLeagueId', userLeagueId);
+  }
 
+  onValue(ref(db, 'leagues/' + userLeagueId), snapshot => {
+    let data = snapshot.val();
+    APP.league = data;
+    APP.season = data.season;
+    APP.session = data.session;
+    APP.league = data.league;
+    console.log(APP);
+    initPageContent();
+  }, { onlyOnce: true });
+}
+
+/* ------------------------------------------------ */
+
+function initPageContent() {
+
+  onValue(ref(db, 'leagues'), snapshot => {
     let data = snapshot.val();
     makeLeaguePicker(data);
-
-    document.querySelector('#loading').remove();
   }, { onlyOnce: true });
+
+  document.querySelector('#loading').remove();
 }
 
 /* ------------------------------------------------ */
@@ -25,114 +43,65 @@ function init() {
 // allow user to pick the season, session, and league to view standings/schedule for (on other pages), save to local storage
 function makeLeaguePicker(data) {
 
-  let seasons = data;
-  let season = localStorage.getItem('season') || Object.keys(seasons)[0];
-  let sessions = seasons[season]['sessions'];
-  let session = localStorage.getItem('session') || Object.keys(sessions)[0];
-  let leagues = seasons[season]['sessions'][session]['leagues'];
-  let league = localStorage.getItem('league') || Object.keys(leagues)[0];
+  let leagues = Object.values(data);
+  let season = APP.season;
+  let session = APP.session;
+  let league = APP.league;
 
-  ['season', 'session', 'league'].forEach((item, index) => {
-    let select = document.createElement('select');
-    select.id = item;
-    select.classList.add('form-select');
+  let seasonOptions = leagues.map(l => l.season).filter((v, i, a) => a.indexOf(v) === i);
+  let sessionOptions = leagues.filter(l => l.season == season).map(l => l.session).filter((v, i, a) => a.indexOf(v) === i);
+  let leagueOptions = leagues.filter(l => l.season == season && l.session == session).map(l => l.league);
 
-    let options = item === 'season' ? seasons : item === 'session' ? sessions : leagues;
-    let selected = item === 'season' ? season : item === 'session' ? session : league;
-    if (localStorage.getItem(item) === null) localStorage.setItem(item, selected);
+  let seasonSelect = document.querySelector('#seasonSelect');
+  let sessionSelect = document.querySelector('#sessionSelect');
+  let leagueSelect = document.querySelector('#leagueSelect');
 
-    Object.keys(options).forEach(option => {
-      let opt = document.createElement('option');
-      opt.value = option;
-      opt.textContent = option;
-      opt.selected = option === selected;
-      select.appendChild(opt);
-    });
+  seasonSelect.innerHTML = '';
+  seasonSelect.value = season;
+  seasonOptions.forEach(s => {
+    let opt = document.createElement('option');
+    opt.value = s;
+    opt.innerHTML = s;
+    opt.selected = s == season;
+    seasonSelect.appendChild(opt);
+  });
 
-    select.addEventListener('change', function () {
-      let value = this.value;
-      localStorage.setItem(item, value);
-      // re-generate the select elements
-      ['season', 'session', 'league'].forEach((item, index) => {
-        document.querySelector('#' + item + '-div').remove();
-      });
-      makeLeaguePicker(data);
-    });
-
-    let label = document.createElement('label');
-    label.textContent = item.charAt(0).toUpperCase() + item.slice(1);
-    label.setAttribute('for', item);
-
-    let selectDiv = document.createElement('div');
-    selectDiv.id = item + '-div';
-    selectDiv.classList.add('form-group');
-    selectDiv.appendChild(label);
-    selectDiv.appendChild(select);
+  sessionSelect.innerHTML = '';
+  sessionSelect.value = session;
+  sessionOptions.forEach(s => {
+    let opt = document.createElement('option');
+    opt.value = s;
+    opt.innerHTML = s;
+    opt.selected = s == session;
+    sessionSelect.appendChild(opt);
+  });
 
 
-    document.querySelector('#league-select-container').appendChild(selectDiv);
+  leagueSelect.innerHTML = '';
+  leagueSelect.value = league;
+  leagueOptions.forEach(l => {
+    let opt = document.createElement('option');
+    opt.value = l;
+    opt.innerHTML = l;
+    opt.selected = l == league;
+    leagueSelect.appendChild(opt);
   });
 
 
 
 
 
-}
 
-/* ------------------------------------------------ */
-// adding data to firebase
 
-async function addNewData() {
 
-  await DBold.load('games');
-  await DBold.load('teams');
 
-  let meta = DBold.get('teams')[0];
-  let season = meta.season;
-  let session = meta.session;
-  let league = meta.league;
 
-  let teams = {};
-  DBold.get('teams').forEach(team => {
-    teams[team.id] = team;
-  });
 
-  let games = {};
-  DBold.get('games').forEach(game => {
-    games[game.game_id] = game;
-  });
 
-  // add league to firebase
-  let leagueRef = ref(db, 'seasons/' + season + '/' + session + '/' + league);
-  onValue(leagueRef, snapshot => {
-    if (!snapshot.exists()) {
-      set(leagueRef, true);
-      console.log('added league to firebase');
-    } else {
-      console.log('league already exists in firebase');
-    }
-  }, { onlyOnce: true });
 
-  // add teams to firebase
-  let teamsRef = ref(db, 'teams/' + season + '/' + session + '/' + league);
-  onValue(teamsRef, snapshot => {
-    if (!snapshot.exists()) {
-      set(teamsRef, teams);
-      console.log('added teams to firebase');
-    } else {
-      console.log('teams already exist in firebase');
-    }
-  }, { onlyOnce: true });
 
-  // add games to firebase
-  let gamesRef = ref(db, 'games/' + season + '/' + session + '/' + league);
-  onValue(gamesRef, snapshot => {
-    if (!snapshot.exists()) {
-      set(gamesRef, games);
-      console.log('added games to firebase');
-    } else {
-      console.log('games already exist in firebase');
-    }
-  }, { onlyOnce: true });
+
+
+
 }
 

@@ -8,31 +8,48 @@ document.addEventListener('DOMContentLoaded', init);
 
 function init() {
 
-  let season = localStorage.getItem('season') || '2024';
-  let session = localStorage.getItem('session') || '01';
-  let league = localStorage.getItem('league') || 'MONDAY';
-  APP.leaguePath = season + '/' + session + '/' + league;
+  let userLeagueId = localStorage.getItem('userLeagueId');
+  if (userLeagueId == null) {
+    userLeagueId = '202401MONDAY';
+    localStorage.setItem('userLeagueId', userLeagueId);
+  }
 
-  onValue(ref(db, 'teams/' + APP.leaguePath), snapshot => {
-
+  onValue(ref(db, 'leagues/' + userLeagueId), snapshot => {
     let data = snapshot.val();
-    makeStandings(Object.values(data));
-
-    document.querySelector('#loading').remove();
+    APP.league = data;
+    APP.gamesPath = data.refs.games;
+    APP.teamsPath = data.refs.teams;
+    console.log(APP);
+    initPageContent();
   }, { onlyOnce: true });
+}
 
+/* ------------------------------------------------ */
+
+function initPageContent() {
+
+  onValue(ref(db, APP.teamsPath), snapshot => {
+
+    let teams = snapshot.val();
+    makeStandings(teams);
+
+    // document.querySelector('#loading').remove();
+  });
+
+  document.querySelector('#loading').remove();
 
 }
 
 /* ------------------------------------------------ */
 
-function makeStandings(data) {
+function makeStandings(teams) {
+
+  // create array from object
+  let data = JSON.parse(JSON.stringify(teams));
+  data = Object.values(data);
 
   // process data
   data.forEach(team => {
-    team.record = team.wins + '-' + team.losses;
-    team.wins = parseInt(team.wins);
-    team.losses = parseInt(team.losses);
     team.games = team.wins + team.losses;
     team.winPct = team.games > 0 ? team.wins / team.games : 0;
   });
@@ -45,6 +62,8 @@ function makeStandings(data) {
     if (a.losses < b.losses) return -1;
     if (a.wins < b.wins) return 1;
     if (a.wins > b.wins) return -1;
+    if (a.id > b.id) return 1;
+    if (a.id < b.id) return -1;
 
     return 0;
   });
@@ -107,6 +126,7 @@ function makeStandings(data) {
 function makeStandingsStructure() {
 
   let standingsContainer = document.querySelector('#standings-container');
+  standingsContainer.innerHTML = '';
 
   let contCardTitle = document.createElement('div');
   contCardTitle.classList.add('cont-card-title');

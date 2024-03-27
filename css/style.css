@@ -293,7 +293,17 @@ div::-webkit-scrollbar {
   padding: 0 .1rem;
 }
 
+/* ease in and out red text color */
+/* .game-item.flash-update span {
+  color: var(--ios-red-lighter) !important;
+  transition: color .5s ease-out;
+} */
 
+/* .game-item.flash-update {
+  border-left: 10px solid var(--ios-red-lighter) !important;
+  transition: border-left .5s ease-out;
+
+} */
 
 .game-item.pending {
   pointer-events: none;
@@ -321,14 +331,18 @@ div::-webkit-scrollbar {
   padding-right: 0;
 }
 
+.game-item.post .stat-col {
+  opacity: .5;
+}
+
 .game-item .stat-col .edit-icon {
   color: var(--ios-blue);
   font-size: .8rem;
 }
 
-.game-item.post .stat-col .edit-icon {
+/* .game-item.post .stat-col .edit-icon {
   color: var(--ios-text2);
-}
+} */
 
 .game-item-form .stat-col .edit-icon {
   /* color: var(--ios-red-lighter); */
@@ -364,11 +378,6 @@ div::-webkit-scrollbar {
   font-size: .85rem;
 }
 
-.game-item .team-item .team-result {
-  opacity: 0;
-  font-size: 1.1rem;
-}
-
 .game-item-form .team-item .team-result {
   color: var(--ios-text3);
   font-size: 1.5rem;
@@ -377,10 +386,7 @@ div::-webkit-scrollbar {
 
 .game-item-form .team-item.winner .team-result {
   color: var(--ios-green);
-  opacity: 1;
 }
-
-
 
 .game-item .game-time {
   color: var(--ios-text);

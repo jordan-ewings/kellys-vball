@@ -1,3 +1,33 @@
+
+
+/* ------------------------------------------------ */
+
+export function createAlert(type, msg) {
+
+  let alert = document.createElement('div');
+  alert.classList.add('alert', 'd-flex', 'align-items-center');
+  // alert.classList.add('py-2', 'px-3', 'm-0');
+  alert.classList.add('alert-' + type);
+  alert.setAttribute('role', 'alert');
+
+  let alertMsg = document.createElement('div');
+  alertMsg.classList.add('me-auto');
+  alertMsg.innerHTML = msg;
+  alert.appendChild(alertMsg);
+
+  let closeBtn = document.createElement('button');
+  closeBtn.id = 'alertCloseBtn';
+  closeBtn.classList.add('btn-close');
+  closeBtn.classList.add('btn-sm');
+  closeBtn.setAttribute('type', 'button');
+  closeBtn.addEventListener('click', () => {
+    alert.remove();
+  });
+  alert.appendChild(closeBtn);
+
+  return alert;
+}
+
 /* ------------------------------------------------ */
 
 export function createFromTemplate(templateId) {
