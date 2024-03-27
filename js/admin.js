@@ -215,13 +215,9 @@ function createActionButtons() {
     btnPush.disabled = true;
     pushNewData();
     btnPush.textContent = 'Data Pushed';
-    let classList = btnPush.classList;
-    btnPush.classList = 'btn btn-sm btn-success';
 
     setTimeout(() => {
       btnPush.textContent = 'Push Data';
-      btnPush.classList = classList;
-      btnPush.disabled = false;
     }, 2000);
   });
 
@@ -236,6 +232,7 @@ function createActionButtons() {
     setMode.textContent = 'MODE: replace ' + APP.setMode + ' nodes';
     setMode.classList = 'btn btn-sm ' + (APP.setMode == 'parent' ? 'btn-outline-danger' : 'btn-outline-warning');
     btnPush.classList = 'btn btn-sm ' + (APP.setMode == 'parent' ? 'btn-danger' : 'btn-warning');
+    btnPush.disabled = false;
     showData();
   });
 

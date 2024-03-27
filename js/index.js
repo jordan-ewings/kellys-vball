@@ -23,6 +23,8 @@ function init() {
       APP.session = data.session;
       APP.league = data.league;
     } else {
+      userLeagueId = '202401MONDAY';
+      localStorage.setItem('userLeagueId', userLeagueId);
       APP.season = userLeagueId.slice(0, 4);
       APP.session = userLeagueId.slice(4, 6);
       APP.league = userLeagueId.slice(6);
@@ -71,9 +73,13 @@ function makeLeaguePicker(data) {
     select.innerHTML = '';
 
     let leagues = data;
-    selects.forEach((s2, i2) => {
-      if (i2 < i) leagues = leagues.filter(l => l[s2] == APP[s2]);
-    });
+    if (s == 'session') {
+      leagues = leagues.filter(l => l.season == APP.season);
+    }
+
+    if (s == 'league') {
+      leagues = leagues.filter(l => l.season == APP.season && l.session == APP.session);
+    }
 
     let availOptions = leagues.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
     let options = data.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
