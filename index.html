@@ -22,20 +22,18 @@
 
 <body>
 
-  <!-- navigation -->
-  <div id="nav-wrapper">
-    <nav id="navCont" class="navbar">
-      <div class="container-fluid">
-        <div class="navbar-nav flex-grow-1 nav-underline">
-          <a id="nav-standings" class="nav-link flex-fill">STANDINGS</a>
-          <a id="nav-index" class="nav-link active">
-            <img src="img/logo-512.png" alt="Kelly's Volleyball" width="25" height="25" class="d-inline-block align-text-top">
-          </a>
-          <a id="nav-schedule" class="nav-link flex-fill">SCHEDULE</a>
-        </div>
+  <!-- top-level navigation -->
+  <nav id="navCont" class="navbar">
+    <div class="container-fluid">
+      <div class="navbar-nav flex-grow-1 nav-underline">
+        <a id="nav-standings" role="button" class="nav-link flex-fill">STANDINGS</a>
+        <a id="nav-index" role="button" class="nav-link">
+          <img src="img/logo-512.png" alt="Kelly's Volleyball" width="25" height="25" class="d-inline-block align-text-top">
+        </a>
+        <a id="nav-schedule" role="button" class="nav-link flex-fill">SCHEDULE</a>
       </div>
-    </nav>
-  </div>
+    </div>
+  </nav>
 
   <!-- loading spinner -->
   <div id="loading" class="d-flex justify-content-center align-items-center">
@@ -44,90 +42,70 @@
     </div>
   </div>
 
-  <!-- page content -->
+  <!-- main content -->
   <div id="main" class="container-fluid g-0 d-none">
 
-    <!---------- home page ------------>
+    <!-- home/index page ----------------------------------------------------->
     <section id="index-section" class="d-none">
 
-      <!-- sub navigation -->
+      <!-- section head ---------------------------------->
       <div class="main-header mb-3 mt-1">
-
-        <!-- league select -->
-        <div id="league-select-container" class="px-0">
-          <div id="season-div" class="form-group">
-            <label for="seasonSelect" class="form-label">Season</label>
-            <select id="seasonSelect" class="form-select"></select>
-          </div>
-          <div id="session-div" class="form-group">
-            <label for="sessionSelect" class="form-label">Session</label>
-            <select id="sessionSelect" class="form-select"></select>
-          </div>
-          <div id="league-div" class="form-group">
-            <label for="leagueSelect" class="form-label">League</label>
-            <select id="leagueSelect" class="form-select"></select>
-          </div>
-        </div>
+        <div id="league-select-container"></div>
       </div>
 
-      <!-- main content -->
+      <!-- section body ---------------------------------->
       <div class="main-body">
 
       </div>
     </section>
 
-    <!---------- standings page ------------>
+    <!-- standings page ------------------------------------------------------>
     <section id="standings-section" class="d-none">
 
-      <!-- sub navigation -->
-      <div class="main-header mb-3 mt-1">
+      <!-- section head ---------------------------------->
+      <div class="main-header mb-3 mt-1"></div>
 
-      </div>
-
-      <!-- main content -->
+      <!-- section body ---------------------------------->
       <div class="main-body">
-
-        <!-- leaderboard -->
-        <div id="standings-container" class="cont-card">
-        </div>
-
+        <div id="leaderboard-container"></div>
       </div>
     </section>
 
-    <!---------- schedule page ------------>
+    <!-- schedule page ------------------------------------------------------->
     <section id="schedule-section" class="d-none">
 
-      <!-- sub navigation -->
+      <!-- section head ---------------------------------->
       <div class="main-header mb-3 mt-1">
-
-        <!-- week select buttons -->
-        <div id="filter-container" class="btn-group d-flex flex-nowrap overflow-x-scroll" role="group">
-        </div>
+        <div id="week-filter-container" class="btn-group d-flex flex-nowrap overflow-x-scroll" role="group"></div>
       </div>
 
-      <!-- main content -->
+      <!-- section body ---------------------------------->
       <div class="main-body">
-
-        <!-- schedule -->
-        <div id="schedule-container">
-        </div>
+        <div id="schedule-container"></div>
       </div>
     </section>
-
 
   </div>
 
-  <!-- footer with admin link -->
+  <!-- footer with league link -->
   <footer class="footer d-none">
     <div class="container-fluid">
-      <a>
-        <span id="league-title" class="d-inline-block"></span>
-      </a>
+      <a id="league-title" role="button" class="d-inline-block"></a>
     </div>
   </footer>
 
   <!-- hidden components / scripts -->
   <div id="components" class="d-none">
+
+    <!---------- home templates ---------------->
+
+    <!-- league select -->
+    <template id="league-select-form-group-template">
+      <div class="form-group flex-fill">
+        <label class="form-label"></label>
+        <select class="form-select"></select>
+      </div>
+    </template>
 
     <!---------- schedule templates ------------>
 
@@ -168,7 +146,40 @@
       </div>
     </template>
 
+    <!-- game item form footer -->
+    <template id="game-item-form-footer-template">
+      <div class="d-flex justify-content-end mt-4 mb-2 column-gap-2 form-footer">
+        <button id="cancelBtn" type="button" class="btn btn-secondary">Cancel</button>
+        <button id="saveBtn" type="button" class="btn btn-outline-primary" disabled>Submit</button>
+      </div>
+    </template>
+
     <!---------- standings templates ------------>
+
+    <!-- leaderboard -->
+    <template id="leaderboard-template">
+      <div class="cont-card">
+        <div class="cont-card-title">
+          <span>LEADERBOARD</span>
+        </div>
+        <div class="cont-card-body">
+          <div class="table-responsive">
+            <table class="table table-borderless align-middle text-nowrap m-0">
+              <thead>
+                <tr>
+                  <th class="team">TEAM</th>
+                  <th class="wins">W</th>
+                  <th class="losses">L</th>
+                  <th class="winPct">PCT</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </template>
 
     <!-- standings item -->
     <template id="standings-item-template">

@@ -1,12 +1,39 @@
 import * as util from './util.js';
-import { db, APP } from './firebase.js';
-import { ref, get, query, equalTo, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved, runTransaction } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+import { db } from './firebase.js';
+import { ref, get, query, orderByKey, orderByChild, equalTo, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved, runTransaction } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
 /* ------------------------------------------------ */
 
-document.addEventListener('DOMContentLoaded', init);
+const navbarNav = document.querySelector('.navbar-nav');
+const navLinks = document.querySelectorAll('.nav-link');
+const mainDiv = document.querySelector('#main');
+const sections = document.querySelectorAll('section');
+const footer = document.querySelector('footer');
+const footerLink = document.querySelector('footer a');
+const loadingSpinner = document.querySelector('#loading');
 
-function init() {
+const homeNav = document.querySelector('#nav-index');
+const homeSection = document.querySelector('#index-section');
+const leagueSelectContainer = document.querySelector('#league-select-container');
+
+const standingsNav = document.querySelector('#nav-standings');
+const standingsSection = document.querySelector('#standings-section');
+const leaderboardContainer = document.querySelector('#leaderboard-container');
+
+const scheduleNav = document.querySelector('#nav-schedule');
+const scheduleSection = document.querySelector('#schedule-section');
+const weekFilterContainer = document.querySelector('#week-filter-container');
+const scheduleContainer = document.querySelector('#schedule-container');
+
+/* ------------------------------------------------ */
+
+const APP = {};
+
+/* ------------------------------------------------ */
+
+document.addEventListener('DOMContentLoaded', initUserContent);
+
+function initUserContent(e) {
 
   let userLeagueId = localStorage.getItem('userLeagueId');
   if (userLeagueId == null) {
@@ -14,59 +41,75 @@ function init() {
     localStorage.setItem('userLeagueId', userLeagueId);
   }
 
-  onValue(ref(db, 'leagues/' + userLeagueId), snapshot => {
-    const user = snapshot.val();
-    APP.user = user;
-    APP.season = user.season;
-    APP.session = user.session;
-    APP.league = user.league;
-    APP.gamesPath = user.refs.games;
-    APP.teamsPath = user.refs.teams;
+  return onValue(ref(db, 'leagues/' + userLeagueId), snapshot => {
+    const league = snapshot.val();
+    APP.user = league;
+    APP.season = league.season;
+    APP.session = league.session;
+    APP.league = league.league;
+    APP.gamesPath = league.refs.games;
+    APP.teamsPath = league.refs.teams;
 
-    console.log(APP);
     initHomeContent();
     initStandingsContent();
     initScheduleContent();
 
-    document.querySelector('#loading').remove();
-    document.querySelector('#main').classList.remove('d-none');
+    footerLink.textContent = APP.user.title;
+    initPageContent();
 
-    const navs = document.querySelectorAll('.nav-link');
-    navs.forEach(nav => {
-      nav.addEventListener('click', (e) => {
-        e.preventDefault();
-        showContent(nav);
-      });
-    });
-
-    // send user to home content
-    const footer = document.querySelector('footer');
-    const footerLink = footer.querySelector('a');
-    footerLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.querySelector('#nav-index').click();
-    });
-
-    document.querySelector('#nav-index').click();
   }, { onlyOnce: true });
 }
 
 /* ------------------------------------------------ */
 
-function showContent(navLink) {
+function initPageContent() {
 
-  document.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active'));
-  navLink.classList.add('active');
-
-  document.querySelectorAll('section').forEach(sec => sec.classList.add('d-none'));
-  const secId = navLink.id.replace('nav-', '') + '-section';
-  document.querySelector('#' + secId).classList.remove('d-none');
-
-  if (secId != 'index-section') {
-    document.querySelector('footer').classList.remove('d-none');
-  } else {
-    document.querySelector('footer').classList.add('d-none');
+  if (APP.initialized) {
+    console.log('Updated page content', APP);
+    return;
   }
+
+  APP.initialized = true;
+  console.log('Initialized page content', APP);
+
+  // set up nav links
+  navLinks.forEach(navLink => {
+    navLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      let name = navLink.id.replace('nav-', '');
+      showContent(name);
+    });
+  });
+
+  // set up footer link
+  footerLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    navbarNav.querySelector('#nav-index').click();
+  });
+
+  // show home content
+  navbarNav.querySelector('#nav-index').click();
+  loadingSpinner.classList.add('d-none');
+  mainDiv.classList.remove('d-none');
+  footer.classList.remove('d-none');
+}
+
+/* ------------------------------------------------ */
+
+function showContent(name) {
+
+  const navLink = document.querySelector('#nav-' + name);
+  const section = document.querySelector('#' + name + '-section');
+
+  navLinks.forEach(nav => {
+    nav.classList.toggle('active', nav == navLink);
+  });
+
+  sections.forEach(sec => {
+    sec.classList.toggle('d-none', sec != section);
+  });
+
+  footer.classList.toggle('fixed-bottom', section == homeSection);
 }
 
 /* ------------------------------------------------ */
@@ -74,45 +117,68 @@ function showContent(navLink) {
 function initHomeContent() {
 
   onValue(ref(db, 'leagues'), snapshot => {
-    const leagues = snapshot.val();
-    makeLeaguePicker(leagues);
+    let leagues = Object.values(snapshot.val());
+    makeLeagueSelect(leagues);
   }, { onlyOnce: true });
-
 }
 
 /* ------------------------------------------------ */
 
-function makeLeaguePicker(leaguesData) {
+function initStandingsContent() {
 
-  let data = JSON.parse(JSON.stringify(leaguesData));
-  data = Object.values(data);
+  onValue(ref(db, APP.teamsPath), snapshot => {
+    let teams = Object.values(snapshot.val());
+    makeLeaderboard(teams);
+  });
+}
 
+/* ------------------------------------------------ */
+
+function initScheduleContent() {
+
+  onValue(ref(db, APP.gamesPath), snapshot => {
+    let games = Object.values(snapshot.val());
+    APP.currentWeek = games.find(g => g.status == 'PRE').week;
+
+    makeWeekFilters(games);
+    weekFilterContainer.querySelector('#week-' + APP.currentWeek + '-btn').click();
+
+  }, { onlyOnce: true });
+}
+
+/* ------------------------------------------------ */
+
+function makeLeagueSelect(leagues) {
+
+  leagueSelectContainer.innerHTML = '';
+
+  let data = JSON.parse(JSON.stringify(leagues));
   let selects = ['season', 'session', 'league'];
+
   selects.forEach((s, i) => {
 
-    // get select element (and remove event listeners)
-    let selectElement = document.querySelector('#' + s + 'Select');
-    let select = selectElement.cloneNode(true);
-    selectElement.replaceWith(select);
-    select.innerHTML = '';
+    let formGroup = util.createFromTemplate('league-select-form-group-template');
+    let select = formGroup.querySelector('select');
+    let label = formGroup.querySelector('label');
 
-    let leagues = data;
-    if (s == 'session') {
-      leagues = leagues.filter(l => l.season == APP.season);
-    }
-    if (s == 'league') {
-      leagues = leagues.filter(l => l.season == APP.season && l.session == APP.session);
-    }
+    formGroup.id = s + '-div';
+    select.id = s + 'Select';
+    label.for = s + 'Select';
+    label.textContent = s;
+
+    let limLeagues = data;
+    if (s == 'session') limLeagues = limLeagues.filter(l => l.season == APP.season);
+    if (s == 'league') limLeagues = limLeagues.filter(l => l.season == APP.season && l.session == APP.session);
 
     // get options
-    let availOptions = leagues.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
+    let availOptions = limLeagues.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
     let options = data.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
 
     // add options
     options.forEach(o => {
       let opt = document.createElement('option');
       opt.value = o;
-      opt.innerHTML = o;
+      opt.innerHTML = o.charAt(0).toUpperCase() + o.slice(1).toLowerCase();
       if (o == APP[s]) opt.setAttribute('selected', '');
       if (!availOptions.includes(o)) opt.setAttribute('disabled', '');
       select.appendChild(opt);
@@ -129,45 +195,25 @@ function makeLeaguePicker(leaguesData) {
       APP[s] = e.target.value;
       let leagueId = APP.season + APP.session + APP.league;
       let leagueData = data.find(l => l.id == leagueId);
-      localStorage.setItem('userLeagueId', leagueId);
 
       if (leagueData) {
-        console.log('new userLeagueId:', leagueId);
-        APP.user = leagueData;
-        APP.gamesPath = leagueData.refs.games;
-        APP.teamsPath = leagueData.refs.teams;
-
-        console.log(APP);
-        initStandingsContent();
-        initScheduleContent();
+        localStorage.setItem('userLeagueId', leagueId);
+        initUserContent();
 
       } else {
-        console.log('league not found, change selections');
+        console.log('League selection invalid - reloading options');
+        makeLeagueSelect(data);
       }
-
-      makeLeaguePicker(data);
     });
-  });
 
-}
-
-/* ------------------------------------------------ */
-
-function initStandingsContent() {
-
-  document.querySelector('#league-title').textContent = APP.user.title;
-
-  onValue(ref(db, APP.teamsPath), snapshot => {
-    let teams = snapshot.val();
-    teams = Object.values(teams);
-    makeStandings(teams);
+    leagueSelectContainer.appendChild(formGroup);
   });
 }
 
 /* ------------------------------------------------ */
 // generate standings
 
-function makeStandings(teams) {
+function makeLeaderboard(teams) {
 
   // create copy of data
   let data = JSON.parse(JSON.stringify(teams));
@@ -213,27 +259,13 @@ function makeStandings(teams) {
   }
 
   // create standings elements
-  makeStandingsStructure();
-  let standingsHead = document.querySelector('#standings-container thead');
-  let standingsBody = document.querySelector('#standings-container tbody');
+  let leaderboard = util.createFromTemplate('leaderboard-template');
+  let leaderboardTBody = leaderboard.querySelector('tbody');
 
   // populate standings
   data.forEach((team, index) => {
 
     let standingsItem = util.createFromTemplate('standings-item-template');
-
-    // add headers if first item
-    if (index == 0) {
-      let tr = document.createElement('tr');
-      let tds = standingsItem.querySelectorAll('td');
-      tds.forEach(td => {
-        let th = document.createElement('th');
-        th.classList.add(td.className);
-        th.textContent = td.getAttribute('data-column');
-        tr.appendChild(th);
-      });
-      standingsHead.appendChild(tr);
-    }
 
     team.winPct = util.formatNumber(team.winPct, '0.000');
     team.id = parseInt(team.id);
@@ -245,72 +277,18 @@ function makeStandings(teams) {
       item.textContent = team[dataItem];
     });
 
-    standingsBody.appendChild(standingsItem);
+    leaderboardTBody.appendChild(standingsItem);
   });
+
+  leaderboardContainer.innerHTML = '';
+  leaderboardContainer.appendChild(leaderboard);
 }
 
 /* ------------------------------------------------ */
 
-function makeStandingsStructure() {
+function makeWeekFilters(data) {
 
-  // clear standings container
-  let standingsContainer = document.querySelector('#standings-container');
-  standingsContainer.innerHTML = '';
-
-  // card title
-  let contCardTitle = document.createElement('div');
-  contCardTitle.classList.add('cont-card-title');
-  let contCardTitleContent = document.createElement('span');
-  contCardTitleContent.textContent = 'LEADERBOARD';
-  contCardTitle.appendChild(contCardTitleContent);
-
-  // card body + table responsive div
-  let contCardBody = document.createElement('div');
-  contCardBody.classList.add('cont-card-body');
-  let tableResponsive = document.createElement('div');
-  tableResponsive.classList.add('table-responsive');
-
-  // table
-  let table = document.createElement('table');
-  table.classList.add('table', 'table-borderless', 'align-middle', 'text-nowrap', 'm-0');
-  let thead = document.createElement('thead');
-  let tbody = document.createElement('tbody');
-  table.appendChild(thead);
-  table.appendChild(tbody);
-
-  // append elements
-  tableResponsive.appendChild(table);
-  contCardBody.appendChild(tableResponsive);
-
-  standingsContainer.appendChild(contCardTitle);
-  standingsContainer.appendChild(contCardBody);
-
-}
-
-/* ------------------------------------------------ */
-
-function initScheduleContent() {
-
-  document.querySelector('#league-title').textContent = APP.user.title;
-
-  onValue(ref(db, APP.gamesPath), snapshot => {
-    let games = Object.values(snapshot.val());
-    let nextGame = games.find(g => g.status === 'PRE');
-    let currentWeek = nextGame.week;
-    APP.currentWeek = currentWeek;
-
-    makeFilters(games);
-
-    document.querySelector('#filter-container button[data-week="' + currentWeek + '"]').click();
-  }, { onlyOnce: true });
-}
-
-/* ------------------------------------------------ */
-
-function makeFilters(data) {
-
-  let filterContainer = document.querySelector('#filter-container');
-  filterContainer.innerHTML = '';
+  weekFilterContainer.innerHTML = '';
 
   // get unique weeks
   let weeks = data.map(d => {
@@ -323,68 +301,83 @@ function makeFilters(data) {
     let label = w.label;
     let btn = document.createElement('button');
     btn.type = 'button';
+    btn.id = 'week-' + value + '-btn';
     btn.setAttribute('data-week', value);
     btn.classList.add('btn', 'text-nowrap');
     btn.innerHTML = label;
 
     // fetch live data for week
     btn.addEventListener('click', (e) => {
-      let week = e.target.getAttribute('data-week');
-      onValue(ref(db, APP.gamesPath), (snapshot) => {
-
-        let games = Object.values(snapshot.val()).filter(g => g.week == week);
-        onValue(ref(db, APP.teamsPath), (snapshot) => {
-          let teams = snapshot.val();
-          games.forEach(g => {
-            Object.keys(g.teams).forEach(teamId => {
-              let teamObj = teams[teamId];
-              g['teams'][teamId] = { ...teamObj };
-            });
-          });
-          makeSchedule(games);
-        }, { onlyOnce: true });
-      }, { onlyOnce: true });
-
-      // highlight active button and scroll into view
-      let active = filterContainer.querySelector('.active');
-      if (active) active.classList.remove('active');
-      e.target.classList.add('active');
+      makeSchedule(value);
       e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      weekFilterContainer.querySelectorAll('button').forEach(b => {
+        b.classList.toggle('active', b == e.target);
+      });
     });
 
-    filterContainer.appendChild(btn);
+    weekFilterContainer.appendChild(btn);
   });
 }
 
 /* ------------------------------------------------ */
 
-function makeSchedule(data) {
+function makeSchedule(week) {
 
-  // clear schedule container
-  let scheduleContainer = document.querySelector('#schedule-container');
-  scheduleContainer.innerHTML = '';
+  let weekGamesRef = query(ref(db, APP.gamesPath), orderByChild('week'), equalTo(week));
 
-  // group games by time
-  let timeSlots = data.map(d => d.time).filter((v, i, a) => a.findIndex(t => (t === v)) === i);
-  timeSlots.forEach(timeSlot => {
-    let gameCard = util.createFromTemplate('game-group-template');
-    let gameGroup = gameCard.querySelector('.cont-card-body');
-    let games = data.filter(d => d.time === timeSlot);
+  // initializing schedule
+  onValue(weekGamesRef, (snapshot) => {
 
-    // create and append game items
-    games.forEach((game, index) => {
-      let gameItem = makeGameItem(game);
-      gameGroup.appendChild(gameItem);
+    scheduleContainer.innerHTML = '';
+    const data = Object.values(snapshot.val());
 
-      // add separator between games
-      if (index < games.length - 1) {
-        let separator = document.createElement('div');
-        separator.classList.add('game-separator');
-        gameGroup.appendChild(separator);
-      }
+    // group games by time
+    let timeSlots = data.map(d => d.time).filter((v, i, a) => a.findIndex(t => (t === v)) === i);
+    timeSlots.forEach(timeSlot => {
+      let gameCard = util.createFromTemplate('game-group-template');
+      let gameGroup = gameCard.querySelector('.cont-card-body');
+      let games = data.filter(d => d.time === timeSlot);
+
+      // create and append game items
+      games.forEach((game, index) => {
+        let gameItem = makeGameItem(game);
+        gameGroup.appendChild(gameItem);
+
+        // add separator between games
+        if (index < games.length - 1) {
+          let separator = document.createElement('div');
+          separator.classList.add('game-separator');
+          gameGroup.appendChild(separator);
+        }
+      });
+
+      scheduleContainer.appendChild(gameCard);
     });
 
-    scheduleContainer.appendChild(gameCard);
+    // set up team selection
+    if (APP.focusedTeam) {
+      setTimeout(() => {
+        handleTeamSelection();
+      }, 250);
+    }
+
+  }, { onlyOnce: true });
+
+  // updating the schedule on game changes
+  onChildChanged(weekGamesRef, (snapshot) => {
+    let game = snapshot.val();
+    let gameItem = document.querySelector('#game-' + game.id);
+    if (!gameItem) return;
+
+    let gameItemForm = document.querySelector('#game-' + game.id + '-form');
+    let newGameItem = makeGameItem(game);
+    if (gameItemForm) {
+      newGameItem.classList.add('d-none');
+      gameItem.replaceWith(newGameItem);
+      showGameUpdateAlert(gameItemForm);
+    } else {
+      gameItem.replaceWith(newGameItem);
+    }
   });
 }
 
@@ -421,6 +414,12 @@ function makeGameItem(d) {
       teamItem.querySelector('.team-record').textContent = team.record;
     });
 
+    // winner/loser formatting
+    if (d.status == 'POST') {
+      if (teamId == d.winner) teamItem.classList.add('winner');
+      if (teamId != d.winner) teamItem.classList.add('loser');
+    }
+
     // apply team focus formatting
     if (APP.focusedTeam) {
       let isFocused = (APP.focusedTeam == teamId);
@@ -445,8 +444,7 @@ function makeGameItem(d) {
     handleTeamSelection();
 
     // close any open game item forms
-    let gameItemForms = document.querySelectorAll('.game-item-form');
-    gameItemForms.forEach((gif) => {
+    document.querySelectorAll('.game-item-form').forEach(gif => {
       let gifStatCol = gif.querySelector('.stat-col');
       gifStatCol.click();
     });
@@ -455,31 +453,6 @@ function makeGameItem(d) {
     let gameItemForm = gameItemToForm(gameItem);
     gameItem.classList.add('d-none');
     gameItem.insertAdjacentElement('afterend', gameItemForm);
-  });
-
-  // on game data change, update game item (winner/loser and status)
-  let gameRef = ref(db, APP.gamesPath + '/' + d.id);
-  onValue(gameRef, (snapshot) => {
-
-    let game = snapshot.val();
-    gameItem.classList.remove('pre', 'post');
-    gameItem.classList.add((game.status == 'PRE') ? 'pre' : 'post');
-    gameItem.dataset.winner_id = (game.status == 'POST') ? game.winner : '';
-    let teamItems = gameItem.querySelectorAll('.team-item');
-    teamItems.forEach(ti => {
-      ti.classList.remove('winner', 'loser');
-      let teamId = ti.dataset.team_id;
-      if (game.status == 'POST') {
-        if (teamId == game.winner) ti.classList.add('winner');
-        if (teamId != game.winner) ti.classList.add('loser');
-      }
-    });
-
-    // make user close and re-open form if game has since been updated (by another user)
-    let gameItemForm = document.querySelector('.game-item-form[data-game_id="' + d.id + '"]');
-    if (gameItemForm) {
-      showGameUpdateAlert(gameItemForm);
-    }
   });
 
   return gameItem;
@@ -517,100 +490,15 @@ function gameItemToForm(gameItem) {
   // clone game item and set properties
   let gameItemForm = gameItem.cloneNode(true);
   gameItemForm.classList.add('game-item-form');
-  gameItemForm.removeAttribute('id');
+  gameItemForm.id = gameItem.id + '-form';
   gameItemForm.dataset.form_winner_id = gameItem.dataset.winner_id;
-
   let gameId = gameItem.dataset.game_id;
-  let winnerId = gameItem.dataset.winner_id;
+  let currWinnerId = gameItem.dataset.winner_id;
 
-  // stat-col click replaces form with game item
-  let statCol = gameItemForm.querySelector('.stat-col');
-  let editIcon = statCol.querySelector('.edit-icon');
-  editIcon.classList.replace('fa-pen', 'fa-xmark');
-  statCol.addEventListener('click', (e) => {
-    document.querySelector('#game-' + gameId).classList.remove('d-none');
-    gameItemForm.remove();
-  });
-
-  // cancel button (replaces form with game item)
-  let cancelBtn = document.createElement('button');
-  cancelBtn.id = 'cancelBtn';
-  cancelBtn.type = 'button';
-  cancelBtn.classList.add('btn', 'btn-secondary');
-  cancelBtn.textContent = 'Cancel';
-  cancelBtn.addEventListener('click', (e) => {
-    document.querySelector('#game-' + gameId).classList.remove('d-none');
-    gameItemForm.remove();
-  });
-
-  // save button
-  let saveBtn = document.createElement('button');
-  saveBtn.id = 'saveBtn';
-  saveBtn.type = 'button';
-  saveBtn.classList.add('btn', 'btn-outline-primary');
-  saveBtn.disabled = true;
-  saveBtn.textContent = 'Submit';
-  saveBtn.addEventListener('click', (e) => {
-
-    let gi = document.querySelector('#game-' + gameId);
-    let giForm = document.querySelector('.game-item-form[data-game_id="' + gameId + '"]');
-    let newWinnerId = giForm.dataset.form_winner_id;
-
-    // destroy form and show game item (to be updated shortly)
-    gi.classList.remove('d-none');
-    giForm.remove();
-
-    // stop if nothing has changed
-    if (newWinnerId == winnerId) return;
-
-    let teamItems = giForm.querySelectorAll('.team-item');
-    teamItems.forEach(ti => {
-      let teamId = ti.dataset.team_id;
-      let teamRef = ref(db, APP.teamsPath + '/' + teamId);
-
-      // calculate wins and losses change
-      let winsChange = 0;
-      let lossesChange = 0;
-      if (teamId == newWinnerId) {
-        winsChange = 1;
-        if (winnerId != '') lossesChange = -1;
-      } else if (teamId == winnerId) {
-        winsChange = -1;
-        if (newWinnerId != '') lossesChange = 1;
-      } else {
-        if (winnerId == '' && newWinnerId != '') {
-          // team is now a loser
-          lossesChange = 1;
-        } else if (winnerId != '' && newWinnerId == '') {
-          // team is no longer a loser
-          lossesChange = -1;
-        }
-      }
-
-      // update team's wins, losses, and record in db
-      runTransaction(teamRef, (team) => {
-        if (team) {
-          team.wins += winsChange;
-          team.losses += lossesChange;
-          team.record = team.wins + '-' + team.losses;
-        }
-        return team;
-      });
-    });
-
-    // update game's winner and status
-    let gameRef = ref(db, APP.gamesPath + '/' + gameId);
-    update(gameRef, {
-      winner: newWinnerId,
-      status: (newWinnerId == '') ? 'PRE' : 'POST'
-    });
-  });
-
-  // form footer with cancel and save buttons
-  let footer = document.createElement('div');
-  footer.classList.add('d-flex', 'justify-content-end', 'mt-4', 'mb-2', 'column-gap-2', 'form-footer');
-  footer.appendChild(cancelBtn);
-  footer.appendChild(saveBtn);
+  // add form footer
+  let footer = util.createFromTemplate('game-item-form-footer-template');
+  let cancelBtn = footer.querySelector('#cancelBtn');
+  let saveBtn = footer.querySelector('#saveBtn');
   gameItemForm.appendChild(footer);
 
   // helper function to select/deselect teams
@@ -663,7 +551,59 @@ function gameItemToForm(gameItem) {
   });
 
   // select initial winner if exists
-  setWinner(winnerId);
+  setWinner(currWinnerId);
+
+  // stat-col click replaces form with game item
+  let statCol = gameItemForm.querySelector('.stat-col');
+  let editIcon = statCol.querySelector('.edit-icon');
+  editIcon.classList.replace('fa-pen', 'fa-xmark');
+  statCol.addEventListener('click', (e) => {
+    document.querySelector('#game-' + gameId).classList.remove('d-none');
+    gameItemForm.remove();
+  });
+
+  // cancel button (replaces form with game item)
+  cancelBtn.addEventListener('click', (e) => {
+    document.querySelector('#game-' + gameId).classList.remove('d-none');
+    gameItemForm.remove();
+  });
+
+  // save button pushes new game data and team records to database
+  saveBtn.addEventListener('click', (e) => {
+
+    let gi = document.querySelector('#game-' + gameId);
+    let giForm = document.querySelector('#game-' + gameId + '-form');
+    let teamItems = giForm.querySelectorAll('.team-item');
+    let teamIds = [teamItems[0].dataset.team_id, teamItems[1].dataset.team_id];
+    let oldWinnerId = gi.dataset.winner_id;
+    let newWinnerId = giForm.dataset.form_winner_id;
+
+    giForm.remove();
+    gi.classList.remove('d-none');
+    if (newWinnerId == oldWinnerId) return;
+
+    // update team records
+    teamIds.forEach(teamId => {
+      let winsDiff = (teamId == newWinnerId) ? 1 : (teamId == oldWinnerId) ? -1 : 0;
+      let gamesDiff = (oldWinnerId == '') ? 1 : (newWinnerId == '') ? -1 : 0;
+      let lossesDiff = gamesDiff - winsDiff;
+
+      runTransaction(ref(db, APP.teamsPath + '/' + teamId), (team) => {
+        if (team) {
+          team.wins += winsDiff;
+          team.losses += lossesDiff;
+          team.record = team.wins + '-' + team.losses;
+        }
+        return team;
+      });
+    });
+
+    // update game's winner and status
+    update(ref(db, APP.gamesPath + '/' + gameId), {
+      winner: newWinnerId,
+      status: (newWinnerId == '') ? 'PRE' : 'POST'
+    });
+  });
 
   return gameItemForm;
 }
@@ -688,10 +628,10 @@ function handleTeamSelection(e) {
     if (ti.getAttribute('data-team_id') == team) {
       ti.classList.remove('unselected');
       ti.classList.add('selected');
-      // if (ti == teamItem1) {
-      //   let gameGroup = ti.closest('.game-group');
-      //   scrollIntoView(gameGroup);
-      // }
+      if (ti == teamItem1) {
+        let gameGroup = ti.closest('.game-group');
+        util.offsetScrollIntoView(gameGroup);
+      }
     } else {
       ti.classList.remove('selected');
       ti.classList.add('unselected');

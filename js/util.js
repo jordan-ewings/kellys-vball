@@ -35,6 +35,35 @@ export function createFromTemplate(templateId) {
 
 /* ------------------------------------------------ */
 
+export function offsetScrollIntoView(element) {
+
+  // get '.main-header' height of the section being displayed (i.e., doesn't have 'd-none' class)
+  let liveSection = document.querySelector('section:not(.d-none)');
+  let header = liveSection.querySelector('.main-header');
+  let headerHeight = header.offsetHeight;
+
+  // get the top of the element (including margin)
+  let top = element.getBoundingClientRect().top;
+  let elementMarginTop = window.getComputedStyle(element).marginTop;
+  if (elementMarginTop) {
+    top = top - parseInt(elementMarginTop);
+  }
+
+  // get offset from top of the window
+  let safeAreaAdjustment = 0;
+  let bodyBefore = window.getComputedStyle(document.body, '::before');
+  if (bodyBefore) {
+    safeAreaAdjustment = parseInt(bodyBefore.height);
+  }
+
+  // scroll to the element
+  let scrollTop = window.scrollY;
+  let topAdjusted = top + scrollTop - headerHeight - safeAreaAdjustment;
+  window.scrollTo({ top: topAdjusted, behavior: 'smooth' });
+}
+
+/* ------------------------------------------------ */
+
 export function getItem(element, dataItem) {
   let item = element.querySelector('[data-item="' + dataItem + '"]');
   return item;

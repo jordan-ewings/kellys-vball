@@ -54,6 +54,11 @@
   --bs-border-color-translucent: rgba(255, 255, 255, 0.1);
 }
 
+/* size/position utilities */
+:root {
+  --body-max-width: 700px;
+}
+
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* GLOBAL */
 
@@ -81,7 +86,7 @@ body {
   margin-bottom: 0;
   margin-right: auto;
   margin-left: auto;
-  max-width: 700px;
+  max-width: var(--body-max-width);
 }
 
 html::-webkit-scrollbar,
@@ -126,6 +131,10 @@ div::-webkit-scrollbar {
   background-color: var(--ios-bg-black);
   border-bottom: 1px solid var(--ios-separator-dark);
   box-shadow: 0 15px 10px -15px var(--ios-separator-dark);
+  /* padding: .8rem 0; */
+}
+
+.main-header>* {
   padding: .8rem 0;
 }
 
@@ -138,7 +147,7 @@ footer {
   text-align: center;
 }
 
-footer a span {
+footer a {
   color: var(--ios-text1);
   font-weight: 500;
   text-decoration: underline;
@@ -166,7 +175,6 @@ footer a span {
   border-bottom: 1px solid var(--ios-separator);
 }
 
-/* cells in first row of body */
 .table tbody tr:first-child td {
   border-top: none;
   padding-top: .6rem;
@@ -207,7 +215,8 @@ footer a span {
 #league-select-container {
   display: flex;
   justify-content: center;
-  padding: 0 1rem;
+  align-items: center;
+  margin: 0 .5rem;
 }
 
 #league-select-container .form-group {
@@ -218,16 +227,23 @@ footer a span {
 #league-select-container select {
   background-color: var(--ios-bg2);
   color: var(--ios-text);
-  padding: .5rem 3rem .5rem 1rem;
+  padding: .5rem 1rem;
   border: none;
   border-radius: 12px;
+}
+
+#league-select-container select:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
 }
 
 #league-select-container label {
   color: var(--ios-text1);
   font-size: .85rem;
   font-weight: 500;
-  padding-bottom: .3rem;
+  padding-bottom: .25rem;
+  text-transform: uppercase;
 }
 
 #league-select-container select.invalid {
@@ -240,35 +256,33 @@ footer a span {
 
 /* ---------------------------------- */
 
-#standings-container th.rank {
+#leaderboard-container th.rank {
   text-align: center;
 }
 
-#standings-container th.team {
+#leaderboard-container th.team {
   text-align: left;
 }
 
-/* ---------------------------------- */
-
-#standings-container td.rank {
+#leaderboard-container td.rank {
   text-align: center;
   font-size: .9rem;
 }
 
-#standings-container td.team span[data-item="nbr"] {
+#leaderboard-container td.team span[data-item="nbr"] {
   color: var(--ios-blue) !important;
   text-align: right !important;
   min-width: 1.1rem;
 }
 
-#standings-container td.team span[data-item="name"] {
+#leaderboard-container td.team span[data-item="name"] {
   color: var(--ios-text);
 }
 
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* SCHEDULE */
 
-#filter-container button {
+#week-filter-container button {
   color: var(--ios-text1);
   margin: 0rem .6rem;
   padding: .1rem 0rem;
@@ -280,12 +294,12 @@ footer a span {
   text-transform: uppercase;
 }
 
-#filter-container button:hover {
+#week-filter-container button:hover {
   color: var(--ios-blue) !important;
   cursor: pointer;
 }
 
-#filter-container button.active {
+#week-filter-container button.active {
   color: var(--ios-text) !important;
   border-bottom: 2px solid var(--ios-blue) !important;
   font-weight: 600 !important;
