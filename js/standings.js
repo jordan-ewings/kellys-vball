@@ -2,7 +2,8 @@ import * as util from './util.js';
 import { db } from './firebase.js';
 import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
-import { APP } from './main.js';
+import { APP, showContent } from './main.js';
+import { handleTeamSelection } from './schedule.js';
 
 /* ------------------------------------------------ */
 
@@ -16,25 +17,57 @@ export function initStandingsContent() {
 
   onValue(ref(db, APP.teamsPath), snapshot => {
     let teams = Object.values(snapshot.val());
-    makeLeaderboard(teams);
+    onValue(ref(db, APP.gamesPath), snapshot => {
+      let games = Object.values(snapshot.val());
+      makeLeaderboard(teams, games);
+    }, { onlyOnce: true });
   });
 }
 
 /* ------------------------------------------------ */
 
-function makeLeaderboard(teams) {
-
-  // create copy of data
-  let data = JSON.parse(JSON.stringify(teams));
+function makeLeaderboard(teams, games) {
 
   // calculate winPct
-  data.forEach(team => {
+  teams.forEach(team => {
     team.games = team.wins + team.losses;
     team.winPct = team.games > 0 ? team.wins / team.games : 0;
+
+    // calculate streak the team is on
+    if (team.games == 0) {
+      team.streak = '-';
+      return;
+    }
+
+    // get team games
+    let teamSchedule = games.filter(g => Object.keys(g.teams).includes(team.id));
+    let teamGames = teamSchedule.filter(g => g.status == 'POST');
+    teamGames.reverse();
+
+    // get streak
+    let streak = 0;
+    let streakType = '';
+    teamGames.forEach((g, i) => {
+      let win = g.winner == team.id;
+      if (i == 0) {
+        streak = 1;
+        streakType = win ? 'W' : 'L';
+      } else {
+        if (win && streakType == 'W') {
+          streak++;
+        } else if (!win && streakType == 'L') {
+          streak++;
+        } else {
+          return;
+        }
+      }
+    });
+
+    team.streak = streakType + streak;
   });
 
   // sort standings
-  data.sort((a, b) => {
+  teams.sort((a, b) => {
     if (a.winPct < b.winPct) return 1;
     if (a.winPct > b.winPct) return -1;
     if (a.losses > b.losses) return 1;
@@ -50,19 +83,19 @@ function makeLeaderboard(teams) {
   // add rank (not currently used)
   let rank = 1;
   let prevWinPct = null;
-  data.forEach((team, index) => {
+  teams.forEach((team, index) => {
     let winPct = team.winPct;
-    let ties = data.filter(t => t.winPct === winPct).length;
+    let ties = teams.filter(t => t.winPct === winPct).length;
     if (winPct != prevWinPct) rank = index + 1;
     team.rank = ties > 1 ? 'T-' + rank : rank;
     prevWinPct = winPct;
   });
 
   // if no games played, set rank to '-'
-  let teamGames = data.map(t => t.games);
+  let teamGames = teams.map(t => t.games);
   let totalGames = teamGames.reduce((a, b) => a + b);
   if (totalGames == 0) {
-    data.forEach(team => {
+    teams.forEach(team => {
       team.rank = '-';
     });
   }
@@ -72,11 +105,10 @@ function makeLeaderboard(teams) {
   let leaderboardTBody = leaderboard.querySelector('tbody');
 
   // populate standings
-  data.forEach((team, index) => {
+  teams.forEach((team, index) => {
 
     let standingsItem = util.createFromTemplate('standings-item-template');
-
-    team.winPct = util.formatNumber(team.winPct, '0.000');
+    team.winPct = util.formatNumber(team.winPct, '0.00');
     team.id = parseInt(team.id);
 
     // populate data items
@@ -85,6 +117,22 @@ function makeLeaderboard(teams) {
       let dataItem = item.getAttribute('data-item');
       item.textContent = team[dataItem];
     });
+
+    let streakClass = team.streak.includes('W') ? 'winStreak' : 'loseStreak';
+    if (team.streak != '-') {
+      let streakItem = standingsItem.querySelector('td.streak');
+      streakItem.classList.add(streakClass);
+    }
+
+    // event listener for team click
+    // when clicked, set team as focused team and show the schedule
+    standingsItem.addEventListener('click', () => {
+      showContent('schedule');
+      APP.focusedTeam = team.id;
+      handleTeamSelection();
+    });
+    standingsItem.style.cursor = 'pointer';
+    standingsItem.style.userSelect = 'none';
 
     leaderboardTBody.appendChild(standingsItem);
   });

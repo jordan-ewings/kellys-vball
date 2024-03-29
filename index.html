@@ -24,14 +24,15 @@
 
   <!-- top-level navigation -->
   <nav id="navCont" class="navbar">
-    <div class="container-fluid">
-      <div class="navbar-nav flex-grow-1 nav-underline">
+    <div class="container-fluid px-0">
+      <div class="navbar-nav flex-grow-1">
         <a id="nav-standings" role="button" class="nav-link flex-fill">STANDINGS</a>
         <a id="nav-index" role="button" class="nav-link">
           <img src="img/logo-512.png" alt="Kelly's Volleyball" width="25" height="25" class="d-inline-block align-text-top">
         </a>
         <a id="nav-schedule" role="button" class="nav-link flex-fill">SCHEDULE</a>
       </div>
+      <div id="navbar-border"></div>
     </div>
   </nav>
 
@@ -161,6 +162,7 @@
                   <th class="wins">W</th>
                   <th class="losses">L</th>
                   <th class="winPct">PCT</th>
+                  <th class="streak">STRK</th>
                 </tr>
               </thead>
               <tbody>
@@ -193,6 +195,11 @@
         <td class="winPct" data-column="PCT">
           <div>
             <span data-item="winPct"></span>
+          </div>
+        </td>
+        <td class="streak" data-column="STRK">
+          <div>
+            <span data-item="streak"></span>
           </div>
         </td>
       </tr>

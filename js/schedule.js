@@ -356,7 +356,7 @@ function showGameUpdateAlert(gameItemForm, game) {
 
 /* ------------------------------------------------ */
 
-function handleTeamSelection(e) {
+export function handleTeamSelection(e) {
 
   let team = APP.focusedTeam;
   let allTeamItems = document.querySelectorAll('.team-item');

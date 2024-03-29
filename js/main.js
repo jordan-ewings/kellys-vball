@@ -86,12 +86,16 @@ function initPageContent() {
 
 /* ------------------------------------------------ */
 
-function showContent(name) {
+export function showContent(name) {
 
   const navLink = document.querySelector('#nav-' + name);
   const section = document.querySelector('#' + name + '-section');
+  const navbarBorder = document.querySelector('#navbar-border');
+  const content = document.querySelector('#main');
 
+  let blur = false
   navLinks.forEach(nav => {
+    if (nav.classList.contains('active')) blur = true;
     nav.classList.toggle('active', nav == navLink);
   });
 
@@ -100,4 +104,14 @@ function showContent(name) {
   });
 
   footer.classList.toggle('fixed-bottom', name == 'index');
+
+  navbarBorder.style.left = navLink.offsetLeft + 'px';
+  navbarBorder.style.width = navLink.offsetWidth + 'px';
+
+  // if (blur) {
+  //   content.classList.add('blur');
+  //   setTimeout(() => {
+  //     content.classList.remove('blur');
+  //   }, 150);
+  // }
 }
