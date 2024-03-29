@@ -15,10 +15,10 @@ const leaderboardContainer = document.querySelector('#leaderboard-container');
 
 export function initStandingsContent() {
 
-  onValue(ref(db, APP.teamsPath), snapshot => {
-    let teams = Object.values(snapshot.val());
-    onValue(ref(db, APP.gamesPath), snapshot => {
-      let games = Object.values(snapshot.val());
+  onValue(ref(db, APP.gamesPath), snapshot => {
+    let games = Object.values(snapshot.val());
+    onValue(ref(db, APP.teamsPath), snapshot => {
+      let teams = Object.values(snapshot.val());
       makeLeaderboard(teams, games);
     }, { onlyOnce: true });
   });
