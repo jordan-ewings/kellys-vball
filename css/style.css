@@ -161,7 +161,7 @@ footer a {
 .table th {
   background-color: transparent !important;
   color: var(--ios-text);
-  font-size: 1rem;
+  font-size: .95rem;
   padding: .5rem .4rem;
   text-align: center;
 }
@@ -188,7 +188,7 @@ footer a {
 }
 
 .cont-card {
-  margin: .6rem 0;
+  margin: .6rem 0rem;
 }
 
 .cont-card-title {
@@ -204,7 +204,7 @@ footer a {
 }
 
 .cont-card-body {
-  padding: .5rem .5rem;
+  padding: .6rem .5rem;
   background-color: var(--ios-bg);
   border-radius: 12px;
 }
@@ -347,9 +347,9 @@ footer a {
   padding-right: 0;
 }
 
-.game-item.post .stat-col {
+/* .game-item.post .stat-col {
   opacity: .5;
-}
+} */
 
 .game-item .stat-col .edit-icon {
   color: var(--ios-blue);
@@ -365,28 +365,38 @@ footer a {
 .game-item .team-nbr {
   color: var(--ios-blue);
   font-weight: 500;
-  font-size: 1rem;
+  font-size: .95rem;
   text-align: right;
   min-width: 1.1rem;
 }
 
 .game-item .team-name {
   color: var(--ios-text);
-  font-size: 1rem;
+  font-size: .95rem;
 }
 
 .team-item.winner .team-name {
   font-weight: 500;
 }
 
-.team-item.loser .team-name {
-  font-weight: 300;
+.team-item.loser .team-name,
+.team-item.loser .team-nbr {
+  /* font-weight: 300; */
   opacity: .5;
 }
 
 .team-item .team-record {
   color: var(--ios-text2);
-  font-size: .85rem;
+  font-size: .75rem;
+}
+
+.game-item .team-item .team-result {
+  opacity: 0;
+}
+
+.game-item.post .team-item.winner .team-result {
+  opacity: 1;
+  color: var(--ios-green);
 }
 
 .game-item-form .team-item .team-result {
@@ -401,14 +411,18 @@ footer a {
 
 .game-item .game-time {
   color: var(--ios-text);
-  font-size: 1rem;
+  font-size: .95rem;
   font-weight: 400;
 }
 
+.game-item.post .game-time {
+  color: var(--ios-text2);
+}
+
 .game-item .game-court {
-  color: var(--ios-text1);
-  font-size: .9rem !important;
-  font-weight: 300;
+  color: var(--ios-text2);
+  font-size: .85rem;
+  font-weight: 400;
 }
 
 /* ---------------------------------- */
@@ -417,15 +431,26 @@ footer a {
 .game-item .team-item.selected .team-name {
   color: var(--ios-blue) !important;
   font-weight: 500 !important;
+  opacity: 1 !important;
 }
 
-.game-item .team-item.unselected .team-name {
-  color: var(--ios-text2) !important;
+.game-item .team-item.loser.selected .team-result {
+  color: var(--ios-red) !important;
+  opacity: 1 !important;
+}
+
+.game-item .team-item.unselected>* {
+  color: var(--ios-text3) !important;
 }
 
 /* ---------------------------------- */
 
-.game-item-form .help-text {
-  color: var(--ios-text1);
-  font-weight: 500;
+.game-item-form .alert p:nth-child(2) {
+  margin: .5rem 0;
+  color: var(--ios-text1) !important;
+}
+
+.game-item-form .alert p {
+  margin: .5rem 0;
+  color: var(--ios-text) !important;
 }

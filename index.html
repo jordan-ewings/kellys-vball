@@ -47,13 +47,9 @@
 
     <!-- home/index page ----------------------------------------------------->
     <section id="index-section" class="d-none">
-
-      <!-- section head ---------------------------------->
       <div class="main-header mb-3 mt-1">
         <div id="league-select-container"></div>
       </div>
-
-      <!-- section body ---------------------------------->
       <div class="main-body">
 
       </div>
@@ -61,11 +57,9 @@
 
     <!-- standings page ------------------------------------------------------>
     <section id="standings-section" class="d-none">
+      <div class="main-header mb-3 mt-1">
 
-      <!-- section head ---------------------------------->
-      <div class="main-header mb-3 mt-1"></div>
-
-      <!-- section body ---------------------------------->
+      </div>
       <div class="main-body">
         <div id="leaderboard-container"></div>
       </div>
@@ -73,13 +67,9 @@
 
     <!-- schedule page ------------------------------------------------------->
     <section id="schedule-section" class="d-none">
-
-      <!-- section head ---------------------------------->
       <div class="main-header mb-3 mt-1">
         <div id="week-filter-container" class="btn-group d-flex flex-nowrap overflow-x-scroll" role="group"></div>
       </div>
-
-      <!-- section body ---------------------------------->
       <div class="main-body">
         <div id="schedule-container"></div>
       </div>
@@ -87,7 +77,7 @@
 
   </div>
 
-  <!-- footer with league link -->
+  <!-- global footer with league link -->
   <footer class="footer d-none">
     <div class="container-fluid">
       <a id="league-title" role="button" class="d-inline-block"></a>
@@ -120,18 +110,18 @@
     <!-- game item -->
     <template id="game-item-template">
       <div class="game-item row g-0">
-        <div class="team-col col-8 pe-3 d-flex flex-column justify-content-center">
+        <div class="team-col col-8 pe-3 d-flex flex-column row-gap-1 justify-content-center">
           <div class="team-item team-item-1 d-flex align-items-center column-gap-2">
             <span data-item="team1_nbr" class="team-nbr"></span>
             <span data-item="team1_name" class="team-name"></span>
+            <i class="team-result fa-regular fa-circle-check"></i>
             <span data-item="team1_record" class="team-record ms-auto"></span>
-            <i class="team-result ms-auto d-none"></i>
           </div>
           <div class="team-item team-item-2 d-flex align-items-center column-gap-2">
             <span data-item="team2_nbr" class="team-nbr"></span>
             <span data-item="team2_name" class="team-name"></span>
+            <i class="team-result fa-regular fa-circle-check"></i>
             <span data-item="team2_record" class="team-record ms-auto"></span>
-            <i class="team-result ms-auto d-none"></i>
           </div>
         </div>
         <div class="stat-col col-4 ps-3 d-flex justify-content-between column-gap-1" role="button" data-bs-toggle="collapse">

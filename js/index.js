@@ -1,93 +1,58 @@
-import { db, APP } from './firebase.js';
-import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+import * as util from './util.js';
+import { db } from './firebase.js';
+import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+
+import { APP, initUserContent } from './main.js';
 
 /* ------------------------------------------------ */
 
-document.addEventListener('DOMContentLoaded', init);
-
-function init() {
-
-  // ensure userLeagueId is set
-  let userLeagueId = localStorage.getItem('userLeagueId');
-  if (userLeagueId == null) {
-    userLeagueId = '202401MONDAY';
-    localStorage.setItem('userLeagueId', userLeagueId);
-  }
-
-  onValue(ref(db, 'leagues/' + userLeagueId), snapshot => {
-    let data = snapshot.val();
-    if (data) {
-      APP.userLeague = data;
-      APP.season = data.season;
-      APP.session = data.session;
-      APP.league = data.league;
-    } else {
-      userLeagueId = '202401MONDAY';
-      localStorage.setItem('userLeagueId', userLeagueId);
-      APP.season = userLeagueId.slice(0, 4);
-      APP.session = userLeagueId.slice(4, 6);
-      APP.league = userLeagueId.slice(6);
-    }
-
-    console.log(APP);
-    initPageContent();
-
-  }, { onlyOnce: true });
-}
+const homeNav = document.querySelector('#nav-index');
+const homeSection = document.querySelector('#index-section');
+const leagueSelectContainer = document.querySelector('#league-select-container');
 
 /* ------------------------------------------------ */
 
-function initPageContent() {
+export function initHomeContent() {
 
   onValue(ref(db, 'leagues'), snapshot => {
-    let data = snapshot.val();
-    data = Object.values(data);
-    makeLeaguePicker(data);
-    showPageContent();
-
+    let leagues = Object.values(snapshot.val());
+    makeLeagueSelect(leagues);
   }, { onlyOnce: true });
 }
 
 /* ------------------------------------------------ */
 
-function showPageContent() {
-  document.querySelector('#loading').remove();
-  document.querySelector('#main').classList.remove('d-none');
-  document.querySelector('footer').classList.remove('d-none');
-}
+function makeLeagueSelect(leagues) {
 
-/* ------------------------------------------------ */
-// user league selector
+  leagueSelectContainer.innerHTML = '';
 
-function makeLeaguePicker(data) {
-
+  let data = JSON.parse(JSON.stringify(leagues));
   let selects = ['season', 'session', 'league'];
 
   selects.forEach((s, i) => {
 
-    // get select element (and remove event listeners)
-    let selectElement = document.querySelector('#' + s + 'Select');
-    let select = selectElement.cloneNode(true);
-    selectElement.replaceWith(select);
-    select.innerHTML = '';
+    let formGroup = util.createFromTemplate('league-select-form-group-template');
+    let select = formGroup.querySelector('select');
+    let label = formGroup.querySelector('label');
 
-    let leagues = data;
-    if (s == 'session') {
-      leagues = leagues.filter(l => l.season == APP.season);
-    }
-    if (s == 'league') {
-      leagues = leagues.filter(l => l.season == APP.season && l.session == APP.session);
-    }
+    formGroup.id = s + '-div';
+    select.id = s + 'Select';
+    label.for = s + 'Select';
+    label.textContent = s;
+
+    let limLeagues = data;
+    if (s == 'session') limLeagues = limLeagues.filter(l => l.season == APP.season);
+    if (s == 'league') limLeagues = limLeagues.filter(l => l.season == APP.season && l.session == APP.session);
 
     // get options
-    let availOptions = leagues.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
+    let availOptions = limLeagues.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
     let options = data.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
 
     // add options
     options.forEach(o => {
       let opt = document.createElement('option');
       opt.value = o;
-      opt.innerHTML = o;
+      opt.innerHTML = o.charAt(0).toUpperCase() + o.slice(1).toLowerCase();
       if (o == APP[s]) opt.setAttribute('selected', '');
       if (!availOptions.includes(o)) opt.setAttribute('disabled', '');
       select.appendChild(opt);
@@ -104,16 +69,17 @@ function makeLeaguePicker(data) {
       APP[s] = e.target.value;
       let leagueId = APP.season + APP.session + APP.league;
       let leagueData = data.find(l => l.id == leagueId);
-      localStorage.setItem('userLeagueId', leagueId);
 
       if (leagueData) {
-        console.log('new userLeagueId:', leagueId);
+        localStorage.setItem('userLeagueId', leagueId);
+        initUserContent();
+
       } else {
-        console.log('league not found, change selections');
+        console.log('League selection invalid - reloading options');
+        makeLeagueSelect(data);
       }
-
-      makeLeaguePicker(data);
     });
-  });
 
+    leagueSelectContainer.appendChild(formGroup);
+  });
 }

@@ -1,77 +1,28 @@
 import * as util from './util.js';
-import { db, APP } from './firebase.js';
-import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+import { db } from './firebase.js';
+import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+
+import { APP } from './main.js';
 
 /* ------------------------------------------------ */
 
-// document.addEventListener('DOMContentLoaded', init);
-
-// function init() {
-
-//   // ensure userLeagueId is set
-//   let userLeagueId = localStorage.getItem('userLeagueId');
-//   if (userLeagueId == null) {
-//     userLeagueId = '202401MONDAY';
-//     localStorage.setItem('userLeagueId', userLeagueId);
-//   }
-
-//   // load page if userLeagueId is valid
-//   onValue(ref(db, 'leagues/' + userLeagueId), snapshot => {
-//     let data = snapshot.val();
-//     if (data) {
-//       APP.league = data;
-//       APP.gamesPath = data.refs.games;
-//       APP.teamsPath = data.refs.teams;
-//       console.log(APP);
-//       initPageContent();
-
-//     } else {
-//       haltPageContent('Please select a league.');
-//     }
-
-//   }, { onlyOnce: true });
-// }
+const standingsNav = document.querySelector('#nav-standings');
+const standingsSection = document.querySelector('#standings-section');
+const leaderboardContainer = document.querySelector('#leaderboard-container');
 
 /* ------------------------------------------------ */
 
-function initPageContent() {
+export function initStandingsContent() {
 
   onValue(ref(db, APP.teamsPath), snapshot => {
-    let teams = snapshot.val();
-    teams = Object.values(teams);
-    makeStandings(teams);
-    document.querySelector('#league-title').textContent = APP.league.title;
-    showPageContent();
+    let teams = Object.values(snapshot.val());
+    makeLeaderboard(teams);
   });
 }
 
 /* ------------------------------------------------ */
 
-function showPageContent() {
-  document.querySelector('#loading').remove();
-  document.querySelector('#main').classList.remove('d-none');
-  document.querySelector('footer').classList.remove('d-none');
-}
-
-/* ------------------------------------------------ */
-
-function haltPageContent(msg) {
-
-  let alert = util.createAlert('danger', msg);
-  alert.querySelector('.btn-close').remove();
-
-  document.querySelector('#main-header').appendChild(alert);
-  document.querySelector('#loading').remove();
-  document.querySelector('footer').remove();
-
-  let brand = document.querySelector('#nav-index');
-  brand.classList.add('direct-user');
-}
-
-/* ------------------------------------------------ */
-// generate standings
-
-function makeStandings(teams) {
+function makeLeaderboard(teams) {
 
   // create copy of data
   let data = JSON.parse(JSON.stringify(teams));
@@ -117,27 +68,13 @@ function makeStandings(teams) {
   }
 
   // create standings elements
-  makeStandingsStructure();
-  let standingsHead = document.querySelector('#standings-container thead');
-  let standingsBody = document.querySelector('#standings-container tbody');
+  let leaderboard = util.createFromTemplate('leaderboard-template');
+  let leaderboardTBody = leaderboard.querySelector('tbody');
 
   // populate standings
   data.forEach((team, index) => {
 
     let standingsItem = util.createFromTemplate('standings-item-template');
-
-    // add headers if first item
-    if (index == 0) {
-      let tr = document.createElement('tr');
-      let tds = standingsItem.querySelectorAll('td');
-      tds.forEach(td => {
-        let th = document.createElement('th');
-        th.classList.add(td.className);
-        th.textContent = td.getAttribute('data-column');
-        tr.appendChild(th);
-      });
-      standingsHead.appendChild(tr);
-    }
 
     team.winPct = util.formatNumber(team.winPct, '0.000');
     team.id = parseInt(team.id);
@@ -149,45 +86,9 @@ function makeStandings(teams) {
       item.textContent = team[dataItem];
     });
 
-    standingsBody.appendChild(standingsItem);
+    leaderboardTBody.appendChild(standingsItem);
   });
+
+  leaderboardContainer.innerHTML = '';
+  leaderboardContainer.appendChild(leaderboard);
 }
-
-/* ------------------------------------------------ */
-
-function makeStandingsStructure() {
-
-  // clear standings container
-  let standingsContainer = document.querySelector('#standings-container');
-  standingsContainer.innerHTML = '';
-
-  // card title
-  let contCardTitle = document.createElement('div');
-  contCardTitle.classList.add('cont-card-title');
-  let contCardTitleContent = document.createElement('span');
-  contCardTitleContent.textContent = 'LEADERBOARD';
-  contCardTitle.appendChild(contCardTitleContent);
-
-  // card body + table responsive div
-  let contCardBody = document.createElement('div');
-  contCardBody.classList.add('cont-card-body');
-  let tableResponsive = document.createElement('div');
-  tableResponsive.classList.add('table-responsive');
-
-  // table
-  let table = document.createElement('table');
-  table.classList.add('table', 'table-borderless', 'align-middle', 'text-nowrap', 'm-0');
-  let thead = document.createElement('thead');
-  let tbody = document.createElement('tbody');
-  table.appendChild(thead);
-  table.appendChild(tbody);
-
-  // append elements
-  tableResponsive.appendChild(table);
-  contCardBody.appendChild(tableResponsive);
-
-  standingsContainer.appendChild(contCardTitle);
-  standingsContainer.appendChild(contCardBody);
-
-}
-
