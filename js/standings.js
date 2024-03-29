@@ -43,26 +43,30 @@ function makeLeaderboard(teams, games) {
     let teamSchedule = games.filter(g => Object.keys(g.teams).includes(team.id));
     let teamGames = teamSchedule.filter(g => g.status == 'POST');
     teamGames.reverse();
+    console.log(team.name, teamGames);
 
     // get streak
     let streak = 0;
     let streakType = '';
-    teamGames.forEach((g, i) => {
-      let win = g.winner == team.id;
+    for (let i = 0; i < teamGames.length; i++) {
+      let game = teamGames[i];
+      let winner = game.winner;
       if (i == 0) {
-        streak = 1;
-        streakType = win ? 'W' : 'L';
-      } else {
-        if (win && streakType == 'W') {
-          streak++;
-        } else if (!win && streakType == 'L') {
-          streak++;
-        } else {
-          return;
-        }
+        streakType = winner == team.id ? 'W' : 'L';
+        streak++;
+        continue;
       }
-    });
 
+      if (winner == team.id) {
+        if (streakType == 'W') streak++;
+        if (streakType == 'L') break;
+      } else {
+        if (streakType == 'L') streak++;
+        if (streakType == 'W') break;
+      }
+    }
+
+    console.log(team.name, streakType + streak);
     team.streak = streakType + streak;
   });
 
