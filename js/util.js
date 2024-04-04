@@ -58,7 +58,8 @@ export function offsetScrollIntoView(element) {
 
   // scroll to the element
   let scrollTop = window.scrollY;
-  let topAdjusted = top + scrollTop - headerHeight - safeAreaAdjustment;
+  let topAdjusted = top + scrollTop - headerHeight;
+  console.log('headerHeight:', headerHeight, 'safeAreaAdjustment:', safeAreaAdjustment, 'topAdjusted:', topAdjusted);
   window.scrollTo({ top: topAdjusted, behavior: 'smooth' });
 }
 

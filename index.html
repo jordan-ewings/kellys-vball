@@ -6,7 +6,7 @@
   <title>Kelly's Volleyball</title>
   <meta name="description" content="Kelly's Volleyball">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-  <meta name="theme-color" content="rgb(14, 14, 15)">
+  <meta name="theme-color" content="rgb(0, 0, 0)">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Kelly's Volleyball">
@@ -63,6 +63,7 @@
       </div>
       <div class="main-body">
         <div id="leaderboard-container"></div>
+        <div id="playoff-bracket-container"></div>
       </div>
     </section>
 
@@ -111,18 +112,20 @@
     <!-- game item -->
     <template id="game-item-template">
       <div class="game-item row g-0">
-        <div class="team-col col-8 pe-3 d-flex flex-column row-gap-1 justify-content-center">
+        <div class="team-col col-8 pe-2 d-flex flex-column row-gap-1 justify-content-center">
           <div class="team-item team-item-1 d-flex align-items-center column-gap-2">
             <span data-item="team1_nbr" class="team-nbr"></span>
             <span data-item="team1_name" class="team-name"></span>
-            <i class="team-result fa-regular fa-circle-check"></i>
-            <span data-item="team1_record" class="team-record ms-auto"></span>
+            <span data-item="team1_record" class="team-record"></span>
+            <i class="result result-G1 fa-regular fa-circle ms-auto"></i>
+            <i class="result result-G2 fa-regular fa-circle"></i>
           </div>
           <div class="team-item team-item-2 d-flex align-items-center column-gap-2">
             <span data-item="team2_nbr" class="team-nbr"></span>
             <span data-item="team2_name" class="team-name"></span>
-            <i class="team-result fa-regular fa-circle-check"></i>
-            <span data-item="team2_record" class="team-record ms-auto"></span>
+            <span data-item="team2_record" class="team-record"></span>
+            <i class="result result-G1 fa-regular fa-circle ms-auto"></i>
+            <i class="result result-G2 fa-regular fa-circle"></i>
           </div>
         </div>
         <div class="stat-col col-4 ps-3 d-flex justify-content-between column-gap-1" role="button" data-bs-toggle="collapse">
@@ -139,7 +142,7 @@
 
     <!-- game item form footer -->
     <template id="game-item-form-footer-template">
-      <div class="d-flex justify-content-end mt-4 mb-2 column-gap-2 form-footer">
+      <div class="d-flex justify-content-end column-gap-2 form-footer">
         <button id="cancelBtn" type="button" class="btn btn-secondary">Cancel</button>
         <button id="saveBtn" type="button" class="btn btn-outline-primary" disabled>Submit</button>
       </div>
@@ -172,6 +175,44 @@
         </div>
       </div>
     </template>
+
+    <!-- bracket -->
+    <template id="bracket-template">
+      <div class="cont-card">
+        <div class="cont-card-title">
+          <span>PLAYOFFS</span>
+        </div>
+        <div class="cont-card-body">
+        </div>
+      </div>
+    </template>
+
+    <!-- bracket game template -->
+    <template id="bracket-game-template">
+      <div class="cont-card bracket-game">
+        <div class="cont-card-body">
+          <div class="game-item bracket-game-item row g-0">
+            <div class="team-col col-9 pe-2 d-flex flex-column row-gap-2 justify-content-center">
+              <div class="team-item team-item-1 d-flex text-nowrap align-items-center column-gap-1">
+                <span class="team-seed"></span>
+                <span class="team-name"></span>
+              </div>
+              <div class="team-item team-item-2 d-flex text-nowrap align-items-center column-gap-1">
+                <span class="team-seed"></span>
+                <span class="team-name"></span>
+              </div>
+            </div>
+            <div class="stat-col col-3 ps-2 d-flex justify-content-end column-gap-1" role="button" data-bs-toggle="collapse">
+              <div class="d-flex flex-column justify-content-between align-items-end">
+                <span data-item="time" class="game-time"></span>
+                <span data-item="game_nbr" class="game-nbr"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
 
     <!-- standings item -->
     <template id="standings-item-template">

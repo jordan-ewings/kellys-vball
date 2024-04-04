@@ -10,9 +10,7 @@ document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
 
-  // await loadNewData();
   createActionButtons();
-  // showData();
 
 }
 
@@ -24,101 +22,159 @@ async function loadNewData() {
   await DBold.load('games');
   await DBold.load('teams');
 
-  let meta = DBold.get('teams')[0];
-
-  let league = meta.league.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
-  let leagueMin = league.slice(0, 3);
-  let sessionVal = parseInt(meta.session);
-  let sessionFull = sessionVal + (sessionVal == 1 ? 'st' : 'nd') + ' Session';
-  let sessionShort = 'S' + sessionVal;
-  let season = meta.season;
-
-  let leagueTitle = league + ' Night ' + sessionFull + ' ' + season;
-  let leagueTitleShort = league + ' ' + sessionShort + ' ' + season;
-  let leagueTitleMin = leagueMin + ' ' + sessionShort;
-  let leaguePath = meta.season + '/' + meta.session + '/' + meta.league;
-
+  let gamesRaw = DBold.get('games');
+  let teamsRaw = DBold.get('teams');
+  let meta = { season: '2024', session: '01', league: 'MONDAY' };
   let leagueId = meta.season + meta.session + meta.league;
+
+  let weeksArr = gamesRaw.map(g => g.week).filter((v, i, a) => a.indexOf(v) === i);
+  let weeks = {};
+  weeksArr.forEach(w => {
+    let week_id = 'WK' + w.padStart(2, '0');
+    weeks[week_id] = {
+      id: week_id,
+      nbr: parseInt(w),
+      label: 'Week ' + w,
+      refs: {
+        games: 'games/' + leagueId + '/' + week_id,
+        stats: 'stats/' + leagueId + '/' + week_id,
+      }
+    };
+  });
+
+  let teams = {};
+  teamsRaw.forEach(t => {
+    let team = {
+      id: t.id,
+      nbr: t.nbr,
+      name: t.name,
+      stats: {
+        games: {
+          count: 0,
+          wins: 0,
+          losses: 0,
+          record: '0-0',
+        },
+        drinks: {
+          count: 0,
+        }
+      }
+    };
+
+    teams[t.id] = team;
+  });
+
+  let games = {};
+  Object.values(weeks).forEach(w => {
+    let weekGames = gamesRaw.filter(g => g.week == w.nbr);
+    let weekSchedule = {};
+    weekGames.forEach((g, i) => {
+
+      let event = {
+        id: g.id,
+        week: w.id,
+        time: g.time,
+        court: g.court,
+        teams: {
+          [g.team1_id]: true,
+          [g.team2_id]: true,
+        },
+        matches: {
+          G1: {
+            name: 'Game 1',
+            status: 'PRE',
+            winner: null,
+          },
+          G2: {
+            name: 'Game 2',
+            status: 'PRE',
+            winner: null,
+          },
+        }
+      };
+
+      weekSchedule[g.id] = event;
+    });
+
+    games[w.id] = weekSchedule;
+  });
+
+  let stats = {};
+  // Object.keys(teams).forEach(t => {
+  //   stats[t] = {};
+  //   stats[t]['games'] = {};
+  //   stats[t]['drinks'] = {};
+  //   Object.keys(weeks).forEach(w => {
+  //     stats[t][w] = {};
+  //     stats[t][w]['games'] = { count: 0, wins: 0, losses: 0, record: '0-0' };
+  //     stats[t][w]['drinks'] = { count: 0 };
+  //   });
+  // });
+  Object.keys(weeks).forEach(w => {
+    stats[w] = {};
+    Object.keys(teams).forEach(t => {
+      stats[w][t] = {};
+      stats[w][t]['games'] = { count: 0, wins: 0, losses: 0, record: '0-0' };
+      stats[w][t]['drinks'] = { count: 0 };
+    });
+  });
+  // stats['games'] = {};
+  // stats['drinks'] = {};
+
+  // Object.keys(weeks).forEach(w => {
+  //   stats['games'][w] = {};
+  //   stats['drinks'][w] = {};
+  //   Object.keys(teams).forEach(t => {
+  //     stats['games'][w][t] = { count: 0, wins: 0, losses: 0, record: '0-0' };
+  //     stats['drinks'][w][t] = { count: 0 };
+  //   });
+  // });
+
+  // let drinks = {};
+  // Object.values(weeks).forEach(w => {
+  //   let weekTeams = Object.keys(teams);
+  //   let weekDrinks = {};
+  //   weekTeams.forEach(t => {
+  //     weekDrinks[t] = { count: 0 };
+  //   });
+
+  //   drinks[w.id] = weekDrinks;
+  // });
+
+
+  let leagueLab = meta.league.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+  let sessionLab = parseInt(meta.session) + (parseInt(meta.session) == 1 ? 'st' : 'nd') + ' Session';
+  let seasonLab = meta.season;
+  let leagueTitle = leagueLab + ' Night ' + sessionLab + ' ' + seasonLab;
+
   let leagueData = {
     id: leagueId,
     season: meta.season,
     session: meta.session,
     league: meta.league,
     title: leagueTitle,
-    titleShort: leagueTitleShort,
-    titleMin: leagueTitleMin,
     refs: {
-      teams: 'teams/' + leaguePath,
-      games: 'games/' + leaguePath,
+      weeks: 'weeks/' + leagueId,
+      teams: 'teams/' + leagueId,
+      stats: 'stats/' + leagueId,
+      games: 'games/' + leagueId,
+    },
+    refsDetail: {
+      weeks: 'weeks/' + leagueId + '/{weekId}',
+      teams: 'teams/' + leagueId + '/{teamId}',
+      stats: 'stats/' + leagueId + '/{weekId}/{teamId}/{statId}',
+      games: 'games/' + leagueId + '/{weekId}/{gameId}',
     }
   };
 
-  let teamsRaw = DBold.get('teams');
-  let teams = {};
-  teamsRaw.forEach(t => {
-    let altStruct = {
-      id: t.id,
-      nbr: t.nbr,
-      name: t.name,
-      wins: parseInt(t.wins),
-      losses: parseInt(t.losses),
-      record: t.wins + '-' + t.losses,
-    };
-
-    teams[t.id] = altStruct;
-  });
-
-  let gamesRaw = DBold.get('games');
-  let games = {};
-  gamesRaw.forEach(g => {
-    let id_1 = g.week.padStart(2, '0');
-    let id_2 = g.time.replace(':', '').split(' ')[0].padStart(4, '0');
-    let id_3 = g.court.replace('Court ', '').padStart(2, '0');
-    let game_id = id_1 + id_2 + id_3;
-    let altStruct = {
-      id: game_id,
-      week: g.week,
-      week_label: g.week_label,
-      time: g.time,
-      court: g.court,
-      status: g.status,
-      teams: {
-        [g.team1_id]: true,
-        [g.team2_id]: true,
-      },
-      winner: null,
-    };
-    games[game_id] = altStruct;
-  });
-
-  APP.dataParentSet = {
-    leagues: {
-      [leagueId]: leagueData,
-    },
-    teams: {
-      [meta.season]: {
-        [meta.session]: {
-          [meta.league]: teams,
-        },
-      },
-    },
-    games: {
-      [meta.season]: {
-        [meta.session]: {
-          [meta.league]: games,
-        },
-      },
-    },
-  };
-
-  APP.dataChildSet = {
+  APP.data = {
     ['leagues/' + leagueId]: leagueData,
-    ['teams/' + leaguePath]: teams,
-    ['games/' + leaguePath]: games,
-  };
+    ['weeks/' + leagueId]: weeks,
+    ['teams/' + leagueId]: teams,
+    ['stats/' + leagueId]: stats,
+    ['games/' + leagueId]: games,
 
-  APP.setMode = 'child';
-  APP.data = (APP.setMode == 'parent') ? APP.dataParentSet : APP.dataChildSet;
+  };
 
   console.log(APP);
   return APP;
@@ -186,7 +242,6 @@ function showData() {
     hljs.highlightElement(code);
   });
 
-  document.querySelector('#btn-set-mode').classList.remove('d-none');
   document.querySelector('#btn-push').classList.remove('d-none');
 }
 
@@ -209,41 +264,16 @@ function createActionButtons() {
   let btnPush = document.createElement('button');
   btnPush.id = "btn-push";
   btnPush.type = 'button';
-  btnPush.classList = 'btn btn-sm ' + (APP.setMode == 'parent' ? 'btn-danger' : 'btn-warning');
+  btnPush.classList = 'btn btn-sm btn-warning';
   btnPush.textContent = 'Push Data';
   btnPush.addEventListener('click', () => {
-    btnPush.disabled = true;
     pushNewData();
-    btnPush.textContent = 'Data Pushed';
-
-    setTimeout(() => {
-      btnPush.textContent = 'Push Data';
-    }, 2000);
-  });
-
-  let setMode = document.createElement('button');
-  setMode.id = "btn-set-mode";
-  setMode.type = 'button';
-  setMode.classList = 'btn btn-sm ' + (APP.setMode == 'parent' ? 'btn-outline-danger' : 'btn-outline-warning');
-  setMode.textContent = 'MODE: replace ' + APP.setMode + ' nodes';
-  setMode.addEventListener('click', () => {
-    APP.setMode = APP.setMode == 'parent' ? 'child' : 'parent';
-    APP.data = (APP.setMode == 'parent') ? APP.dataParentSet : APP.dataChildSet;
-    setMode.textContent = 'MODE: replace ' + APP.setMode + ' nodes';
-    setMode.classList = 'btn btn-sm ' + (APP.setMode == 'parent' ? 'btn-outline-danger' : 'btn-outline-warning');
-    btnPush.classList = 'btn btn-sm ' + (APP.setMode == 'parent' ? 'btn-danger' : 'btn-warning');
-    btnPush.disabled = false;
-    showData();
   });
 
   abContainer.appendChild(btnLoad);
-  abContainer.appendChild(setMode);
   abContainer.appendChild(btnPush);
 
-  setMode.classList.add('d-none');
   btnPush.classList.add('d-none');
-
-
 }
 
 

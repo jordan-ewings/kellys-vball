@@ -1,8 +1,8 @@
 import * as util from './util.js';
 import { db } from './firebase.js';
-import { ref, query, orderByKey, orderByChild, equalTo, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved, runTransaction } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+import { ref, get, query, orderByKey, orderByChild, equalTo, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved, runTransaction } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
-import { APP } from './main.js';
+import { APP, LG } from './main.js';
 
 /* ------------------------------------------------ */
 
@@ -15,30 +15,43 @@ const scheduleContainer = document.querySelector('#schedule-container');
 
 export function initScheduleContent() {
 
-  onValue(ref(db, APP.gamesPath), snapshot => {
-    let games = Object.values(snapshot.val());
-    APP.currentWeek = games.find(g => g.status == 'PRE').week;
+  onValue(ref(db, LG.refs.teams), snapshot => {
+    let teams = snapshot.val();
+    onValue(ref(db, LG.refs.games), snapshot => {
+      let games = snapshot.val();
+      onValue(ref(db, LG.refs.weeks), snapshot => {
+        let weeks = snapshot.val();
 
-    makeWeekFilters(games);
-    weekFilterContainer.querySelector('#week-' + APP.currentWeek + '-btn').click();
+        APP.currentWeek = getCurrentWeek(games);
+        makeWeekFilters(weeks);
+        makeSchedule(games, teams);
+        weekFilterContainer.querySelector('#week-' + APP.currentWeek + '-btn').click();
 
+      }, { onlyOnce: true });
+    }, { onlyOnce: true });
   }, { onlyOnce: true });
 }
 
 /* ------------------------------------------------ */
+// db functions
 
-function makeWeekFilters(data) {
+function getCurrentWeek(games) {
+
+  let gamesArr = Object.values(games).map(g => Object.values(g)).flat();
+  let game = gamesArr.find(g => g.matches.G1.status == 'PRE' || g.matches.G2.status == 'PRE');
+  let currentWeek = game.week;
+  return currentWeek;
+}
+
+/* ------------------------------------------------ */
+
+function makeWeekFilters(weeks) {
 
   weekFilterContainer.innerHTML = '';
 
-  // get unique weeks
-  let weeks = data.map(d => {
-    return { value: d.week, label: d.week_label };
-  }).filter((v, i, a) => a.findIndex(t => (t.value === v.value)) === i);
-
   // create week buttons
-  weeks.forEach(w => {
-    let value = w.value;
+  Object.values(weeks).forEach(w => {
+    let value = w.id;
     let label = w.label;
     let btn = document.createElement('button');
     btn.type = 'button';
@@ -49,7 +62,7 @@ function makeWeekFilters(data) {
 
     // fetch live data for week
     btn.addEventListener('click', (e) => {
-      makeSchedule(value);
+      showWeekSchedule(e.target.dataset.week);
       e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       weekFilterContainer.querySelectorAll('button').forEach(b => {
         b.classList.toggle('active', b == e.target);
@@ -62,64 +75,96 @@ function makeWeekFilters(data) {
 
 /* ------------------------------------------------ */
 
-function makeSchedule(week) {
+function showWeekSchedule(week) {
 
-  let weekGamesRef = query(ref(db, APP.gamesPath), orderByChild('week'), equalTo(week));
+  let weekGroups = scheduleContainer.querySelectorAll('.week-group');
+  weekGroups.forEach(wg => {
+    wg.classList.toggle('d-none', wg.id != 'week-' + week + '-group');
+  });
+
+  // team selection formatting
+  if (APP.focusedTeam) {
+    setTimeout(() => {
+      handleTeamSelection();
+    }, 250);
+  }
+}
+
+/* ------------------------------------------------ */
+
+function makeSchedule(games, teams) {
+
+  scheduleContainer.innerHTML = '';
 
   // initializing schedule
-  onValue(weekGamesRef, (snapshot) => {
+  let dataFull = Object.values(games).map(g => Object.values(g)).flat().map(g => {
+    let game = g;
+    Object.keys(game.teams).forEach(teamId => {
+      let team = teams[teamId];
+      game.teams[teamId] = team;
+    });
+    return game;
+  });
 
-    scheduleContainer.innerHTML = '';
-    const data = Object.values(snapshot.val());
+  console.log(dataFull);
 
-    // group games by time
+  // group games by week
+  let weekGroups = dataFull.map(d => d.week).filter((v, i, a) => a.indexOf(v) === i);
+  weekGroups.forEach(week => {
+
+    let weekGroup = document.createElement('div');
+    weekGroup.classList.add('week-group', 'd-none');
+    weekGroup.id = 'week-' + week + '-group';
+
+    let data = dataFull.filter(d => d.week == week);
     let timeSlots = data.map(d => d.time).filter((v, i, a) => a.findIndex(t => (t === v)) === i);
+
     timeSlots.forEach(timeSlot => {
       let gameCard = util.createFromTemplate('game-group-template');
       let gameGroup = gameCard.querySelector('.cont-card-body');
-      let games = data.filter(d => d.time === timeSlot);
+      let cardGames = data.filter(d => d.time === timeSlot);
 
       // create and append game items
-      games.forEach((game, index) => {
+      cardGames.forEach((game, index) => {
         let gameItem = makeGameItem(game);
         gameGroup.appendChild(gameItem);
 
         // add separator between games
-        if (index < games.length - 1) {
+        if (index < cardGames.length - 1) {
           let separator = document.createElement('div');
           separator.classList.add('game-separator');
           gameGroup.appendChild(separator);
         }
       });
 
-      scheduleContainer.appendChild(gameCard);
+      weekGroup.appendChild(gameCard);
     });
 
-    // set up team selection
-    if (APP.focusedTeam) {
-      setTimeout(() => {
-        handleTeamSelection();
-      }, 250);
-    }
+    let weekGamesRef = ref(db, LG.refs.games + '/' + week);
+    onChildChanged(weekGamesRef, snapshot => {
+      let game = snapshot.val();
+      let gameItem = document.querySelector('#game-' + game.id);
+      if (!gameItem) return;
 
-  }, { onlyOnce: true });
+      let newGameItem = makeGameItem(game);
+      let gameItemForm = document.querySelector('#game-' + game.id + '-form');
+      if (gameItemForm) {
+        newGameItem.classList.add('d-none');
+        gameItem.replaceWith(newGameItem);
+        if (gameItemForm.classList.contains('pending')) {
+          newGameItem.classList.remove('d-none');
+          gameItemForm.remove();
+        } else {
+          showGameUpdateAlert(gameItemForm, game);
+        }
+      } else {
+        gameItem.replaceWith(newGameItem);
+      }
+    });
 
-  // updating the schedule on game changes
-  onChildChanged(weekGamesRef, (snapshot) => {
-    let game = snapshot.val();
-    let gameItem = document.querySelector('#game-' + game.id);
-    if (!gameItem) return;
-
-    let gameItemForm = document.querySelector('#game-' + game.id + '-form');
-    let newGameItem = makeGameItem(game);
-    if (gameItemForm) {
-      newGameItem.classList.add('d-none');
-      gameItem.replaceWith(newGameItem);
-      showGameUpdateAlert(gameItemForm, game);
-    } else {
-      gameItem.replaceWith(newGameItem);
-    }
+    scheduleContainer.appendChild(weekGroup);
   });
+
 }
 
 /* ------------------------------------------------ */
@@ -131,38 +176,41 @@ function makeGameItem(d) {
   // set game item properties
   gameItem.id = 'game-' + d.id;
   gameItem.dataset.game_id = d.id;
-  gameItem.dataset.winner_id = (d.status == 'POST') ? d.winner : '';
-  gameItem.classList.add((d.status == 'PRE') ? 'pre' : 'post');
+  let matchStatuses = Object.values(d.matches).map(m => m.status);
+  let hasPre = matchStatuses.includes('PRE');
+  let hasPost = matchStatuses.includes('POST');
+  let gameStatus = (hasPost && !hasPre) ? 'post' : (hasPre && !hasPost) ? 'pre' : 'in';
+  gameItem.classList.add('game-item', gameStatus);
 
   // set game info text
   gameItem.querySelector('.game-time').textContent = d.time;
-  gameItem.querySelector('.game-court').textContent = d.court;
+  gameItem.querySelector('.game-court').textContent = 'Court ' + d.court;
 
   let teams = Object.keys(d.teams);
   teams.forEach((teamId, index) => {
 
     let teamItem = gameItem.querySelector('.team-item-' + (index + 1));
+    teamItem.dataset.team_id = teamId;
 
-    // on team data change, update team item
-    let teamRef = ref(db, APP.teamsPath + '/' + teamId);
-    onValue(teamRef, (snapshot) => {
-      let team = snapshot.val();
-      teamItem.dataset.team_id = teamId;
-      teamItem.querySelector('.team-nbr').textContent = team.nbr;
-      teamItem.querySelector('.team-name').textContent = team.name;
-      teamItem.querySelector('.team-record').textContent = team.record;
+    let teamRef = ref(db, LG.refs.teams + '/' + teamId);
+    onValue(teamRef, snapshot => {
+      let t = snapshot.val();
+      teamItem.querySelector('.team-nbr').textContent = t.nbr;
+      teamItem.querySelector('.team-name').textContent = t.name;
+      teamItem.querySelector('.team-record').textContent = t.stats.games.record;
     });
 
     // winner/loser formatting
-    if (d.status == 'POST') {
-      let isWinner = (teamId == d.winner);
-      if (isWinner) {
-        teamItem.classList.add('winner');
-      } else {
-        teamItem.classList.add('loser');
-        teamItem.querySelector('.team-result').classList.replace('fa-circle-check', 'fa-circle-xmark');
+    let matches = d.matches;
+    Object.keys(matches).forEach(matchId => {
+      let m = matches[matchId];
+      let icon = teamItem.querySelector('i.result-' + matchId);
+      if (m.status == 'POST') {
+        if (m.winner == teamId) {
+          icon.classList.replace('fa-circle', 'fa-circle-check');
+        }
       }
-    }
+    });
 
     // apply team focus formatting
     if (APP.focusedTeam) {
@@ -216,60 +264,66 @@ function gameItemToForm(gameItem, d) {
   let saveBtn = footer.querySelector('#saveBtn');
   gameItemForm.appendChild(footer);
 
+  // add G1 and G2 header below last team item (so that "G1" appears below the G1 icons and "G2" below the G2 icons)
+  let matchHeaders = document.createElement('div');
+  matchHeaders.classList.add('match-headers', 'd-flex', 'justify-content-end', 'column-gap-2');
+  ['G1', 'G2'].forEach(g => {
+    let header = document.createElement('div');
+    header.textContent = g;
+    matchHeaders.appendChild(header);
+  });
+
+  let teamItem2 = gameItemForm.querySelector('.team-item-2');
+  teamItem2.insertAdjacentElement('afterend', matchHeaders);
+
   let gameId = d.id;
-  let oldWinnerId = (d.winner === undefined || d.winner === null || d.winner === '') ? null : d.winner;
-  let newWinnerId = oldWinnerId;
+  let oldMatches = d.matches;
+  Object.keys(oldMatches).forEach(matchId => {
+    let m = oldMatches[matchId];
+    m.winner = (m.winner === undefined || m.winner === null || m.winner === '') ? null : m.winner;
+    m.status = (m.winner === null) ? 'PRE' : 'POST';
+  });
 
-  // helper function to select/deselect teams
-  const formatWinner = (teamId) => {
-
-    let teamItems = gameItemForm.querySelectorAll('.team-item');
-    teamItems.forEach(ti => {
-      ti.classList.remove('winner', 'loser');
-      ti.querySelector('.team-result').classList.remove('fa-solid', 'fa-circle-check');
-      ti.querySelector('.team-result').classList.add('fa-regular', 'fa-circle');
-      if (teamId == null) return;
-
-      if (ti.dataset.team_id == teamId) {
-        ti.classList.add('winner');
-        ti.querySelector('.team-result').classList.remove('fa-regular', 'fa-circle');
-        ti.querySelector('.team-result').classList.add('fa-solid', 'fa-circle-check');
-      } else {
-        ti.classList.add('loser');
-      }
-    });
-  };
-
-  // replace team items with team item forms
+  let newMatches = JSON.parse(JSON.stringify(oldMatches));
   let teamItems = gameItemForm.querySelectorAll('.team-item');
-  teamItems.forEach(ti => {
 
+  teamItems.forEach(ti => {
     let tiForm = ti.cloneNode(true);
     let teamId = tiForm.dataset.team_id;
-    tiForm.classList.add('py-1');
     tiForm.querySelector('.team-record').classList.add('d-none');
-    tiForm.querySelector('.team-result').classList.add('ms-auto');
-    tiForm.querySelector('.team-result').classList.remove('fa-regular', 'fa-circle-check', 'fa-circle-xmark');
 
-    tiForm.addEventListener('click', (e) => {
+    Object.keys(oldMatches).forEach(matchId => {
+      let icon = tiForm.querySelector('i.result-' + matchId);
+      icon.addEventListener('click', (e) => {
+        let matchupIcons = gameItemForm.querySelectorAll('i.result-' + matchId);
+        matchupIcons.forEach(mi => {
+          if (mi != icon) {
+            mi.classList.remove('fa-circle-check');
+            mi.classList.add('fa-circle');
+          } else {
+            mi.classList.toggle('fa-circle-check');
+            mi.classList.toggle('fa-circle');
+          }
+        });
 
-      // select/deselect team
-      newWinnerId = (newWinnerId == teamId) ? null : teamId;
-      formatWinner(newWinnerId);
+        // update newMatches
+        let winnerId = (icon.classList.contains('fa-circle-check')) ? teamId : null;
+        newMatches[matchId].winner = winnerId;
+        newMatches[matchId].status = (winnerId === null) ? 'PRE' : 'POST';
 
-      // enable save button if game has changed
-      let gameChanged = newWinnerId != oldWinnerId;
-      gameItemForm.classList.toggle('changed', gameChanged);
-      saveBtn.disabled = !gameChanged;
-      saveBtn.classList.toggle('btn-outline-primary', !gameChanged);
-      saveBtn.classList.toggle('btn-primary', gameChanged);
+        // enable save button if game has changed
+        let gameChanged = JSON.stringify(oldMatches) != JSON.stringify(newMatches);
+        gameItemForm.classList.toggle('changed', gameChanged);
+        saveBtn.disabled = !gameChanged;
+        saveBtn.classList.toggle('btn-outline-primary', !gameChanged);
+        saveBtn.classList.toggle('btn-primary', gameChanged);
+
+        console.log(newMatches);
+      });
     });
 
     ti.replaceWith(tiForm);
   });
-
-  // select initial winner if exists
-  formatWinner(oldWinnerId);
 
   // stat-col click replaces form with game item
   let statCol = gameItemForm.querySelector('.stat-col');
@@ -281,44 +335,117 @@ function gameItemToForm(gameItem, d) {
   });
 
   // cancel button (replaces form with game item)
-  cancelBtn.addEventListener('click', (e) => {
-    document.querySelector('#game-' + gameId).classList.remove('d-none');
-    gameItemForm.remove();
-  });
+  cancelBtn.remove();
+  // cancelBtn.addEventListener('click', (e) => {
+  //   document.querySelector('#game-' + gameId).classList.remove('d-none');
+  //   gameItemForm.remove();
+  // });
 
   // save button pushes new game data and team records to database
-  saveBtn.addEventListener('click', (e) => {
+  saveBtn.addEventListener('click', async (e) => {
 
-    document.querySelector('#game-' + gameId).classList.remove('d-none');
-    document.querySelector('#game-' + gameId + '-form').remove();
-    if (newWinnerId == oldWinnerId) return;
+    e.preventDefault();
+    if (!gameItemForm.classList.contains('changed')) return;
 
-    // update team records
-    let teamIds = Object.keys(d.teams);
-    teamIds.forEach(teamId => {
-      let winsDiff = (teamId == newWinnerId) ? 1 : (teamId == oldWinnerId) ? -1 : 0;
-      let gamesDiff = (oldWinnerId == null) ? 1 : (newWinnerId == null) ? -1 : 0;
-      let lossesDiff = gamesDiff - winsDiff;
+    // remove form and show game item
+    // document.querySelector('#game-' + gameId).classList.remove('d-none');
+    // document.querySelector('#game-' + gameId + '-form').remove();
 
-      runTransaction(ref(db, APP.teamsPath + '/' + teamId), (team) => {
-        if (team) {
-          team.wins += winsDiff;
-          team.losses += lossesDiff;
-          team.record = team.wins + '-' + team.losses;
-        }
-        return team;
-      });
-    });
+    gameItemForm.classList.add('pending');
 
-    // update game's winner and status
-    update(ref(db, APP.gamesPath + '/' + gameId), {
-      winner: newWinnerId,
-      status: (newWinnerId == null) ? 'PRE' : 'POST'
-    });
+    await handleMatchUpdate(d, newMatches);
   });
 
   return gameItemForm;
 }
+
+/* ------------------------------------------------ */
+
+async function handleMatchUpdate(d, newMatches) {
+
+  const gameId = d.id;
+  const weekId = d.week;
+  const teamIds = Object.keys(d.teams);
+
+  // reference paths to update
+  const gamesPath = () => `${LG.refs.games}/${weekId}/${gameId}/matches`;
+  const teamsPath = (teamId) => `${LG.refs.teams}/${teamId}/stats/games`;
+  const statsPath = (teamId) => `${LG.refs.stats}/${weekId}/${teamId}/games`;
+  let updates = {};
+
+  // update matches object
+  updates[gamesPath()] = newMatches;
+
+  // get all games once
+  const games = await get(ref(db, LG.refs.games)).then(snap => snap.val());
+
+  // update stats for each team
+  teamIds.forEach(teamId => {
+
+    let stats = {};
+    stats['overall'] = { count: 0, wins: 0, losses: 0, record: '0-0', winPct: 0, streak: 0 };
+    let streak = 0;
+
+    // calculate stats for team
+    for (let week in games) {
+      stats[week] = { count: 0, wins: 0, losses: 0, record: '0-0' };
+      for (let game_id in games[week]) {
+        let game = games[week][game_id];
+        if (teamId in game.teams) {
+          let matches = Object.values(game.matches);
+          if (game_id == gameId) matches = Object.values(newMatches);
+
+          for (let match of matches) {
+            if (match.status == 'POST') {
+
+              // update streak
+              let incr = match.winner == teamId ? 1 : -1;
+              if (streak === 0) {
+                streak = incr;
+              } else if (streak > 0 && incr > 0) {
+                streak++;
+              } else if (streak < 0 && incr < 0) {
+                streak--;
+              } else {
+                streak = incr;
+              }
+
+              // update stats
+              ['overall', week].forEach(w => {
+                stats[w].count++;
+                if (match.winner == teamId) {
+                  stats[w].wins++;
+                } else {
+                  stats[w].losses++;
+                }
+                stats[w].record = `${stats[w].wins}-${stats[w].losses}`;
+                stats[w].winPct = stats[w].count === 0 ? 0 : stats[w].wins / stats[w].count;
+                if (w == 'overall') stats[w].streak = streak;
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // update teamsRef with team stats
+    updates[teamsPath(teamId)] = stats['overall'];
+
+    // update statsRef with team stats
+    updates[statsPath(teamId)] = stats[weekId];
+  });
+
+  // push updates to database
+  console.log(updates);
+  update(ref(db), updates)
+    .then(() => {
+      console.log('Game updated successfully');
+    })
+    .catch((error) => {
+      console.error('Error updating game: ', error);
+    });
+}
+
 
 /* ------------------------------------------------ */
 
@@ -334,12 +461,7 @@ function showGameUpdateAlert(gameItemForm, game) {
   formFooter.classList.remove('justify-content-end');
   formFooter.innerHTML = '';
 
-  let oldWinnerId = gameItemForm.dataset.winner_id;
-  let newWinner = (game.winner) ? 'Team ' + parseInt(game.winner) : 'None';
-  let oldWinner = (oldWinnerId != '') ? 'Team ' + parseInt(oldWinnerId) : 'None';
   let msg = '<span>Game updated by another user. Close and re-open this form to make additional updates.</span>';
-  msg += '<p>Old Winner: <b>' + oldWinner + '</b></p>';
-  msg += '<p>New Winner: <b>' + newWinner + '</b></p>';
 
   let alert = util.createAlert('danger', msg);
   alert.querySelector('.btn-close').remove();
@@ -356,10 +478,11 @@ function showGameUpdateAlert(gameItemForm, game) {
 
 /* ------------------------------------------------ */
 
-export function handleTeamSelection(e) {
+function handleTeamSelection(e) {
 
   let team = APP.focusedTeam;
-  let allTeamItems = document.querySelectorAll('.team-item');
+  let scheduleContainer = document.querySelector('#schedule-container');
+  let allTeamItems = scheduleContainer.querySelectorAll('.team-item');
 
   // clear all focus/unfocus formatting
   if (!team) {
@@ -369,18 +492,26 @@ export function handleTeamSelection(e) {
     return;
   }
 
-  let teamItem1 = document.querySelector('.team-item[data-team_id="' + team + '"]');
-  document.querySelectorAll('.team-item').forEach(ti => {
+  // let teamItem1 = document.querySelector('.team-item[data-team_id="' + team + '"]');
+  scheduleContainer.querySelectorAll('.team-item').forEach(ti => {
     if (ti.getAttribute('data-team_id') == team) {
       ti.classList.remove('unselected');
       ti.classList.add('selected');
-      if (ti == teamItem1) {
-        let gameGroup = ti.closest('.game-group');
-        util.offsetScrollIntoView(gameGroup);
-      }
+      // if (ti == teamItem1) {
+      //   let gameGroup = ti.closest('.game-group');
+      //   util.offsetScrollIntoView(gameGroup);
+      // }
     } else {
       ti.classList.remove('selected');
       ti.classList.add('unselected');
     }
   });
+
+  let weekGroup = scheduleContainer.querySelector('.week-group:not(.d-none)');
+  if (weekGroup) {
+    let firstSelected = weekGroup.querySelector('.team-item.selected');
+    let gameGroup = firstSelected.closest('.game-group');
+    console.log(gameGroup);
+    util.offsetScrollIntoView(gameGroup);
+  }
 }
