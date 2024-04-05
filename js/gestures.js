@@ -29,7 +29,6 @@ export function handleTouchMove(evt) {
 
   let minXDiff = 100;
   let minXMultiple = 2;
-
   let isHorizontalSwipe = false;
   if (Math.abs(xDiff) > minXDiff) {
     if (Math.abs(xDiff) > Math.abs(yDiff) * minXMultiple) {
@@ -37,16 +36,44 @@ export function handleTouchMove(evt) {
     }
   }
 
-  if (!isHorizontalSwipe) return;
-
-  // reset values before returning
-  touchEvents.xDown = null;
-  touchEvents.yDown = null;
-
-  if (xDiff > 0) {
-    return 'left';
-  } else {
-    return 'right';
+  let minYDiff = 10;
+  let minYMultiple = 2;
+  let isVerticalSwipe = false;
+  if (Math.abs(yDiff) > minYDiff) {
+    if (Math.abs(yDiff) > Math.abs(xDiff) * minYMultiple) {
+      isVerticalSwipe = true;
+    }
   }
+
+  if (isHorizontalSwipe) {
+    if (xDiff > 0) {
+      touchEvents.xDown = xUp;
+      touchEvents.yDown = yUp;
+      return 'left';
+    } else {
+      touchEvents.xDown = xUp;
+      touchEvents.yDown = yUp;
+      return 'right';
+    }
+  }
+
+  if (isVerticalSwipe) {
+    if (yDiff > 0) {
+      touchEvents.xDown = xUp;
+      touchEvents.yDown = yUp;
+      return 'up';
+    } else {
+      touchEvents.xDown = xUp;
+      touchEvents.yDown = yUp;
+      return 'down';
+    }
+  }
+
+  // Update the start position for the next swipe
+  // touchEvents.xDown = xUp;
+  // touchEvents.yDown = yUp;
+
+
+  // return;
 }
 

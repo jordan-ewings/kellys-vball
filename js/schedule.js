@@ -334,25 +334,12 @@ function gameItemToForm(gameItem, d) {
     gameItemForm.remove();
   });
 
-  // cancel button (replaces form with game item)
-  cancelBtn.remove();
-  // cancelBtn.addEventListener('click', (e) => {
-  //   document.querySelector('#game-' + gameId).classList.remove('d-none');
-  //   gameItemForm.remove();
-  // });
-
   // save button pushes new game data and team records to database
   saveBtn.addEventListener('click', async (e) => {
-
     e.preventDefault();
     if (!gameItemForm.classList.contains('changed')) return;
 
-    // remove form and show game item
-    // document.querySelector('#game-' + gameId).classList.remove('d-none');
-    // document.querySelector('#game-' + gameId + '-form').remove();
-
     gameItemForm.classList.add('pending');
-
     await handleMatchUpdate(d, newMatches);
   });
 
@@ -492,15 +479,10 @@ function handleTeamSelection(e) {
     return;
   }
 
-  // let teamItem1 = document.querySelector('.team-item[data-team_id="' + team + '"]');
   scheduleContainer.querySelectorAll('.team-item').forEach(ti => {
     if (ti.getAttribute('data-team_id') == team) {
       ti.classList.remove('unselected');
       ti.classList.add('selected');
-      // if (ti == teamItem1) {
-      //   let gameGroup = ti.closest('.game-group');
-      //   util.offsetScrollIntoView(gameGroup);
-      // }
     } else {
       ti.classList.remove('selected');
       ti.classList.add('unselected');
@@ -515,3 +497,5 @@ function handleTeamSelection(e) {
     util.offsetScrollIntoView(gameGroup);
   }
 }
+
+/* ------------------------------------------------ */

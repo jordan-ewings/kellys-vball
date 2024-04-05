@@ -40,7 +40,12 @@ export function offsetScrollIntoView(element) {
   // get '.main-header' height of the section being displayed (i.e., doesn't have 'd-none' class)
   let liveSection = document.querySelector('section:not(.d-none)');
   let header = liveSection.querySelector('.main-header');
-  let headerHeight = header.offsetHeight;
+  let headerHeight = window.getComputedStyle(header, '::after');
+  if (headerHeight) {
+    headerHeight = parseInt(headerHeight.height);
+  } else {
+    headerHeight = header.offsetHeight;
+  }
 
   // get the top of the element (including margin)
   let top = element.getBoundingClientRect().top;
@@ -49,17 +54,9 @@ export function offsetScrollIntoView(element) {
     top = top - parseInt(elementMarginTop);
   }
 
-  // get offset from top of the window
-  let safeAreaAdjustment = 0;
-  let bodyBefore = window.getComputedStyle(document.body, '::before');
-  if (bodyBefore) {
-    safeAreaAdjustment = parseInt(bodyBefore.height);
-  }
-
   // scroll to the element
   let scrollTop = window.scrollY;
   let topAdjusted = top + scrollTop - headerHeight;
-  console.log('headerHeight:', headerHeight, 'safeAreaAdjustment:', safeAreaAdjustment, 'topAdjusted:', topAdjusted);
   window.scrollTo({ top: topAdjusted, behavior: 'smooth' });
 }
 

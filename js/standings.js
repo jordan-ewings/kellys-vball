@@ -9,6 +9,7 @@ import { APP, LG } from './main.js';
 const standingsNav = document.querySelector('#nav-standings');
 const standingsSection = document.querySelector('#standings-section');
 const leaderboardContainer = document.querySelector('#leaderboard-container');
+const bracketContainer = document.querySelector('#playoff-bracket-container');
 
 /* ------------------------------------------------ */
 
@@ -64,7 +65,6 @@ function makeLeaderboard(teamsRaw) {
     return 0;
   });
 
-  // makePlayoffBracket(JSON.parse(JSON.stringify(teams)));
 
   // add rank (not currently used)
   let rank = 1;
@@ -181,11 +181,8 @@ function makePlayoffBracket(bracket, teamsRaw) {
     }
   });
 
-  console.log(bracket);
-
   let types = ['Winner', 'Loser', 'Championship'];
   let matchups = {};
-
   types.forEach(type => {
 
     let games = bracket.filter(g => g.bracket == type);
@@ -200,10 +197,6 @@ function makePlayoffBracket(bracket, teamsRaw) {
     matchups[type] = games;
   });
 
-  console.log(matchups);
-
-  let bracketContainer = document.querySelector('#playoff-bracket-container');
-  bracketContainer.innerHTML = '';
   let bracketWrapper = util.createFromTemplate('bracket-template');
   let bracketBody = bracketWrapper.querySelector('.cont-card-body');
 
@@ -236,7 +229,6 @@ function makePlayoffBracket(bracket, teamsRaw) {
             let tSplit = team.split(' ');
             let abbr = tSplit[0].split('')[0];
             label = abbr + '-' + tSplit[1];
-            // label = 'G' + tSplit[1] + ' ' + tSplit[0].toLowerCase();
           }
           teamDiv.querySelector('.team-name').textContent = label;
           if (game['team' + i].seed) teamDiv.querySelector('.team-seed').textContent = game['team' + i].seed;
@@ -246,7 +238,6 @@ function makePlayoffBracket(bracket, teamsRaw) {
           gameDiv.querySelector('.game-time').textContent = 'TBD';
           gameDiv.querySelector('.game-nbr').textContent = game.match;
         }
-
 
         // identify game type
         let team1Name = (game.team1.name || game.team1);
@@ -277,13 +268,12 @@ function makePlayoffBracket(bracket, teamsRaw) {
       });
 
       bracketDiv.appendChild(columnDiv);
-
     });
 
     bracketBody.appendChild(bracketDiv);
-
   });
 
+  bracketContainer.innerHTML = '';
   bracketContainer.appendChild(bracketWrapper);
 
 }

@@ -41,30 +41,13 @@
   --ios-link: rgb(0, 122, 255);
 }
 
-/* ios objects */
-.ios-material-thick {
-  /* Materials/Thick - Dark */
-  background: linear-gradient(0deg, #7C7C7C, #7C7C7C), rgba(37, 37, 37, 0.9);
-  background-blend-mode: overlay, normal;
-  box-shadow: 0px 4px 50px rgba(0, 0, 0, 0.25);
-  border-radius: 20px;
-}
-
-.ios-material-regular {
-  /* Materials/Regular - Dark */
-  background: linear-gradient(0deg, #8C8C8C, #8C8C8C), rgba(37, 37, 37, 0.82);
-  background-blend-mode: overlay, normal;
-  box-shadow: inset 0px 4px 50px rgba(0, 0, 0, 0.25);
-  border-radius: 20px;
-}
-
 :root {
   --bs-body-color: var(--ios-text);
   --bs-body-color-rgb: 255, 255, 255;
   --bs-body-bg: var(--ios-bg-primary);
-  --bs-body-bg-rgb: 14, 14, 15;
-  --bs-border-color: var(--ios-separator);
-  --bs-border-color-translucent: rgba(255, 255, 255, 0.1);
+  --bs-body-bg-rgb: 0, 0, 0;
+  --bs-primary: var(--ios-blue);
+  --bs-primary-rgb: 10, 132, 255;
 }
 
 :root {
@@ -105,90 +88,38 @@ div::-webkit-scrollbar {
   display: none;
 }
 
-
 /* ---------------------------------- */
 
-.navbar .navbar-nav {
-  flex-direction: row !important;
-  justify-content: space-around;
-  /* z-index: 1030; */
+nav {
+  z-index: 9999;
+  transform: translateZ(0);
 }
 
-.navbar a {
+nav .navbar-nav {
+  flex-direction: row !important;
+  justify-content: space-around;
+}
+
+nav a {
   font-weight: 500 !important;
   font-size: 1rem !important;
   padding-top: 0 !important;
   padding-bottom: .3rem !important;
   text-align: center !important;
   margin: 0 .5rem !important;
-
 }
 
-.navbar a.direct-user {
+nav a.direct-user {
   border-bottom: 2px solid var(--ios-red) !important;
   transition: border-bottom 1s;
 }
 
-#navbar-border {
+nav #navbar-border {
   height: 2px;
   background-color: var(--ios-text);
   position: absolute;
   bottom: 0;
-  /* z-index: 1030; */
   transition: all 0.2s ease-in-out;
-}
-
-.blur {
-  filter: blur(10px);
-  transition: filter 0.3s ease-in-out;
-}
-
-nav {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 9999;
-  transform: translateZ(0);
-  /* want nav to be on top of everything */
-}
-
-/* ---------------------------------- */
-
-#loading {
-  height: 50vh;
-  width: 100%;
-  z-index: 1000;
-  background-color: var(--ios-bg-primary);
-}
-
-/* .main-header::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: calc(100% + env(safe-area-inset-top));
-  z-index: -1000;
-  background-color: rgba(0, 0, 0, .7);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-} */
-
-.main-header:has(> *) {
-  position: sticky;
-  top: 0;
-  padding-top: calc(env(safe-area-inset-top) + .25rem);
-  margin-top: calc(-1 * env(safe-area-inset-top)) !important;
-  background-color: rgba(0, 0, 0, .7);
-  -webkit-backdrop-filter: blur(5px);
-  backdrop-filter: blur(5px);
-  border-bottom: 1px solid var(--ios-bg-primary);
-  z-index: 1080;
-}
-
-.main-header>* {
-  padding: .8rem 0;
 }
 
 footer {
@@ -202,10 +133,51 @@ footer {
 
 footer a {
   color: var(--ios-text);
-  /* font-weight: 500; */
   text-decoration: underline;
   text-decoration-color: var(--ios-blue);
   text-underline-offset: .5rem;
+}
+
+/* ---------------------------------- */
+
+#loading {
+  height: 50vh;
+  width: 100%;
+  z-index: 1000;
+  background-color: var(--ios-bg-primary);
+}
+
+.main-header::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(100% + env(safe-area-inset-top));
+  z-index: -1000;
+  background-color: rgba(0, 0, 0, .5);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.main-header:has(> *) {
+  position: sticky;
+  top: env(safe-area-inset-top);
+  left: 0;
+  border-bottom: 1px solid var(--ios-bg-primary);
+  z-index: 1080;
+  opacity: 1;
+  transition: all 0.2s ease-in-out;
+}
+
+.main-header.hidden {
+  opacity: 0;
+  transform: translateY(-100%);
+  transition: all 0.2s ease-in-out;
+}
+
+.main-header>* {
+  padding: .8rem 0;
 }
 
 /* ---------------------------------- */
@@ -345,7 +317,6 @@ footer a {
 
 #leaderboard-container td.streak {
   font-size: .85rem;
-  /* font-weight: 500; */
   opacity: .9;
 }
 

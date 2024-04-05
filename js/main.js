@@ -15,13 +15,14 @@ const sections = document.querySelectorAll('section');
 const footer = document.querySelector('footer');
 const footerLink = document.querySelector('footer a');
 const loadingSpinner = document.querySelector('#loading');
+const currentSection = () => document.querySelector('section:not(.d-none)');
+
+const scheduleContainer = document.querySelector('#schedule-container');
 
 /* ------------------------------------------------ */
 
 export const APP = {};
 export const LG = {};
-
-/* ------------------------------------------------ */
 
 /* ------------------------------------------------ */
 
@@ -84,6 +85,46 @@ function initPageContent() {
   loadingSpinner.classList.add('d-none');
   mainDiv.classList.remove('d-none');
   footer.classList.remove('d-none');
+
+  // gesture listeners
+  let scrollY = 0;
+  let scrollDir = 0;
+  document.addEventListener('scroll', (e) => {
+
+    if (!currentSection()) return;
+    if (currentSection().id != 'schedule-section') return;
+    let header = currentSection().querySelector('.main-header');
+
+    if (APP.focusedTeam) {
+      if (header.classList.contains('hidden')) {
+        header.classList.remove('hidden');
+      }
+      return;
+    }
+
+    if (!header.firstElementChild) return;
+
+    let mainBody = currentSection().querySelector('.main-body');
+    let currentY = window.scrollY;
+    let dir = currentY > scrollY ? 1 : -1;
+    let belowTop = mainBody.getBoundingClientRect().top < 0;
+    let aboveBottom = mainBody.getBoundingClientRect().bottom > window.innerHeight;
+
+    if (belowTop && aboveBottom) {
+      if (dir != scrollDir) {
+        scrollDir = dir;
+        if (dir == -1) {
+          header.classList.remove('hidden');
+        } else {
+          header.classList.add('hidden');
+        }
+      }
+    } else if (!belowTop) {
+      header.classList.remove('hidden');
+    }
+
+    scrollY = currentY;
+  });
 }
 
 /* ------------------------------------------------ */
@@ -104,8 +145,6 @@ function showContent(name) {
   });
 
   footer.classList.toggle('fixed-bottom', name == 'index');
-
-  localStorage.setItem('currentPage', name);
 }
 
 /* ------------------------------------------------ */
@@ -157,7 +196,6 @@ function makeLeagueSelect(leagues) {
       let opt = document.createElement('option');
       opt.value = o;
       opt.innerHTML = o;
-      // opt.innerHTML = o.charAt(0).toUpperCase() + o.slice(1).toLowerCase();
       if (o == LG[s]) opt.setAttribute('selected', '');
       if (!availOptions.includes(o)) opt.setAttribute('disabled', '');
       select.appendChild(opt);
