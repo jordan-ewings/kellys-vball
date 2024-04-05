@@ -17,8 +17,6 @@ const footerLink = document.querySelector('footer a');
 const loadingSpinner = document.querySelector('#loading');
 const currentSection = () => document.querySelector('section:not(.d-none)');
 
-const scheduleContainer = document.querySelector('#schedule-container');
-
 /* ------------------------------------------------ */
 
 export const APP = {};
