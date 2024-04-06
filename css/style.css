@@ -442,9 +442,17 @@ footer a {
   padding: .25rem 0;
 }
 
+.game-item-form .team-record {
+  display: none;
+}
+
 .game-item-form .stat-col .game-court,
 .game-item-form .stat-col .game-time {
   /* display: none; */
+}
+
+.game-item.collapsing {
+  transition: height 0.1s ease-in-out;
 }
 
 /* ---------------------------------- */
