@@ -18,8 +18,7 @@ export function initStandingsContent() {
   onValue(ref(db, session.user.league.refs.teams), (snapshot) => {
 
     const teams = snapshot.val();
-    const standings = processStandings(teams);
-    makeLeaderboard(standings);
+    makeLeaderboard(teams);
     // makePlayoffBracket(standings);
 
   });
@@ -88,9 +87,9 @@ function processStandings(teamsRaw) {
 
 /* ------------------------------------------------ */
 
-function makeLeaderboard(standings) {
+function makeLeaderboard(teamsRaw) {
 
-  const teams = JSON.parse(JSON.stringify(standings));
+  const teams = processStandings(teamsRaw);
 
   // create standings elements
   const leaderboard = util.createFromTemplate('leaderboard-template');
