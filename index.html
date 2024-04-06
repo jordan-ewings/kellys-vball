@@ -59,7 +59,6 @@
     <!-- standings page ------------------------------------------------------>
     <section id="standings-section" class="d-none">
       <div class="main-header mb-3 mt-1">
-
       </div>
       <div class="main-body">
         <div id="leaderboard-container"></div>
@@ -133,8 +132,10 @@
             <span data-item="time" class="game-time"></span>
             <span data-item="court" class="game-court"></span>
           </div>
-          <div class="d-flex flex-column justify-content-center pe-1">
-            <i class="fa-solid fa-pen edit-icon"></i>
+          <div class="d-flex flex-column justify-content-start pe-1">
+            <div class="edit-icon-circle">
+              <i class="fa-solid fa-pen edit-icon"></i>
+            </div>
           </div>
         </div>
       </div>
@@ -142,8 +143,10 @@
 
     <!-- game item form footer -->
     <template id="game-item-form-footer-template">
-      <div class="d-flex justify-content-end column-gap-2 form-footer">
-        <button id="saveBtn" type="button" class="btn btn-outline-primary" disabled>Submit</button>
+      <div class="form-footer row g-0">
+        <div class="offset-8 col-4 ps-3 pe-1">
+          <button id="saveBtn" type="button" class="btn w-100 btn-outline-primary" disabled>Submit</button>
+        </div>
       </div>
     </template>
 

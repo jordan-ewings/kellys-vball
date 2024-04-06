@@ -1,8 +1,8 @@
 import * as util from './util.js';
-import { db } from './firebase.js';
+import { db, session } from './firebase.js';
 import { ref, onValue, set } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
-import { APP, LG } from './main.js';
+import { APP } from './main.js';
 
 /* ------------------------------------------------ */
 
@@ -15,44 +15,43 @@ const bracketContainer = document.querySelector('#playoff-bracket-container');
 
 export function initStandingsContent() {
 
-  onValue(ref(db, LG.refs.teams), snapshot => {
-    let teams = Object.values(snapshot.val());
-    onValue(ref(db, 'brackets/DE14'), snapshot => {
-      let bracket = snapshot.val();
-      makeLeaderboard(teams);
-      makePlayoffBracket(bracket, teams);
-    }, { onlyOnce: true });
+  onValue(ref(db, session.user.league.refs.teams), (snapshot) => {
+
+    const teams = snapshot.val();
+    const standings = processStandings(teams);
+    makeLeaderboard(standings);
+    // makePlayoffBracket(standings);
+
   });
 }
 
 /* ------------------------------------------------ */
 
-function makeLeaderboard(teamsRaw) {
+function processStandings(teamsRaw) {
 
-  let teams = JSON.parse(JSON.stringify(teamsRaw));
+  const teams = Object.values(teamsRaw);
 
-  // get game stats
-  teams.forEach(team => {
+  let standings = teams.map(team => {
 
     let gameStats = team.stats.games;
     team.games = gameStats.count;
     team.wins = gameStats.wins;
     team.losses = gameStats.losses;
-    team.record = gameStats.record;
-    team.winPct = team.games == 0 ? 0 : gameStats.winPct;
+    team.streak = gameStats.streak;
+    team.winPct = team.games == 0 ? 0 : team.wins / team.games;
 
     let streak = '-';
     if (team.games != 0) {
-      let type = gameStats.streak > 0 ? 'W' : 'L';
-      let count = Math.abs(gameStats.streak);
+      let type = team.streak > 0 ? 'W' : 'L';
+      let count = Math.abs(team.streak);
       streak = type + count;
     }
-
     team.streak = streak;
+
+    return team;
   });
 
-  // sort standings
-  teams.sort((a, b) => {
+  standings.sort((a, b) => {
     if (a.winPct < b.winPct) return 1;
     if (a.winPct > b.winPct) return -1;
     if (a.losses > b.losses) return 1;
@@ -65,40 +64,47 @@ function makeLeaderboard(teamsRaw) {
     return 0;
   });
 
-
-  // add rank (not currently used)
   let rank = 1;
   let prevWinPct = null;
-  teams.forEach((team, index) => {
+  standings.forEach((team, index) => {
     let winPct = team.winPct;
-    let ties = teams.filter(t => t.winPct === winPct).length;
+    let ties = standings.filter(t => t.winPct === winPct).length;
     if (winPct != prevWinPct) rank = index + 1;
     team.rank = ties > 1 ? 'T-' + rank : rank;
     prevWinPct = winPct;
   });
 
   // if no games played, set rank to '-'
-  let teamGames = teams.map(t => t.games);
+  let teamGames = standings.map(t => t.games);
   let totalGames = teamGames.reduce((a, b) => a + b);
   if (totalGames == 0) {
-    teams.forEach(team => {
+    standings.forEach(team => {
       team.rank = '-';
     });
   }
 
+  return standings;
+}
+
+/* ------------------------------------------------ */
+
+function makeLeaderboard(standings) {
+
+  const teams = JSON.parse(JSON.stringify(standings));
+
   // create standings elements
-  let leaderboard = util.createFromTemplate('leaderboard-template');
-  let leaderboardTBody = leaderboard.querySelector('tbody');
+  const leaderboard = util.createFromTemplate('leaderboard-template');
+  const leaderboardTBody = leaderboard.querySelector('tbody');
 
   // populate standings
   teams.forEach((team, index) => {
 
-    let standingsItem = util.createFromTemplate('standings-item-template');
+    const standingsItem = util.createFromTemplate('standings-item-template');
+    standingsItem.id = 'team-' + team.id;
     team.winPct = util.formatNumber(team.winPct, '0.00');
-    team.id = team.nbr;
 
     // populate data items
-    let dataItems = standingsItem.querySelectorAll('[data-item]');
+    const dataItems = standingsItem.querySelectorAll('[data-item]');
     dataItems.forEach(item => {
       let dataItem = item.getAttribute('data-item');
       item.textContent = team[dataItem];
@@ -106,7 +112,7 @@ function makeLeaderboard(teamsRaw) {
 
     let streakClass = team.streak.includes('W') ? 'winStreak' : 'loseStreak';
     if (team.streak != '-') {
-      let streakItem = standingsItem.querySelector('td.streak');
+      const streakItem = standingsItem.querySelector('td.streak');
       streakItem.classList.add(streakClass);
     }
 
@@ -115,6 +121,7 @@ function makeLeaderboard(teamsRaw) {
 
   leaderboardContainer.innerHTML = '';
   leaderboardContainer.appendChild(leaderboard);
+
 }
 
 /* ------------------------------------------------ */
@@ -127,43 +134,10 @@ function makeLeaderboard(teamsRaw) {
 // }
 // updateBracketTemplates();
 
-function makePlayoffBracket(bracket, teamsRaw) {
+function makePlayoffBracket(standings) {
 
-  let teams = JSON.parse(JSON.stringify(teamsRaw));
-
-  // get game stats
-  teams.forEach(team => {
-
-    let gameStats = team.stats.games;
-    team.games = gameStats.count;
-    team.wins = gameStats.wins;
-    team.losses = gameStats.losses;
-    team.record = gameStats.record;
-    team.winPct = team.games == 0 ? 0 : gameStats.winPct;
-
-    let streak = '-';
-    if (team.games != 0) {
-      let type = gameStats.streak > 0 ? 'W' : 'L';
-      let count = Math.abs(gameStats.streak);
-      streak = type + count;
-    }
-
-    team.streak = streak;
-  });
-
-  // sort standings
-  teams.sort((a, b) => {
-    if (a.winPct < b.winPct) return 1;
-    if (a.winPct > b.winPct) return -1;
-    if (a.losses > b.losses) return 1;
-    if (a.losses < b.losses) return -1;
-    if (a.wins < b.wins) return 1;
-    if (a.wins > b.wins) return -1;
-    if (a.id > b.id) return 1;
-    if (a.id < b.id) return -1;
-
-    return 0;
-  });
+  const teams = JSON.parse(JSON.stringify(standings));
+  let bracket = JSON.parse(JSON.stringify(session.cache.bracket));
 
   // replace team names in bracket according to order in standings
   bracket.forEach(game => {
@@ -197,31 +171,31 @@ function makePlayoffBracket(bracket, teamsRaw) {
     matchups[type] = games;
   });
 
-  let bracketWrapper = util.createFromTemplate('bracket-template');
-  let bracketBody = bracketWrapper.querySelector('.cont-card-body');
+  const bracketWrapper = util.createFromTemplate('bracket-template');
+  const bracketBody = bracketWrapper.querySelector('.cont-card-body');
 
   types.forEach(type => {
 
     let bracketType = matchups[type];
-    let bracketDiv = document.createElement('div');
+    const bracketDiv = document.createElement('div');
     bracketDiv.classList.add('bracket', 'd-flex', 'flex-row');
 
     let columns = bracketType.map(game => game.column).filter((v, i, a) => a.indexOf(v) === i);
     columns.forEach(column => {
 
-      let columnDiv = document.createElement('div');
+      const columnDiv = document.createElement('div');
       columnDiv.classList.add('column', 'd-flex', 'flex-column');
       if (column == 1) columnDiv.classList.add('first-column');
 
       let games = bracketType.filter(g => g.column == column);
       games.forEach(game => {
 
-        let gameDiv = util.createFromTemplate('bracket-game-template');
+        const gameDiv = util.createFromTemplate('bracket-game-template');
 
         [1, 2].forEach(i => {
           let team = game['team' + i].name;
           if (team === undefined) team = game['team' + i];
-          let teamDiv = gameDiv.querySelector('.team-item-' + i);
+          const teamDiv = gameDiv.querySelector('.team-item-' + i);
           if (team == 'BYE') teamDiv.classList.add('bye');
           if (team.includes('Winner') || team.includes('Loser')) teamDiv.classList.add('unknown');
           let label = team;
@@ -275,5 +249,4 @@ function makePlayoffBracket(bracket, teamsRaw) {
 
   bracketContainer.innerHTML = '';
   bracketContainer.appendChild(bracketWrapper);
-
 }

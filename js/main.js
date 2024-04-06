@@ -1,4 +1,4 @@
-import { db } from './firebase.js';
+import { db, session } from './firebase.js';
 import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
 import * as util from './util.js';
@@ -20,35 +20,21 @@ const currentSection = () => document.querySelector('section:not(.d-none)');
 /* ------------------------------------------------ */
 
 export const APP = {};
-export const LG = {};
 
 /* ------------------------------------------------ */
 
 document.addEventListener('DOMContentLoaded', initUserContent);
 
-export function initUserContent(e) {
+export async function initUserContent(e) {
 
-  let userLeagueId = localStorage.getItem('userLeagueId');
-  if (userLeagueId == null) {
-    userLeagueId = '202401MONDAY';
-    localStorage.setItem('userLeagueId', userLeagueId);
-  }
+  await session.init();
 
-  // let userLeagueId = '202401MONDAY';
-  // localStorage.setItem('userLeagueId', userLeagueId);
+  initHomeContent();
+  initStandingsContent();
+  initScheduleContent();
 
-  return onValue(ref(db, 'leagues/' + userLeagueId), snapshot => {
-    const league = snapshot.val();
-    Object.assign(LG, league);
-
-    initHomeContent();
-    initStandingsContent();
-    initScheduleContent();
-
-    footerLink.textContent = LG.title;
-    initPageContent();
-
-  }, { onlyOnce: true });
+  footerLink.textContent = session.user.league.title;
+  initPageContent();
 }
 
 /* ------------------------------------------------ */
@@ -56,12 +42,12 @@ export function initUserContent(e) {
 function initPageContent() {
 
   if (APP.initialized) {
-    console.log('Updated page content', LG);
+    console.log('Updated page content', session);
     return;
   }
 
   APP.initialized = true;
-  console.log('Initialized page content', LG);
+  console.log('Initialized page content', session);
 
   // set up nav links
   navLinks.forEach(navLink => {
@@ -85,44 +71,44 @@ function initPageContent() {
   footer.classList.remove('d-none');
 
   // gesture listeners
-  let scrollY = 0;
-  let scrollDir = 0;
-  document.addEventListener('scroll', (e) => {
+  // let scrollY = 0;
+  // let scrollDir = 0;
+  // document.addEventListener('scroll', (e) => {
 
-    if (!currentSection()) return;
-    if (currentSection().id != 'schedule-section') return;
-    let header = currentSection().querySelector('.main-header');
+  //   if (!currentSection()) return;
+  //   if (currentSection().id != 'schedule-section') return;
+  //   let header = currentSection().querySelector('.main-header');
 
-    if (APP.focusedTeam) {
-      if (header.classList.contains('hidden')) {
-        header.classList.remove('hidden');
-      }
-      return;
-    }
+  //   if (APP.focusedTeam) {
+  //     if (header.classList.contains('hidden')) {
+  //       header.classList.remove('hidden');
+  //     }
+  //     return;
+  //   }
 
-    if (!header.firstElementChild) return;
+  //   if (!header.firstElementChild) return;
 
-    let mainBody = currentSection().querySelector('.main-body');
-    let currentY = window.scrollY;
-    let dir = currentY > scrollY ? 1 : -1;
-    let belowTop = mainBody.getBoundingClientRect().top < 0;
-    let aboveBottom = mainBody.getBoundingClientRect().bottom > window.innerHeight;
+  //   let mainBody = currentSection().querySelector('.main-body');
+  //   let currentY = window.scrollY;
+  //   let dir = currentY > scrollY ? 1 : -1;
+  //   let belowTop = mainBody.getBoundingClientRect().top < 0;
+  //   let aboveBottom = mainBody.getBoundingClientRect().bottom > window.innerHeight;
 
-    if (belowTop && aboveBottom) {
-      if (dir != scrollDir) {
-        scrollDir = dir;
-        if (dir == -1) {
-          header.classList.remove('hidden');
-        } else {
-          header.classList.add('hidden');
-        }
-      }
-    } else if (!belowTop) {
-      header.classList.remove('hidden');
-    }
+  //   if (belowTop && aboveBottom) {
+  //     if (dir != scrollDir) {
+  //       scrollDir = dir;
+  //       if (dir == -1) {
+  //         header.classList.remove('hidden');
+  //       } else {
+  //         header.classList.add('hidden');
+  //       }
+  //     }
+  //   } else if (!belowTop) {
+  //     header.classList.remove('hidden');
+  //   }
 
-    scrollY = currentY;
-  });
+  //   scrollY = currentY;
+  // });
 }
 
 /* ------------------------------------------------ */
@@ -155,19 +141,29 @@ const leagueSelectContainer = document.querySelector('#league-select-container')
 
 function initHomeContent() {
 
-  onValue(ref(db, 'leagues'), snapshot => {
-    let leagues = Object.values(snapshot.val());
-    makeLeagueSelect(leagues);
-  }, { onlyOnce: true });
+  // onValue(ref(db, 'leagues'), snapshot => {
+  //   let leagues = Object.values(snapshot.val());
+  //   makeLeagueSelect(leagues);
+  // }, { onlyOnce: true });
+
+  makeLeagueSelect();
+
+
 }
 
 /* ------------------------------------------------ */
 
-function makeLeagueSelect(leagues) {
+function makeLeagueSelect() {
 
   leagueSelectContainer.innerHTML = '';
 
-  let data = JSON.parse(JSON.stringify(leagues));
+  let LG = {
+    season: session.user.league.season,
+    session: session.user.league.session,
+    league: session.user.league.league
+  };
+
+  let leagues = Object.values(session.cache.leagues);
   let selects = ['season', 'session', 'league'];
 
   selects.forEach((s, i) => {
@@ -181,13 +177,13 @@ function makeLeagueSelect(leagues) {
     label.for = s + 'Select';
     label.textContent = s;
 
-    let limLeagues = data;
+    let limLeagues = leagues;
     if (s == 'session') limLeagues = limLeagues.filter(l => l.season == LG.season);
     if (s == 'league') limLeagues = limLeagues.filter(l => l.season == LG.season && l.session == LG.session);
 
     // get options
     let availOptions = limLeagues.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
-    let options = data.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
+    let options = leagues.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
 
     // add options
     options.forEach(o => {
@@ -209,15 +205,13 @@ function makeLeagueSelect(leagues) {
       e.preventDefault();
       LG[s] = e.target.value;
       let leagueId = LG.season + LG.session + LG.league;
-      let leagueData = data.find(l => l.id == leagueId);
 
-      if (leagueData) {
-        localStorage.setItem('userLeagueId', leagueId);
+      if (session.cache.leagues[leagueId]) {
+        session.setUserLeague(leagueId);
         initUserContent();
-
       } else {
         console.log('League selection invalid - reloading options');
-        makeLeagueSelect(data);
+        makeLeagueSelect();
       }
     });
 
