@@ -120,43 +120,9 @@ function makeLeaderboard(teamsRaw) {
     leaderboardTBody.appendChild(standingsItem);
   });
 
-  let oldBody = leaderboardContainer.querySelector('tbody');
-  if (!oldBody) {
-    leaderboardContainer.innerHTML = '';
-    leaderboardContainer.appendChild(leaderboard);
-    return;
-  }
 
-  // update standings rows
-  // let newRows = leaderboardTBody.querySelectorAll('tr');
-  // newRows.forEach(newRow => {
-
-  //   // need to replace old row with new row
-  //   // also, if newRow.dataset.rank_val is different from oldRow.dataset.rank_val, animate the change
-  //   let oldRow = oldBody.querySelector('#' + newRow.id);
-  //   let newRank = newRow.dataset.rank_val;
-  //   let oldRank = oldRow.dataset.rank_val;
-
-  //   // if ranks are different, animate the change
-  //   if (newRank != oldRank) {
-
-  //     console.log('newRank:', newRank, 'oldRank:', oldRank);
-  //     console.log('newRow:', newRow, 'oldRow:', oldRow);
-
-  //     let height = newRow.offsetHeight;
-  //     let diff = parseInt(newRank) - parseInt(oldRank);
-  //     let distance = height * diff;
-
-  //     // animate the old row
-  //     oldRow.style.transform = 'translateY(' + distance + 'px)';
-  //     oldRow.style.transition = 'transform 0.5s';
-
-  //   }
-
-  // });
-
-  // after, replace the whole table body
-  // oldBody.replaceWith(leaderboardTBody);
+  leaderboardContainer.innerHTML = '';
+  leaderboardContainer.appendChild(leaderboard);
 }
 
 /* ------------------------------------------------ */
