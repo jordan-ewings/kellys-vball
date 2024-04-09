@@ -10,6 +10,8 @@ const standingsNav = document.querySelector('#nav-standings');
 const standingsSection = document.querySelector('#standings-section');
 const leaderboardContainer = document.querySelector('#leaderboard-container');
 const bracketContainer = document.querySelector('#playoff-bracket-container');
+const carouselElement = standingsSection.querySelector('.carousel');
+const carouselBS = new bootstrap.Carousel(carouselElement, { interval: false });
 
 /* ------------------------------------------------ */
 
@@ -19,7 +21,6 @@ export function initStandingsContent() {
 
     const teams = snapshot.val();
     makeLeaderboard(teams);
-    // makePlayoffBracket(standings);
 
   });
 }
@@ -39,13 +40,8 @@ function processStandings(teamsRaw) {
     team.streak = gameStats.streak;
     team.winPct = team.games == 0 ? 0 : team.wins / team.games;
 
-    let streak = '-';
-    if (team.games != 0) {
-      let type = team.streak > 0 ? 'W' : 'L';
-      let count = Math.abs(team.streak);
-      streak = type + count;
-    }
-    team.streak = streak;
+    let drinkStats = team.stats.drinks;
+    team.drinks = drinkStats.count;
 
     return team;
   });
@@ -111,18 +107,71 @@ function makeLeaderboard(teamsRaw) {
       item.textContent = team[dataItem];
     });
 
-    let streakClass = team.streak.includes('W') ? 'winStreak' : 'loseStreak';
-    if (team.streak != '-') {
-      const streakItem = standingsItem.querySelector('td.streak');
-      streakItem.classList.add(streakClass);
-    }
-
     leaderboardTBody.appendChild(standingsItem);
+    standingsItem.addEventListener('click', async () => {
+      carouselBS.to(1);
+      await showTeamWeekly(team.id);
+    });
   });
 
 
   leaderboardContainer.innerHTML = '';
   leaderboardContainer.appendChild(leaderboard);
+}
+
+/* ------------------------------------------------ */
+
+async function showTeamWeekly(teamId) {
+
+  let weeks = session.cache.weeks;
+  let team = session.cache.teams[teamId];
+  let teamStats = {};
+
+  for (let week in weeks) {
+    let path = `${session.user.league.refs.stats}/${week}/${teamId}`;
+    let weekStats = await session.getOnce(path);
+    let stats = { ...weekStats.games };
+    stats.nbr = weeks[week].nbr;
+    stats.name = weeks[week].label;
+    stats.drinks = weekStats.drinks.count;
+    teamStats[week] = stats;
+  }
+
+  const teamboard = util.createFromTemplate('leaderboard-template');
+  const contCardTitle = teamboard.querySelector('.cont-card-title span');
+  contCardTitle.textContent = team.name;
+
+  const teamboardHeader = teamboard.querySelector('thead');
+  teamboardHeader.querySelector('.team').textContent = 'WEEK';
+  const teamboardBody = teamboard.querySelector('tbody');
+
+  console.log(teamStats);
+  for (let week in teamStats) {
+
+    let stats = teamStats[week];
+    const row = util.createFromTemplate('standings-item-template');
+    stats.winPct = util.formatNumber(stats.winPct, '0.00');
+    const dataItems = row.querySelectorAll('[data-item]');
+    dataItems.forEach(item => {
+      let dataItem = item.getAttribute('data-item');
+      item.textContent = stats[dataItem];
+    });
+
+    teamboardBody.appendChild(row);
+  }
+
+  const teamboardContainer = document.querySelector('#teamboard-container');
+  teamboardContainer.innerHTML = '';
+
+  const backBtn = document.createElement('button');
+  backBtn.classList.add('btn', 'btn-primary', 'btn-sm', 'mb-3');
+  backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back to Standings';
+  backBtn.addEventListener('click', () => {
+    carouselBS.to(0);
+  });
+
+  teamboardContainer.appendChild(backBtn);
+  teamboardContainer.appendChild(teamboard);
 }
 
 /* ------------------------------------------------ */

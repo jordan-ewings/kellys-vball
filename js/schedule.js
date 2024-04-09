@@ -39,7 +39,7 @@ function makeSchedule(weeks) {
   /* ------------------------------------------------ */
   // prepare carousel
 
-  const schedule = createElement('<div class="carousel slide" data-bs-touch="false"></div>');
+  const schedule = createElement('<div class="carousel slide carousel-fade" data-bs-touch="false"></div>');
   const scheduleInner = createElement('<div class="carousel-inner"></div>');
   schedule.appendChild(scheduleInner);
   scheduleContainer.appendChild(schedule);
@@ -160,44 +160,6 @@ function makeGameItem(d) {
   });
 
   /* ------------------------------------------------ */
-  // set match icons and game status
-
-  let matches = d.matches;
-  Object.keys(matches).forEach(matchId => {
-    let m = matches[matchId];
-    m.winner = (m.winner === undefined || m.winner === null || m.winner === '') ? null : m.winner;
-    m.status = (m.winner === null) ? 'PRE' : 'POST';
-  });
-
-  let teamItems = gameItem.querySelectorAll('.team-item');
-
-  const formatWinners = (matches) => {
-    Object.keys(matches).forEach(matchId => {
-      let match = matches[matchId];
-      let winner = (match.winner === undefined || match.winner === null || match.winner === '') ? null : match.winner;
-      teamItems.forEach(ti => {
-        let teamId = ti.dataset.team_id;
-        let icon = ti.querySelector('i.result-' + matchId);
-        let isWinner = (winner === teamId);
-        icon.classList.toggle('fa-circle-check', isWinner);
-        icon.classList.toggle('fa-circle', !isWinner);
-      });
-    });
-  };
-
-  const formatGameStatus = (matches) => {
-    let types = Object.values(matches).map(m => m.status);
-    let gameStatus = 'PRE';
-    if (types.includes('POST')) gameStatus = 'IN';
-    if (!types.includes('PRE')) gameStatus = 'POST';
-    gameItem.classList.remove('pre', 'in', 'post');
-    gameItem.classList.add(gameStatus.toLowerCase());
-  };
-
-  formatWinners(matches);
-  formatGameStatus(matches);
-
-  /* ------------------------------------------------ */
   // set up game item form and collapse
 
   const gameItemForm = gameItem.cloneNode(true);
@@ -228,45 +190,106 @@ function makeGameItem(d) {
   /* ------------------------------------------------ */
   // prepare match data
 
+  let matches = d.matches;
   let newMatches = JSON.parse(JSON.stringify(matches));
+  let matchesRef = ref(db, session.user.league.refs.games + '/' + d.week + '/' + d.id + '/matches');
+
+  onValue(matchesRef, snapshot => {
+
+    matches = snapshot.val();
+    newMatches = JSON.parse(JSON.stringify(matches));
+    formatWinners(matches);
+    formatGameStatus(matches);
+    resetForm();
+  });
+
+  /* ------------------------------------------------ */
+
+  let teamItems = gameItem.querySelectorAll('.team-item');
+  let teamItemsForm = gameItemForm.querySelectorAll('.team-item');
+
+  const formatWinners = (matches) => {
+    Object.keys(matches).forEach(matchId => {
+      let match = matches[matchId];
+      teams.forEach((teamId, index) => {
+        let icon = teamItems[index].querySelector('i.result-' + matchId);
+        let iconForm = teamItemsForm[index].querySelector('i.result-' + matchId);
+        let isWinner = (match.winner) ? match.winner == teamId : false;
+        icon.classList.toggle('fa-circle-check', isWinner);
+        icon.classList.toggle('fa-circle', !isWinner);
+        iconForm.classList.toggle('fa-circle-check', isWinner);
+        iconForm.classList.toggle('fa-solid', isWinner);
+        iconForm.classList.toggle('fa-circle', !isWinner);
+      });
+    });
+  };
+
+  const formatGameStatus = (matches) => {
+    let types = Object.values(matches).map(m => m.status);
+    let gameStatus = 'PRE';
+    if (types.includes('POST')) gameStatus = 'IN';
+    if (!types.includes('PRE')) gameStatus = 'POST';
+    gameItem.classList.remove('pre', 'in', 'post');
+    gameItem.classList.add(gameStatus.toLowerCase());
+    gameItemForm.classList.remove('pre', 'in', 'post');
+    gameItemForm.classList.add(gameStatus.toLowerCase());
+  };
+
+  const resetForm = () => {
+
+    gameItemForm.classList.remove('changed');
+    saveBtn.disabled = true;
+
+    if (gameItemForm.classList.contains('pending')) {
+      gameItemForm.classList.remove('pending');
+    } else {
+      if (gameItemForm.classList.contains('show')) {
+        let alert = util.createAlert('danger', 'Game updated by another user.');
+        alert.querySelector('.btn-close').remove();
+        let alertCol = gameItemForm.querySelector('.alert-col');
+        alertCol.innerHTML = '';
+        alertCol.appendChild(alert);
+      } else {
+        if (gameItemForm.querySelector('.alert')) {
+          bootstrap.Alert.getOrCreateInstance(gameItemForm.querySelector('.alert')).close();
+        }
+      }
+    }
+  };
 
   /* ------------------------------------------------ */
   // handle match/team form selections
 
-  gameItemForm.querySelectorAll('.team-item').forEach(ti => {
+  teamItemsForm.forEach(ti => {
 
-    const tiForm = ti.cloneNode(true);
-    const teamId = tiForm.dataset.team_id;
-
+    const teamId = ti.dataset.team_id;
     Object.keys(matches).forEach(matchId => {
-      const icon = tiForm.querySelector('i.result-' + matchId);
+      const icon = ti.querySelector('i.result-' + matchId);
       icon.addEventListener('click', (e) => {
-        gameItemForm.querySelectorAll('i.result-' + matchId).forEach(mi => {
-          if (mi != icon) {
-            mi.classList.remove('fa-circle-check');
-            mi.classList.add('fa-circle');
-          } else {
-            mi.classList.toggle('fa-circle-check');
-            mi.classList.toggle('fa-circle');
-          }
-        });
 
-        // update newMatches
-        let winnerId = (icon.classList.contains('fa-circle-check')) ? teamId : null;
-        newMatches[matchId].winner = winnerId;
-        newMatches[matchId].status = (winnerId === null) ? 'PRE' : 'POST';
+        if (gameItemForm.querySelector('.alert')) {
+          bootstrap.Alert.getOrCreateInstance(gameItemForm.querySelector('.alert')).close();
+        }
 
-        // enable save button if game has changed
+        let match = newMatches[matchId];
+        let isWinner = (match.winner) ? match.winner == teamId : false;
+        if (isWinner) {
+          delete match.winner;
+          match.status = 'PRE';
+        } else {
+          match.winner = teamId;
+          match.status = 'POST';
+        }
+
+        formatWinners(newMatches);
+        formatGameStatus(newMatches);
         let gameChanged = JSON.stringify(matches) != JSON.stringify(newMatches);
         gameItemForm.classList.toggle('changed', gameChanged);
         saveBtn.disabled = !gameChanged;
-        saveBtn.classList.toggle('btn-outline-primary', !gameChanged);
-        saveBtn.classList.toggle('btn-primary', gameChanged);
         console.log('newMatches:', newMatches);
       });
     });
 
-    ti.replaceWith(tiForm);
   });
 
   /* ------------------------------------------------ */
@@ -276,56 +299,9 @@ function makeGameItem(d) {
     e.preventDefault();
     gameItemForm.classList.add('pending');
     await handleMatchUpdate(d, newMatches).then(() => {
-      gameItemForm.classList.remove('pending');
       collapseForm.hide();
       collapseItem.show();
     });
-  });
-
-  /* ------------------------------------------------ */
-  // handle form reset
-
-  const resetForm = (matches) => {
-
-    gameItemForm.classList.remove('changed');
-    saveBtn.disabled = true;
-    saveBtn.classList.remove('btn-primary');
-    saveBtn.classList.add('btn-outline-primary');
-
-    // reset matches
-    newMatches = JSON.parse(JSON.stringify(matches));
-
-    // reset match icons
-    Object.keys(matches).forEach(matchId => {
-      let match = matches[matchId];
-      let winner = match.winner;
-      let teamItemsForm = gameItemForm.querySelectorAll('.team-item');
-      teamItemsForm.forEach(ti => {
-        let teamId = ti.dataset.team_id;
-        let icon = ti.querySelector('i.result-' + matchId);
-        let isWinner = (winner === teamId);
-        icon.classList.toggle('fa-circle-check', isWinner);
-        icon.classList.toggle('fa-circle', !isWinner);
-      });
-    });
-
-  };
-
-
-  /* ------------------------------------------------ */
-  // update match icons and game status on change
-
-  let gamePath = session.user.league.refs.games + '/' + d.week + '/' + d.id;
-  let matchesRef = ref(db, gamePath + '/matches');
-
-  onChildChanged(matchesRef, snapshot => {
-
-    let match = snapshot.val();
-    let matchId = snapshot.key;
-    matches[matchId] = match;
-    formatWinners(matches);
-    formatGameStatus(matches);
-    resetForm(matches);
   });
 
   /* ------------------------------------------------ */
@@ -341,7 +317,12 @@ function makeGameItem(d) {
   gameItemForm.querySelector('.stat-col').addEventListener('click', (e) => {
     collapseForm.hide();
     collapseItem.show();
-    resetForm(matches);
+
+    newMatches = JSON.parse(JSON.stringify(matches));
+    formatWinners(matches);
+    formatGameStatus(matches);
+    resetForm();
+
   });
 
   const frag = document.createDocumentFragment();
@@ -411,30 +392,6 @@ async function handleMatchUpdate(d, newMatches) {
   // push updates to database
   console.log(updates);
   return update(ref(db), updates);
-}
-
-
-/* ------------------------------------------------ */
-
-function showGameUpdateAlert(gameItemForm, game) {
-
-  // alert message
-  // let formFooter = gameItemForm.querySelector('.form-footer');
-  // formFooter.innerHTML = '';
-
-  let msg = '<span>Game updated by another user. Close and re-open this form to make additional updates.</span>';
-
-  let alert = util.createAlert('danger', msg);
-  alert.querySelector('.btn-close').remove();
-  let alertMsg = alert.querySelector('.me-auto');
-  alertMsg.style.fontSize = '0.95rem';
-  alertMsg.style.fontWeight = '400';
-  // formFooter.appendChild(alert);
-
-  // close form icon
-  let editIcon = gameItemForm.querySelector('.edit-icon');
-  editIcon.classList.add('text-danger', 'fa-fade');
-  editIcon.style.fontSize = '1.5rem';
 }
 
 /* ------------------------------------------------ */

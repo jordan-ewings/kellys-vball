@@ -3,7 +3,7 @@
 export function createAlert(type, msg) {
 
   let alert = document.createElement('div');
-  alert.classList.add('alert', 'd-flex', 'align-items-center', 'm-0');
+  alert.classList.add('alert', 'd-flex', 'align-items-center', 'm-0', 'fade', 'show');
   alert.classList.add('alert-' + type);
   alert.setAttribute('role', 'alert');
 
@@ -17,9 +17,7 @@ export function createAlert(type, msg) {
   closeBtn.classList.add('btn-close');
   closeBtn.classList.add('btn-sm');
   closeBtn.setAttribute('type', 'button');
-  closeBtn.addEventListener('click', () => {
-    alert.remove();
-  });
+  closeBtn.setAttribute('data-bs-dismiss', 'alert');
   alert.appendChild(closeBtn);
 
   return alert;

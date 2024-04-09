@@ -61,8 +61,16 @@
       <div class="main-header mb-3 mt-1">
       </div>
       <div class="main-body">
-        <div id="leaderboard-container"></div>
-        <div id="playoff-bracket-container"></div>
+        <div class="carousel slide">
+          <div class="carousel-inner">
+            <div class="carousel-item active">
+              <div id="leaderboard-container"></div>
+            </div>
+            <div class="carousel-item">
+              <div id="teamboard-container"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -144,8 +152,9 @@
     <!-- game item form footer -->
     <template id="game-item-form-footer-template">
       <div class="form-footer row g-0">
-        <div class="offset-8 col-4 ps-3 pe-1">
-          <button id="saveBtn" type="button" class="btn w-100 btn-outline-primary" disabled>Submit</button>
+        <div class="col-8 alert-col"></div>
+        <div class="col-4 ps-3 pe-1">
+          <button id="saveBtn" type="button" class="btn w-100 btn-primary" disabled>Submit</button>
         </div>
       </div>
     </template>
@@ -167,12 +176,70 @@
                   <th class="wins">W</th>
                   <th class="losses">L</th>
                   <th class="winPct">PCT</th>
-                  <th class="streak">STRK</th>
+                  <th class="detail"></th>
                 </tr>
               </thead>
               <tbody>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- standings item -->
+    <template id="standings-item-template">
+      <tr class="standings-item">
+        <td class="team" data-column="TEAM">
+          <div class="d-flex justify-content-start align-items-center column-gap-2">
+            <span data-item="nbr"></span>
+            <span data-item="name"></span>
+          </div>
+        </td>
+        <td class="wins" data-column="W">
+          <div>
+            <span data-item="wins"></span>
+          </div>
+        </td>
+        <td class="losses" data-column="L">
+          <div>
+            <span data-item="losses"></span>
+          </div>
+        </td>
+        <td class="winPct" data-column="PCT">
+          <div>
+            <span data-item="winPct"></span>
+          </div>
+        </td>
+        <td class="detail" data-column="DETAIL">
+          <div class="d-flex justify-content-end align-items-center">
+            <i class="fa-solid fa-chevron-right"></i>
+          </div>
+        </td>
+      </tr>
+    </template>
+
+    <!-- team modal -->
+    <template id="team-drinks-template">
+      <div class="team-drinks cont-card">
+        <div class="cont-card-title">
+          <span>BEVERAGES</span>
+        </div>
+        <div class="cont-card-body">
+
+        </div>
+      </div>
+    </template>
+
+    <!-- week div (drinks row)-->
+    <template id="week-drinks-template">
+      <div class="week-div">
+        <span class="week-label"></span>
+        <div class="week-input">
+          <span class="week-value"></span>
+          <div class="stepper btn-group">
+            <button type="button" class="btn btn-sm decrement">-</button>
+            <button type="button" class="btn btn-sm increment">+</button>
           </div>
         </div>
       </div>
@@ -216,37 +283,7 @@
     </template>
 
 
-    <!-- standings item -->
-    <template id="standings-item-template">
-      <tr class="standings-item">
-        <td class="team" data-column="TEAM">
-          <div class="d-flex justify-content-start align-items-center column-gap-2">
-            <span data-item="nbr"></span>
-            <span data-item="name"></span>
-          </div>
-        </td>
-        <td class="wins" data-column="W">
-          <div>
-            <span data-item="wins"></span>
-          </div>
-        </td>
-        <td class="losses" data-column="L">
-          <div>
-            <span data-item="losses"></span>
-          </div>
-        </td>
-        <td class="winPct" data-column="PCT">
-          <div>
-            <span data-item="winPct"></span>
-          </div>
-        </td>
-        <td class="streak" data-column="STRK">
-          <div>
-            <span data-item="streak"></span>
-          </div>
-        </td>
-      </tr>
-    </template>
+
 
   </div>
 
