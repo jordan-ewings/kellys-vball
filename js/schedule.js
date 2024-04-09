@@ -307,14 +307,14 @@ function makeGameItem(d) {
   /* ------------------------------------------------ */
   // handle game item form show/hide
 
-  gameItem.querySelector('.stat-col').addEventListener('click', (e) => {
+  gameItem.querySelector('.stat-col [role="button"]').addEventListener('click', (e) => {
     collapseItem.hide();
     collapseForm.show();
     console.log('matches:', matches);
     console.log('newMatches:', newMatches);
   });
 
-  gameItemForm.querySelector('.stat-col').addEventListener('click', (e) => {
+  gameItemForm.querySelector('.stat-col [role="button"]').addEventListener('click', (e) => {
     collapseForm.hide();
     collapseItem.show();
 

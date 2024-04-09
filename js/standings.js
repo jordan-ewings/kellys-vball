@@ -1,6 +1,6 @@
 import * as util from './util.js';
 import { db, session } from './firebase.js';
-import { ref, onValue, set } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+import { ref, onValue, set, update, runTransaction } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
 import { APP } from './main.js';
 
@@ -169,6 +169,16 @@ function makeStats() {
   const carouselInst = new bootstrap.Carousel(standingsCarousel, { interval: false });
   const backBtn = createElement('<button class="btn btn-back"><i class="fas fa-chevron-left"></i> Back</button>');
   backBtn.addEventListener('click', () => {
+    // clear any changes from current week
+    const statsCard = carouselInner.querySelector('.carousel-item.active .cont-card');
+    statsCard.querySelectorAll('.week-stats-item.changed').forEach(row => {
+      let drinksCount = parseInt(row.querySelector('.drinks-count').dataset.orig);
+      row.querySelector('.drinks-count').textContent = drinksCount;
+      row.classList.remove('changed');
+    });
+    statsCard.querySelector('.btn-save').classList.add('disabled');
+
+
     carouselInst.to(0);
     document.querySelector('nav').classList.remove('hidden');
     mainHeader.classList.add('hidden');
@@ -207,9 +217,7 @@ function makeStats() {
               <thead>
                 <tr>
                   <th class="team">TEAM</th>
-                  <th class="wins">W</th>
-                  <th class="losses">L</th>
-                  <th class="drinks">DRK</th>
+                  <th class="drinks">DRINKS</th>
                 </tr>
               </thead>
               <tbody>
@@ -221,7 +229,7 @@ function makeStats() {
     );
 
     const carouselItem = createElement(
-      `<div class="carousel-item" data-week="${week}" id="week-${week}-stats"></div>`
+      `<div class="carousel-item week-stats" data-week="${week}" id="week-${week}-stats"></div>`
     );
 
     carouselItem.appendChild(statsCard);
@@ -231,11 +239,16 @@ function makeStats() {
     menuItem.addEventListener('click', () => {
       carouselInst.to(weekNbr);
       mainHeader.classList.remove('hidden');
-      // hide navbar
       document.querySelector('nav').classList.add('hidden');
       mainHeaderTitle.querySelector('span').textContent = weekLabel;
       util.offsetScrollIntoView(carouselItem);
     });
+
+    const saveBtn = createElement(
+      `<button class="btn btn-save disabled">Save</button>`
+    );
+    statsCard.insertBefore(saveBtn, statsCard.querySelector('.cont-card-body'));
+
 
     // populate stats for the week
     const statsBody = statsCard.querySelector('tbody');
@@ -254,11 +267,37 @@ function makeStats() {
                 <span class="team-name">${team.name}</span>
               </div>
             </td>
-            <td class="wins">${stats.games.wins}</td>
-            <td class="losses">${stats.games.losses}</td>
-            <td class="drinks">${stats.drinks.count}</td>
+            <td class="drinks">
+              <div class="drinks-count">${stats.drinks.count}</div>
+              <div class="drinks-input stepper-container">
+                <div class="stepper">
+                  <div role="button" class="stepper-btn stepper-down"><span>-</span></div>
+                  <div class="separator"></div>
+                  <div role="button" class="stepper-btn stepper-up"><span>+</span></div>
+                </div>
+              </div>
+            </td>
           </tr>`
         );
+
+        let drinksCount = stats.drinks.count;
+        let drinksCountOrig = drinksCount;
+        const drinksInput = statsRow.querySelector('.drinks-input');
+        const drinksTD = statsRow.querySelector('.drinks-count');
+        drinksTD.dataset.orig = drinksCountOrig;
+        drinksInput.querySelector('.stepper-down').addEventListener('click', () => {
+          drinksCount = Math.max(0, drinksCount - 1);
+          drinksTD.textContent = drinksCount;
+          statsRow.classList.toggle('changed', drinksCount != drinksCountOrig);
+          saveBtn.classList.toggle('disabled', !statsRow.classList.contains('changed'));
+        });
+
+        drinksInput.querySelector('.stepper-up').addEventListener('click', () => {
+          drinksCount++;
+          drinksTD.textContent = drinksCount;
+          statsRow.classList.toggle('changed', drinksCount != drinksCountOrig);
+          saveBtn.classList.toggle('disabled', !statsRow.classList.contains('changed'));
+        });
 
         let row = statsBody.querySelector(`[data-team="${team.id}"]`);
         if (row) {
@@ -266,6 +305,31 @@ function makeStats() {
         } else {
           statsBody.appendChild(statsRow);
         }
+      });
+    });
+
+    saveBtn.addEventListener('click', () => {
+      const statsBody = statsCard.querySelector('tbody');
+      const updates = {};
+      statsBody.querySelectorAll('.week-stats-item.changed').forEach(row => {
+        let teamId = row.dataset.team;
+        let drinks = parseInt(row.querySelector('.drinks-count').textContent);
+        let drinksOrig = parseInt(row.querySelector('.drinks-count').dataset.orig);
+        let path = `${session.user.league.refs.stats}/${week}/${teamId}/drinks/count`;
+        updates[path] = drinks;
+
+        // update team's total drinks
+        let team = teams[teamId];
+        let teamPath = `${session.user.league.refs.teams}/${teamId}/stats/drinks/count`;
+        runTransaction(ref(db, teamPath), currentDrinks => {
+          let newDrinks = currentDrinks + drinks - drinksOrig;
+          return newDrinks;
+        });
+      });
+
+      console.log('updates', updates);
+      update(ref(db), updates).then(() => {
+        saveBtn.classList.add('disabled');
       });
     });
 

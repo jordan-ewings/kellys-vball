@@ -51,7 +51,7 @@
 }
 
 :root {
-  --body-max-width: 700px;
+  --body-max-width: 600px;
 }
 
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
@@ -98,10 +98,12 @@ nav {
 nav .navbar-nav {
   flex-direction: row !important;
   justify-content: space-around;
+  /* max-width: 600px;
+  margin: 0 auto; */
 }
 
 nav a {
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   font-size: 1rem !important;
   padding-top: 0 !important;
   padding-bottom: .3rem !important;
@@ -138,6 +140,7 @@ footer {
 
 footer a {
   color: var(--ios-text);
+  font-weight: 500;
   text-decoration: underline;
   text-decoration-color: var(--ios-blue);
   text-underline-offset: .5rem;
@@ -201,6 +204,15 @@ footer a {
   padding: .8rem 0;
 }
 
+/* ---------------------------------- */
+
+/* #schedule-container,
+#league-select-container {
+  max-width: 600px;
+  margin: 0 auto;
+} */
+
+/* #standings */
 /* ---------------------------------- */
 
 .table td,
@@ -295,6 +307,10 @@ footer a {
   border-radius: 12px;
 }
 
+#league-select-container select:hover {
+  cursor: pointer;
+}
+
 #league-select-container select:focus {
   outline: none;
   border: none;
@@ -363,41 +379,72 @@ td.team .team-name {
   color: var(--ios-text-primary);
 }
 
-.week-div .week-input {
+td.drinks:has(.drinks-count) {
+  padding: .4rem .4rem !important;
   display: flex;
+  flex-direction: row !important;
+  justify-content: end;
+  align-items: center;
+}
+
+td.drinks .drinks-count {
+  color: var(--ios-text-secondary);
+  font-size: 1rem;
+  font-weight: 400;
+  padding: 0 .75rem 0 .5rem;
+}
+
+.week-stats-item.changed td.drinks .drinks-count {
+  color: var(--ios-blue);
+  font-weight: 600;
+}
+
+.drinks-input {
+  background-color: var(--ios-bg-tertiary);
+  border-radius: 10px;
+  width: fit-content;
+  height: 100%;
+}
+
+.drinks-input .stepper {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
 }
 
-.week-div .week-value {
-  font-size: 1rem;
-  font-weight: 400;
-  color: var(--ios-text-primary);
+.stepper .separator {
+  border: none;
+  border-left: 1px solid var(--ios-separator-nonopaque);
+  height: 1.5rem;
 }
 
-.week-div .stepper.btn-group {
-  margin-left: 1rem;
-}
-
-.stepper.btn-group .btn:first-child {
-  border-radius: 10px 0 0 10px;
-  border-right: 1px solid var(--ios-separator-nonopaque-light) !important;
-}
-
-.stepper.btn-group .btn:last-child {
-  border-radius: 0 10px 10px 0;
-  border-left: 1px solid var(--ios-separator-nonopaque-light) !important;
-}
-
-.stepper.btn-group .btn {
-  padding: 0 1rem;
-  font-size: 1.5rem;
+.stepper div[role="button"] {
+  padding: 0 1.2rem;
+  font-size: 1.4rem;
   font-weight: 300;
-  line-height: 1.5;
-  text-align: center;
-  vertical-align: middle;
-  background-color: var(--ios-bg-tertiary);
   color: var(--ios-text-primary);
+  flex-grow: 1;
+}
+
+.stepper div[role="button"] span {
+  display: block;
+  line-height: 1.5;
+}
+
+
+
+.week-stats button.btn-save {
+  color: var(--ios-text-primary);
+  font-size: .9rem;
+  font-weight: 500;
+  padding: .5rem .5rem;
+  border: none;
+  background: linear-gradient(90deg, var(--ios-blue) 0%, var(--ios-blue) 100%);
+  border-radius: 10px;
+  width: 100%;
+  margin: 0 1rem .5rem 0;
 }
 
 .btn.btn-back {
@@ -498,11 +545,11 @@ td.team .team-name {
   border-right: .8px solid var(--ios-separator-opaque);
 }
 
-.game-item .team-item:hover {
+.game-item .team-name:hover {
   cursor: pointer;
 }
 
-.game-item .stat-col:hover i {
+.game-item-form i.result:hover {
   cursor: pointer;
 }
 

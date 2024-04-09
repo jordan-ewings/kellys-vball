@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', initUserContent);
 
 export async function initUserContent(e) {
 
+  configureStyle();
+
   await session.init();
 
   initHomeContent();
@@ -35,6 +37,43 @@ export async function initUserContent(e) {
 
   footerLink.textContent = session.user.league.title;
   initPageContent();
+}
+
+/* ------------------------------------------------ */
+
+function configureStyle() {
+
+  let mainHeader = document.querySelector('.main-header');
+  let insetTop = window.getComputedStyle(mainHeader).getPropertyValue('top');
+  if (insetTop == '0px') {
+    let style = document.createElement('style');
+    document.head.appendChild(style);
+    style.sheet.insertRule(`
+      .main-header::before {
+        background-color: var(--ios-bg-primary);
+      }
+    `, 0);
+  }
+
+  // store device type in APP variable
+  APP.device = 'desktop';
+  if (window.innerWidth < 768) APP.device = 'mobile';
+  if (window.innerWidth >= 768 && window.innerWidth < 992) APP.device = 'tablet';
+
+  // set max widths if desktop
+
+  // if (APP.device == 'desktop') {
+  //   let style = document.createElement('style');
+  //   document.head.appendChild(style);
+  //   style.sheet.insertRule(`
+  //     .main-header::before {
+  //       max-width: 992px;
+  //     }
+  //     .main-body {
+  //       max-width: 992px;
+  //     }
+  //   `, 0);
+  // }
 }
 
 /* ------------------------------------------------ */
