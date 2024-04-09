@@ -107,7 +107,7 @@ function makeLeaderboard() {
                   <th class="wins">W</th>
                   <th class="losses">L</th>
                   <th class="winPct">PCT</th>
-                  <th class="drinks">DRINKS</th>
+                  <th class="drinks">DRK</th>
                 </tr>
               </thead>
               <tbody>
@@ -209,7 +209,7 @@ function makeStats() {
                   <th class="team">TEAM</th>
                   <th class="wins">W</th>
                   <th class="losses">L</th>
-                  <th class="drinks">DRINKS</th>
+                  <th class="drinks">DRK</th>
                 </tr>
               </thead>
               <tbody>
