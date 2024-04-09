@@ -184,6 +184,13 @@ function showContent(name) {
   });
 
   footer.classList.toggle('fixed-bottom', name == 'index');
+
+  // if schedule, scroll into view active week button
+  if (name == 'schedule') {
+    let weekFilterContainer = section.querySelector('#week-filter-container');
+    let weekBtn = weekFilterContainer.querySelector('button.active');
+    weekBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
 }
 
 /* ------------------------------------------------ */

@@ -245,7 +245,7 @@ function makeStats() {
     });
 
     const saveBtn = createElement(
-      `<button class="btn btn-save disabled">Save</button>`
+      `<button class="btn btn-save disabled">Submit</button>`
     );
     statsCard.insertBefore(saveBtn, statsCard.querySelector('.cont-card-body'));
 
@@ -337,7 +337,7 @@ function makeStats() {
         saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
         saveBtn.classList.add('save-success');
         setTimeout(() => {
-          saveBtn.innerHTML = 'Save';
+          saveBtn.innerHTML = 'Submit';
           saveBtn.classList.remove('save-success');
         }, 2000);
       });
