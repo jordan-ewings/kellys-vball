@@ -38,7 +38,7 @@ export function offsetScrollIntoView(element) {
   // get '.main-header' height of the section being displayed (i.e., doesn't have 'd-none' class)
   let liveSection = document.querySelector('section:not(.d-none)');
   let header = liveSection.querySelector('.main-header');
-  let headerHeight = window.getComputedStyle(header, '::after');
+  let headerHeight = window.getComputedStyle(header, '::before');
   if (headerHeight) {
     headerHeight = parseInt(headerHeight.height);
   } else {

@@ -122,6 +122,11 @@ nav #navbar-border {
   transition: all 0.2s ease-in-out;
 }
 
+nav.hidden {
+  display: none;
+
+}
+
 footer {
   margin-top: 2rem;
   padding-top: 1rem;
@@ -147,37 +152,66 @@ footer a {
   background-color: var(--ios-bg-primary);
 }
 
-.main-header::after {
+.main-header::before {
   content: "";
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: calc(100% + env(safe-area-inset-top));
-  z-index: -1000;
+  z-index: -1;
+  opacity: 1;
   background-color: rgba(0, 0, 0, .7);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px) !important;
+  backdrop-filter: blur(10px) !important;
 }
 
-.main-header:has(> *) {
+.main-header {
   position: sticky;
   top: env(safe-area-inset-top);
   left: 0;
   border-bottom: 1px solid var(--ios-bg-primary);
-  z-index: 1080;
   opacity: 1;
-  transition: all 0.2s ease-in-out;
+  z-index: 1001;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 100%;
 }
 
 .main-header.hidden {
-  opacity: 0;
-  transform: translateY(-100%);
-  transition: all 0.2s ease-in-out;
+  display: none;
+  border-bottom: none;
 }
+
+.main-header .btn-back {
+  position: absolute;
+  left: 0;
+  padding-left: .5rem;
+}
+
+.main-header .main-header-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ios-text);
+  text-align: center;
+}
+
+
+
+/* .main-header:has(>*) {
+  position: sticky;
+  top: env(safe-area-inset-top);
+  left: 0;
+  border-bottom: 1px solid var(--ios-bg-primary);
+  opacity: 1;
+  z-index: 1000;
+  background-color: inherit;
+} */
 
 .main-header>* {
   padding: .8rem 0;
+
 }
 
 /* ---------------------------------- */
@@ -258,6 +292,7 @@ footer a {
   justify-content: center;
   align-items: center;
   margin: 0 .5rem;
+  flex-grow: 1;
 }
 
 #league-select-container .form-group {
@@ -305,14 +340,14 @@ td.team {
   font-size: .95rem;
 }
 
-td.team span[data-item="nbr"] {
+td.team .team-nbr {
   color: var(--ios-blue) !important;
   text-align: right !important;
   min-width: 1.1rem;
   font-weight: 500;
 }
 
-td.team span[data-item="name"] {
+td.team .team-name {
   color: var(--ios-text);
 }
 

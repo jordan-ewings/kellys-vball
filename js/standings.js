@@ -92,26 +92,50 @@ function makeLeaderboard() {
   onValue(ref(db, session.user.league.refs.teams), snapshot => {
 
     const teams = processStandings(snapshot.val());
-    const leaderboard = util.createFromTemplate('leaderboard-template');
-    const leaderboardTBody = leaderboard.querySelector('tbody');
 
-    // populate standings
+    const leaderboard = createElement(
+      `<div class="cont-card">
+        <div class="cont-card-title">
+          <span>LEADERBOARD</span>
+        </div>
+        <div class="cont-card-body">
+          <div class="table-responsive">
+            <table class="table table-borderless align-middle text-nowrap m-0">
+              <thead>
+                <tr>
+                  <th class="team">TEAM</th>
+                  <th class="wins">W</th>
+                  <th class="losses">L</th>
+                  <th class="winPct">PCT</th>
+                  <th class="drinks">DRINKS</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>`
+    );
+
     teams.forEach((team, index) => {
 
-      const standingsItem = util.createFromTemplate('standings-item-template');
-      standingsItem.id = 'team-' + team.id;
-      standingsItem.dataset.rank_val = index + 1;
-      standingsItem.dataset.rank_str = team.rank;
-      team.winPct = util.formatNumber(team.winPct, '0.00');
+      const standingsItem = createElement(
+        `<tr class="leaderboard-item" id="team-${team.id}" data-rank_val="${index + 1}" data-rank_str="${team.rank}">
+          <td class="team">
+            <div class="d-flex align-items-center column-gap-2">
+              <span class="team-nbr">${team.nbr}</span>
+              <span class="team-name">${team.name}</span>
+            </div>
+          </td>
+          <td class="wins">${team.wins}</td>
+          <td class="losses">${team.losses}</td>
+          <td class="winPct">${util.formatNumber(team.winPct, '0.000')}</td>
+          <td class="drinks">${team.drinks}</td>
+        </tr>`
+      );
 
-      // populate data items
-      const dataItems = standingsItem.querySelectorAll('[data-item]');
-      dataItems.forEach(item => {
-        let dataItem = item.getAttribute('data-item');
-        item.textContent = team[dataItem];
-      });
-
-      leaderboardTBody.appendChild(standingsItem);
+      leaderboard.querySelector('tbody').appendChild(standingsItem);
     });
 
 
@@ -128,41 +152,77 @@ function makeStats() {
   let teams = session.cache.teams;
   statsContainer.innerHTML = '';
 
-  const card = createElement('<div class="cont-card"></div>');
-  statsContainer.appendChild(card);
+  const card = createElement(
+    `<div class="cont-card">
+      <div class="cont-card-title">
+        <span>STATS</span>
+      </div>
+      <div class="cont-card-body week-menu">
+      </div>
+    </div>`
+  );
 
-  const cardHeader = createElement('<div class="cont-card-title"><span>STATS</span></div>');
-  const cardBody = createElement('<div class="week-menu cont-card-body"></div>');
-  card.appendChild(cardHeader);
-  card.appendChild(cardBody);
+  statsContainer.appendChild(card);
+  const cardBody = card.querySelector('.cont-card-body');
 
   const carouselInner = standingsCarousel.querySelector('.carousel-inner');
   const carouselInst = new bootstrap.Carousel(standingsCarousel, { interval: false });
-  const backBtn = createElement('<button class="btn btn-back d-none"><i class="fas fa-chevron-left"></i> Back</button>');
+  const backBtn = createElement('<button class="btn btn-back"><i class="fas fa-chevron-left"></i> Back</button>');
   backBtn.addEventListener('click', () => {
     carouselInst.to(0);
-    backBtn.classList.add('d-none');
+    document.querySelector('nav').classList.remove('hidden');
+    mainHeader.classList.add('hidden');
     statsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
+
+  const mainHeaderTitle = createElement(
+    `<div class="main-header-title">
+      <span></span>
+    </div>`
+  );
+
+  mainHeader.classList.add('hidden');
   mainHeader.appendChild(backBtn);
+  mainHeader.appendChild(mainHeaderTitle);
 
   // for each week, create a row that, when clicked, will display the week's stats
   for (let week in weeks) {
 
     const weekNbr = weeks[week].nbr;
     const weekLabel = weeks[week].label;
+    const menuItem = createElement(
+      `<div class="week-menu-item" data-week="${week}" role="button">
+        <div class="week-menu-item-header">${weekLabel}</div>
+        <div class="week-menu-item-detail"><i class="fas fa-chevron-right"></i></div>
+      </div>`
+    );
 
-    const menuItem = createElement(`<div class="week-menu-item" data-week="${week}" role="button"></div>`);
-    let itemHeader = createElement(`<div class="week-menu-item-header">${weekLabel}</div>`);
-    let itemDetail = createElement('<div class="week-menu-item-detail"><i class="fas fa-chevron-right"></i></div>');
-
-    menuItem.appendChild(itemHeader);
-    menuItem.appendChild(itemDetail);
     cardBody.appendChild(menuItem);
 
-    const carouselItem = createElement(`<div class="carousel-item" data-week="${week}" id="week-${week}-stats"></div>`);
-    const statsCard = util.createFromTemplate('week-stats-template');
-    statsCard.querySelector('.cont-card-title span').textContent = weekLabel;
+    const statsCard = createElement(
+      `<div class="cont-card">
+        <div class="cont-card-body">
+          <div class="table-responsive">
+            <table class="table table-borderless align-middle text-nowrap m-0">
+              <thead>
+                <tr>
+                  <th class="team">TEAM</th>
+                  <th class="wins">W</th>
+                  <th class="losses">L</th>
+                  <th class="drinks">DRINKS</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>`
+    );
+
+    const carouselItem = createElement(
+      `<div class="carousel-item" data-week="${week}" id="week-${week}-stats"></div>`
+    );
 
     carouselItem.appendChild(statsCard);
     carouselInner.appendChild(carouselItem);
@@ -170,36 +230,35 @@ function makeStats() {
     // on menu item click, show the stats for the week
     menuItem.addEventListener('click', () => {
       carouselInst.to(weekNbr);
-      backBtn.classList.remove('d-none');
+      mainHeader.classList.remove('hidden');
+      // hide navbar
+      document.querySelector('nav').classList.add('hidden');
+      mainHeaderTitle.querySelector('span').textContent = weekLabel;
       util.offsetScrollIntoView(carouselItem);
     });
 
     // populate stats for the week
     const statsBody = statsCard.querySelector('tbody');
-    let statsPath = `${session.user.league.refs.stats}/${week}`;
 
     Object.values(teams).forEach(team => {
 
-      let path = `${statsPath}/${team.id}`;
+      let path = `${session.user.league.refs.stats}/${week}/${team.id}`;
       onValue(ref(db, path), snapshot => {
 
-        let stats = snapshot.val();
-        let data = {
-          nbr: team.nbr,
-          name: team.name,
-          wins: stats.games.wins,
-          losses: stats.games.losses,
-          drinks: stats.drinks.count,
-        };
-        const statsRow = util.createFromTemplate('week-stats-item-template');
-        statsRow.dataset.team = team.id;
-
-        let dataItems = statsRow.querySelectorAll('[data-item]');
-        dataItems.forEach(item => {
-          let dataItem = item.getAttribute('data-item');
-          item.textContent = data[dataItem];
-          item.dataset.value = data[dataItem];
-        });
+        const stats = snapshot.val();
+        const statsRow = createElement(
+          `<tr class="week-stats-item" data-team="${team.id}">
+            <td class="team">
+              <div class="d-flex align-items-center column-gap-2">
+                <span class="team-nbr">${team.nbr}</span>
+                <span class="team-name">${team.name}</span>
+              </div>
+            </td>
+            <td class="wins">${stats.games.wins}</td>
+            <td class="losses">${stats.games.losses}</td>
+            <td class="drinks">${stats.drinks.count}</td>
+          </tr>`
+        );
 
         let row = statsBody.querySelector(`[data-team="${team.id}"]`);
         if (row) {
