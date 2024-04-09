@@ -164,8 +164,8 @@ async function showTeamWeekly(teamId) {
   teamboardContainer.innerHTML = '';
 
   const backBtn = document.createElement('button');
-  backBtn.classList.add('btn', 'btn-primary', 'btn-sm', 'mb-3');
-  backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back to Standings';
+  backBtn.classList.add('btn', 'btn-back');
+  backBtn.innerHTML = '<i class="fas fa-chevron-left"></i> Back';
   backBtn.addEventListener('click', () => {
     carouselBS.to(0);
   });

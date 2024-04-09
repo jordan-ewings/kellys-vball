@@ -369,6 +369,11 @@ td.team span[data-item="name"] {
   color: var(--ios-text-primary);
 }
 
+.btn.btn-back {
+  color: var(--ios-blue);
+
+}
+
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* SCHEDULE */
 
