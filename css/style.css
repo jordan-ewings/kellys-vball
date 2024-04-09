@@ -241,6 +241,15 @@ footer a {
   border-radius: 10px;
 }
 
+
+#stats-container .cont-card-body {
+  padding: .2rem .4rem;
+}
+
+#standings-carousel .carousel-item {
+  padding: 0 .4rem;
+}
+
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* INDEX/HOME */
 
@@ -313,22 +322,22 @@ td.team span[data-item="name"] {
   font-weight: 500;
 }
 
-.week-div:first-child {
+.week-menu-item:first-child {
   border-top: none;
 }
 
-.week-div {
+.week-menu-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: .5rem .25rem;
+  padding: .7rem .25rem;
   background-color: var(--ios-bg-secondary);
-  border-top: 1px solid var(--ios-separator-opaque);
+  border-top: .8px solid var(--ios-separator-opaque);
 }
 
-.week-div .week-label {
+.week-menu-item-header {
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--ios-text-primary);
 }
 
@@ -403,6 +412,10 @@ td.team span[data-item="name"] {
 }
 
 /* ---------------------------------- */
+
+.carousel-item {
+  transition: transform 0.4s ease-in-out;
+}
 
 .carousel-fade .carousel-item {
   opacity: 0;

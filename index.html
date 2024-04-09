@@ -61,17 +61,14 @@
       <div class="main-header mb-3 mt-1">
       </div>
       <div class="main-body">
-        <div class="carousel slide">
+        <div id="standings-carousel" class="carousel slide" data-bs-touch="false" data-bs-interval="false">
           <div class="carousel-inner">
             <div class="carousel-item active">
               <div id="leaderboard-container"></div>
-            </div>
-            <div class="carousel-item">
-              <div id="teamboard-container"></div>
+              <div id="stats-container"></div>
             </div>
           </div>
         </div>
-      </div>
     </section>
 
     <!-- schedule page ------------------------------------------------------->
@@ -176,7 +173,7 @@
                   <th class="wins">W</th>
                   <th class="losses">L</th>
                   <th class="winPct">PCT</th>
-                  <th class="detail"></th>
+                  <th class="drinks">DRINKS</th>
                 </tr>
               </thead>
               <tbody>
@@ -211,9 +208,61 @@
             <span data-item="winPct"></span>
           </div>
         </td>
-        <td class="detail" data-column="DETAIL">
-          <div class="d-flex justify-content-end align-items-center">
-            <i class="fa-solid fa-chevron-right"></i>
+        <td class="drinks" data-column="DRINKS">
+          <div>
+            <span data-item="drinks"></span>
+          </div>
+        </td>
+      </tr>
+    </template>
+
+    <!-- leaderboard -->
+    <template id="week-stats-template">
+      <div class="cont-card">
+        <div class="cont-card-title">
+          <span></span>
+        </div>
+        <div class="cont-card-body">
+          <div class="table-responsive">
+            <table class="table table-borderless align-middle text-nowrap m-0">
+              <thead>
+                <tr>
+                  <th class="team">TEAM</th>
+                  <th class="wins">W</th>
+                  <th class="losses">L</th>
+                  <th class="drinks">DRINKS</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- standings item -->
+    <template id="week-stats-item-template">
+      <tr class="week-stats-item">
+        <td class="team" data-column="TEAM">
+          <div class="d-flex justify-content-start align-items-center column-gap-2">
+            <span data-item="nbr"></span>
+            <span data-item="name"></span>
+          </div>
+        </td>
+        <td class="wins" data-column="W">
+          <div>
+            <span data-item="wins"></span>
+          </div>
+        </td>
+        <td class="losses" data-column="L">
+          <div>
+            <span data-item="losses"></span>
+          </div>
+        </td>
+        <td class="drinks" data-column="DRINKS">
+          <div>
+            <span data-item="drinks"></span>
           </div>
         </td>
       </tr>
