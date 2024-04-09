@@ -107,7 +107,7 @@ function makeLeaderboard() {
                   <th class="wins">W</th>
                   <th class="losses">L</th>
                   <th class="winPct">PCT</th>
-                  <th class="drinks">DRK</th>
+                  <th class="drinks"><i class="fa-solid fa-beer"></i></th>
                 </tr>
               </thead>
               <tbody>
@@ -155,7 +155,7 @@ function makeStats() {
   const card = createElement(
     `<div class="cont-card">
       <div class="cont-card-title">
-        <span>STATS</span>
+        <span>DRINKING COMPETITION</span>
       </div>
       <div class="cont-card-body week-menu">
       </div>
@@ -285,14 +285,16 @@ function makeStats() {
         const drinksInput = statsRow.querySelector('.drinks-input');
         const drinksTD = statsRow.querySelector('.drinks-count');
         drinksTD.dataset.orig = drinksCountOrig;
-        drinksInput.querySelector('.stepper-down').addEventListener('click', () => {
+        drinksInput.querySelector('.stepper-down').addEventListener('click', (e) => {
+          e.preventDefault();
           drinksCount = Math.max(0, drinksCount - 1);
           drinksTD.textContent = drinksCount;
           statsRow.classList.toggle('changed', drinksCount != drinksCountOrig);
           saveBtn.classList.toggle('disabled', !statsRow.classList.contains('changed'));
         });
 
-        drinksInput.querySelector('.stepper-up').addEventListener('click', () => {
+        drinksInput.querySelector('.stepper-up').addEventListener('click', (e) => {
+          e.preventDefault();
           drinksCount++;
           drinksTD.textContent = drinksCount;
           statsRow.classList.toggle('changed', drinksCount != drinksCountOrig);
@@ -309,6 +311,9 @@ function makeStats() {
     });
 
     saveBtn.addEventListener('click', () => {
+      // saveBtn.classList.add('disabled');
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      saveBtn.classList.add('disabled');
       const statsBody = statsCard.querySelector('tbody');
       const updates = {};
       statsBody.querySelectorAll('.week-stats-item.changed').forEach(row => {
@@ -329,7 +334,12 @@ function makeStats() {
 
       console.log('updates', updates);
       update(ref(db), updates).then(() => {
-        saveBtn.classList.add('disabled');
+        saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
+        saveBtn.classList.add('save-success');
+        setTimeout(() => {
+          saveBtn.innerHTML = 'Save';
+          saveBtn.classList.remove('save-success');
+        }, 2000);
       });
     });
 

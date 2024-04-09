@@ -7,6 +7,7 @@ import { initScheduleContent } from './schedule.js';
 
 /* ------------------------------------------------ */
 
+const navbar = document.querySelector('.navbar');
 const navbarNav = document.querySelector('.navbar-nav');
 const navbarBorder = document.querySelector('#navbar-border');
 const navLinks = document.querySelectorAll('.nav-link');
@@ -100,6 +101,14 @@ function initPageContent() {
   // set up footer link
   footerLink.addEventListener('click', (e) => {
     e.preventDefault();
+    // if footer is clicked while the standings carousel is active, reset it
+    if (currentSection().id == 'standings-section') {
+      let mainHead = currentSection().querySelector('.main-header');
+      let btnBack = mainHead.querySelector('.btn-back:not(.d-none)');
+      if (btnBack) {
+        btnBack.click();
+      }
+    }
     navbarNav.querySelector('#nav-index').click();
   });
 
@@ -108,6 +117,9 @@ function initPageContent() {
   loadingSpinner.classList.add('d-none');
   mainDiv.classList.remove('d-none');
   footer.classList.remove('d-none');
+
+
+
 
   // gesture listeners
   // let scrollY = 0;
@@ -153,6 +165,10 @@ function initPageContent() {
 /* ------------------------------------------------ */
 
 function showContent(name) {
+
+  if (navbar.classList.contains('hidden')) {
+    navbar.classList.remove('hidden');
+  }
 
   const navLink = document.querySelector('#nav-' + name);
   const section = document.querySelector('#' + name + '-section');

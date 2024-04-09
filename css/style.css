@@ -222,6 +222,8 @@ footer a {
   font-size: .9rem;
   padding: .7rem .4rem;
   text-align: center;
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 
 .table thead th {
@@ -354,6 +356,15 @@ td.team .team-name {
   color: var(--ios-text);
 }
 
+th.drinks i.fa-beer {
+  color: var(--ios-orange);
+  opacity: .6;
+}
+
+td.drinks {
+  color: var(--ios-orange)
+}
+
 .fa-chevron-right {
   color: var(--ios-text-tertiary);
   font-size: .8rem;
@@ -385,6 +396,7 @@ td.drinks:has(.drinks-count) {
   flex-direction: row !important;
   justify-content: end;
   align-items: center;
+  color: var(--ios-text-primary);
 }
 
 td.drinks .drinks-count {
@@ -395,7 +407,7 @@ td.drinks .drinks-count {
 }
 
 .week-stats-item.changed td.drinks .drinks-count {
-  color: var(--ios-blue);
+  color: var(--ios-orange);
   font-weight: 600;
 }
 
@@ -445,6 +457,24 @@ td.drinks .drinks-count {
   border-radius: 10px;
   width: 100%;
   margin: 0 1rem .5rem 0;
+}
+
+.week-stats button.btn-save.disabled {
+  /* all regular disabled-button styles */
+  pointer-events: none;
+  opacity: .5;
+  /* custom */
+  /* background: lin grad of ios-bg-sec */
+  background: linear-gradient(90deg, var(--ios-bg-secondary) 0%, var(--ios-bg-secondary) 100%);
+}
+
+.week-stats button.btn-save.save-success {
+  /* all regular disabled-button styles */
+  pointer-events: none;
+  opacity: .5;
+  /* custom */
+  /* background: lin grad of ios-bg-sec */
+  background: linear-gradient(90deg, var(--ios-green) 0%, var(--ios-green) 100%);
 }
 
 .btn.btn-back {
