@@ -58,23 +58,51 @@
 
     <!-- standings page ------------------------------------------------------>
     <section id="standings-section" class="d-none">
-      <div class="main-header mb-3 mt-1">
+      <div class="main-header mb-3 mt-1 hidden">
+        <button class="btn btn-back" type="button">
+          <i class="fa-solid fa-chevron-left"></i> Back
+        </button>
+        <div class="main-header-title">
+          <span></span>
+        </div>
       </div>
       <div class="main-body">
         <div id="standings-carousel" class="carousel slide" data-bs-touch="false" data-bs-interval="false">
           <div class="carousel-inner">
-            <div class="carousel-item active">
-              <div class="d-flex flex-column">
-                <div class="flex-fill">
-                  <div id="leaderboard-container"></div>
+            <div class="carousel-item active initial-item">
+              <div id="leaderboard-container" class="cont-card">
+                <div class="cont-card-title">
+                  <span>LEADERBOARD</span>
                 </div>
-                <div class="flex-fill">
-                  <div id="stats-container"></div>
+                <div class="cont-card-body">
+                  <div class="table-responsive">
+                    <table class="table table-borderless align-middle text-nowrap m-0">
+                      <thead>
+                        <tr>
+                          <th class="team">TEAM</th>
+                          <th class="wins">W</th>
+                          <th class="losses">L</th>
+                          <th class="winPct">PCT</th>
+                          <th class="drinks"><i class="fa-solid fa-beer"></i></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div id="stats-container" class="cont-card">
+                <div class="cont-card-title">
+                  <span>STATS</span>
+                </div>
+                <div class="cont-card-body menu-item-list">
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
     </section>
 
     <!-- schedule page ------------------------------------------------------->

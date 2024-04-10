@@ -1,18 +1,22 @@
 import * as util from './util.js';
 import { db, session } from './firebase.js';
-import { ref, onValue, set, update, runTransaction } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+import { ref, onValue, set, update, runTransaction, increment } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
 import { APP } from './main.js';
 
 /* ------------------------------------------------ */
 
-const standingsNav = document.querySelector('#nav-standings');
 const standingsSection = document.querySelector('#standings-section');
 const mainHeader = standingsSection.querySelector('.main-header');
-const leaderboardContainer = document.querySelector('#leaderboard-container');
-const statsContainer = document.querySelector('#stats-container');
-const standingsCarousel = document.querySelector('#standings-carousel');
-// const carousel = new bootstrap.Carousel(standingsCarousel, { interval: false });
+
+const leaderboardContainer = standingsSection.querySelector('#leaderboard-container');
+const leaderboardTBody = leaderboardContainer.querySelector('tbody');
+
+const statsContainer = standingsSection.querySelector('#stats-container');
+const statsBody = statsContainer.querySelector('.cont-card-body');
+
+const standingsCarousel = standingsSection.querySelector('#standings-carousel');
+const carouselInner = standingsCarousel.querySelector('.carousel-inner');
 
 /* ------------------------------------------------ */
 
@@ -20,8 +24,9 @@ export function initStandingsContent() {
 
   makeLeaderboard();
   makeStats();
-
 }
+
+/* ------------------------------------------------ */
 
 function createElement(html) {
   const template = document.createElement('template');
@@ -31,11 +36,11 @@ function createElement(html) {
 
 /* ------------------------------------------------ */
 
-function processStandings(teamsRaw) {
+function processLeaderboard(teams) {
 
-  const teams = Object.values(teamsRaw);
+  const teamsArr = Object.values(teams);
 
-  let standings = teams.map(team => {
+  let standings = teamsArr.map(team => {
 
     let gameStats = team.stats.games;
     team.games = gameStats.count;
@@ -91,261 +96,285 @@ function makeLeaderboard() {
 
   onValue(ref(db, session.user.league.refs.teams), snapshot => {
 
-    const teams = processStandings(snapshot.val());
+    const teams = snapshot.val();
+    const teamsProc = processLeaderboard(teams);
+    leaderboardTBody.innerHTML = '';
 
-    const leaderboard = createElement(
-      `<div class="cont-card">
-        <div class="cont-card-title">
-          <span>LEADERBOARD</span>
-        </div>
-        <div class="cont-card-body">
-          <div class="table-responsive">
-            <table class="table table-borderless align-middle text-nowrap m-0">
-              <thead>
-                <tr>
-                  <th class="team">TEAM</th>
-                  <th class="wins">W</th>
-                  <th class="losses">L</th>
-                  <th class="winPct">PCT</th>
-                  <th class="drinks"><i class="fa-solid fa-beer"></i></th>
-                </tr>
-              </thead>
-              <tbody>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>`
-    );
-
-    teams.forEach((team, index) => {
-
-      const standingsItem = createElement(
-        `<tr class="leaderboard-item" id="team-${team.id}" data-rank_val="${index + 1}" data-rank_str="${team.rank}">
-          <td class="team">
-            <div class="d-flex align-items-center column-gap-2">
-              <span class="team-nbr">${team.nbr}</span>
-              <span class="team-name">${team.name}</span>
-            </div>
-          </td>
-          <td class="wins">${team.wins}</td>
-          <td class="losses">${team.losses}</td>
-          <td class="winPct">${util.formatNumber(team.winPct, '0.000')}</td>
-          <td class="drinks">${team.drinks}</td>
-        </tr>`
-      );
-
-      leaderboard.querySelector('tbody').appendChild(standingsItem);
+    teamsProc.forEach(team => {
+      const row = makeLeaderboardItem(team);
+      leaderboardTBody.appendChild(row);
     });
 
-
-    leaderboardContainer.innerHTML = '';
-    leaderboardContainer.appendChild(leaderboard);
   });
+}
+
+/* ------------------------------------------------ */
+
+function makeLeaderboardItem(team) {
+
+  const item = createElement(
+    `<tr class="leaderboard-item" id="leaderboard-${team.id}">
+      <td class="team">
+        <div class="d-flex align-items-center column-gap-2">
+          <span class="team-nbr">${team.nbr}</span>
+          <span class="team-name">${team.name}</span>
+        </div>
+      </td>
+      <td class="wins">${team.wins}</td>
+      <td class="losses">${team.losses}</td>
+      <td class="winPct">${util.formatNumber(team.winPct, '0.000')}</td>
+      <td class="drinks">${team.drinks}</td>
+    </tr>`
+  );
+
+  return item;
+}
+
+/* ------------------------------------------------ */
+
+function createMenuItem(drill = true) {
+
+  const item = createElement(
+    `<div class="menu-item" role="button">
+      <div class="label"></div>
+      <div class="contents">
+        <div class="main">
+          <div class="title"></div>
+          <div class="detail"></div>
+        </div>
+        <div class="main-info"></div>
+        <div class="trail"></div>
+      </div>
+    </div>`
+  );
+
+  if (drill) {
+    let drillEl = createElement(`<div class="drill"><i class="fa-solid fa-chevron-right"></i></div>`);
+    item.querySelector('.trail').appendChild(drillEl);
+  }
+
+  return item;
 }
 
 /* ------------------------------------------------ */
 
 function makeStats() {
 
-  let weeks = session.cache.weeks;
-  let teams = session.cache.teams;
-  statsContainer.innerHTML = '';
+  let weeks = Object.values(session.cache.weeks);
+  let teams = Object.values(session.cache.teams);
 
-  const card = createElement(
-    `<div class="cont-card">
-      <div class="cont-card-title">
-        <span>DRINKING COMPETITION</span>
-      </div>
-      <div class="cont-card-body week-menu">
-      </div>
-    </div>`
-  );
-
-  statsContainer.appendChild(card);
-  const cardBody = card.querySelector('.cont-card-body');
-
-  const carouselInner = standingsCarousel.querySelector('.carousel-inner');
-  const carouselInst = new bootstrap.Carousel(standingsCarousel, { interval: false });
-  const backBtn = createElement('<button class="btn btn-back"><i class="fas fa-chevron-left"></i> Back</button>');
-  backBtn.addEventListener('click', () => {
-    // clear any changes from current week
-    const statsCard = carouselInner.querySelector('.carousel-item.active .cont-card');
-    statsCard.querySelectorAll('.week-stats-item.changed').forEach(row => {
-      let drinksCount = parseInt(row.querySelector('.drinks-count').dataset.orig);
-      row.querySelector('.drinks-count').textContent = drinksCount;
-      row.classList.remove('changed');
-    });
-    statsCard.querySelector('.btn-save').classList.add('disabled');
-
-
-    carouselInst.to(0);
-    document.querySelector('nav').classList.remove('hidden');
-    mainHeader.classList.add('hidden');
-    statsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  statsBody.innerHTML = '';
+  carouselInner.querySelectorAll('.carousel-item').forEach((item, index) => {
+    if (index > 0) item.remove();
   });
 
-  const mainHeaderTitle = createElement(
-    `<div class="main-header-title">
-      <span></span>
-    </div>`
-  );
+  /* ------------------------------------------------ */
+  // initialize week buttons and carousel items
 
-  mainHeader.classList.add('hidden');
-  mainHeader.appendChild(backBtn);
-  mainHeader.appendChild(mainHeaderTitle);
+  const carousel = new bootstrap.Carousel(standingsCarousel, { interval: false });
+  const backBtn = mainHeader.querySelector('button.btn-back');
+  const headerSpan = mainHeader.querySelector('.main-header-title span');
 
-  // for each week, create a row that, when clicked, will display the week's stats
-  for (let week in weeks) {
+  weeks.forEach((week, index) => {
 
-    const weekNbr = weeks[week].nbr;
-    const weekLabel = weeks[week].label;
-    const menuItem = createElement(
-      `<div class="week-menu-item" data-week="${week}" role="button">
-        <div class="week-menu-item-header">${weekLabel}</div>
-        <div class="week-menu-item-detail"><i class="fas fa-chevron-right"></i></div>
-      </div>`
-    );
+    const menuItem = createMenuItem(true);
+    menuItem.dataset.week = week.id;
+    menuItem.querySelector('.title').textContent = week.label;
 
-    cardBody.appendChild(menuItem);
+    statsBody.appendChild(menuItem);
+    menuItem.addEventListener('click', () => {
+      let itemIndex = index + 1;
+      let item = carouselInner.querySelector(`.carousel-item[data-week="${week.id}"`);
+      carousel.to(itemIndex);
+      mainHeader.classList.remove('hidden');
+      headerSpan.textContent = week.label;
+      document.querySelector('nav').classList.add('hidden');
+      util.offsetScrollIntoView(item);
+    });
 
-    const statsCard = createElement(
-      `<div class="cont-card">
-        <div class="cont-card-body">
-          <div class="table-responsive">
-            <table class="table table-borderless align-middle text-nowrap m-0">
-              <thead>
-                <tr>
-                  <th class="team">TEAM</th>
-                  <th class="drinks">DRINKS</th>
-                </tr>
-              </thead>
-              <tbody>
-              </tbody>
-            </table>
-          </div>
+    const carouselItem = createElement(
+      `<div class="carousel-item week-stats" data-week="${week.id}" id="week-${week.id}-stats">
+        <div>
+          <button class="btn btn-save disabled">Submit</button>
+        </div>
+        <div class="cont-card">
+          <div class="cont-card-title"><span>TEAM-DRINKS ENTRY</span></div>
+          <div class="cont-card-body menu-item-list"></div>
         </div>
       </div>`
     );
 
-    const carouselItem = createElement(
-      `<div class="carousel-item week-stats" data-week="${week}" id="week-${week}-stats"></div>`
-    );
-
-    carouselItem.appendChild(statsCard);
     carouselInner.appendChild(carouselItem);
+  });
 
-    // on menu item click, show the stats for the week
-    menuItem.addEventListener('click', () => {
-      carouselInst.to(weekNbr);
-      mainHeader.classList.remove('hidden');
-      document.querySelector('nav').classList.add('hidden');
-      mainHeaderTitle.querySelector('span').textContent = weekLabel;
-      util.offsetScrollIntoView(carouselItem);
+  /* ------------------------------------------------ */
+  // handle back button click
+
+  const resetItemRows = (carouselItem) => {
+    const changedRows = carouselItem.querySelectorAll('.menu-item.changed');
+    if (changedRows.length == 0) return;
+    changedRows.forEach(row => {
+      let stepVal = row.querySelector('.drinks-count');
+      stepVal.textContent = stepVal.dataset.value;
+      stepVal.dataset.change = 0;
+      row.classList.remove('changed');
     });
+  };
 
-    const saveBtn = createElement(
-      `<button class="btn btn-save disabled">Submit</button>`
-    );
-    statsCard.insertBefore(saveBtn, statsCard.querySelector('.cont-card-body'));
+  const resetItemButtons = (carouselItem) => {
+    const saveBtn = carouselItem.querySelector('.btn-save');
+    saveBtn.innerHTML = 'Submit';
+    saveBtn.className = 'btn btn-save disabled';
+  };
 
+  backBtn.addEventListener('click', () => {
 
-    // populate stats for the week
-    const statsBody = statsCard.querySelector('tbody');
+    const activeItem = carouselInner.querySelector('.carousel-item.active');
+    resetItemRows(activeItem);
+    resetItemButtons(activeItem);
 
-    Object.values(teams).forEach(team => {
+    carousel.to(0);
+    mainHeader.classList.add('hidden');
+    headerSpan.textContent = '';
+    document.querySelector('nav').classList.remove('hidden');
+    statsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 
-      let path = `${session.user.league.refs.stats}/${week}/${team.id}`;
-      onValue(ref(db, path), snapshot => {
+  /* ------------------------------------------------ */
+  // populate week items with team stats
+
+  weeks.forEach(week => {
+
+    const carouselItem = carouselInner.querySelector(`.carousel-item[data-week="${week.id}"`);
+    const statsCard = carouselItem.querySelector('.cont-card');
+    const saveBtn = carouselItem.querySelector('.btn-save');
+    const statsList = statsCard.querySelector('.menu-item-list');
+
+    teams.forEach(team => {
+
+      const teamStatsPath = `${session.user.league.refs.teams}/${team.id}/stats`;
+      const teamWeekStatsPath = `${session.user.league.refs.stats}/${week.id}/${team.id}`;
+
+      onValue(ref(db, teamWeekStatsPath), snapshot => {
 
         const stats = snapshot.val();
-        const statsRow = createElement(
-          `<tr class="week-stats-item" data-team="${team.id}">
-            <td class="team">
-              <div class="d-flex align-items-center column-gap-2">
-                <span class="team-nbr">${team.nbr}</span>
-                <span class="team-name">${team.name}</span>
+
+        const statsRow = createMenuItem(false);
+        statsRow.removeAttribute('role');
+
+        const label = createElement(`<div class="team-nbr">${team.nbr}</div>`);
+        const stepOrig = createElement(`<div class="drinks-count-orig">${stats.drinks.count}</div>`);
+        const stepVal = createElement(`<div class="drinks-count">${stats.drinks.count}</div>`);
+        const stepInput = createElement(
+          `<div class="drinks-input stepper-container">
+            <div class="stepper">
+              <div role="button" class="stepper-btn stepper-down">
+                <i class="fa-solid fa-minus"></i>
               </div>
-            </td>
-            <td class="drinks">
-              <div class="drinks-count">${stats.drinks.count}</div>
-              <div class="drinks-input stepper-container">
-                <div class="stepper">
-                  <div role="button" class="stepper-btn stepper-down"><span>-</span></div>
-                  <div class="separator"></div>
-                  <div role="button" class="stepper-btn stepper-up"><span>+</span></div>
-                </div>
+              <div class="separator"></div>
+              <div role="button" class="stepper-btn stepper-up">
+                <i class="fa-solid fa-plus"></i>
               </div>
-            </td>
-          </tr>`
+            </div>
+          </div>`
         );
 
-        let drinksCount = stats.drinks.count;
-        let drinksCountOrig = drinksCount;
-        const drinksInput = statsRow.querySelector('.drinks-input');
-        const drinksTD = statsRow.querySelector('.drinks-count');
-        drinksTD.dataset.orig = drinksCountOrig;
-        drinksInput.querySelector('.stepper-down').addEventListener('click', (e) => {
-          e.preventDefault();
-          drinksCount = Math.max(0, drinksCount - 1);
-          drinksTD.textContent = drinksCount;
-          statsRow.classList.toggle('changed', drinksCount != drinksCountOrig);
-          saveBtn.classList.toggle('disabled', !statsRow.classList.contains('changed'));
-        });
+        statsRow.dataset.team = team.id;
+        statsRow.querySelector('.label').appendChild(label);
+        statsRow.querySelector('.title').textContent = team.name;
+        statsRow.querySelector('.main-info').appendChild(stepOrig);
+        statsRow.querySelector('.main-info').appendChild(stepVal);
+        statsRow.querySelector('.main-info').appendChild(stepInput);
 
-        drinksInput.querySelector('.stepper-up').addEventListener('click', (e) => {
-          e.preventDefault();
-          drinksCount++;
-          drinksTD.textContent = drinksCount;
-          statsRow.classList.toggle('changed', drinksCount != drinksCountOrig);
-          saveBtn.classList.toggle('disabled', !statsRow.classList.contains('changed'));
-        });
-
-        let row = statsBody.querySelector(`[data-team="${team.id}"]`);
-        if (row) {
-          row.replaceWith(statsRow);
+        const statsRowBefore = statsList.querySelector(`.menu-item[data-team="${team.id}"`);
+        if (statsRowBefore) {
+          statsList.replaceChild(statsRow, statsRowBefore);
         } else {
-          statsBody.appendChild(statsRow);
+          statsList.appendChild(statsRow);
         }
+
+        stepVal.dataset.valuePath = `${teamWeekStatsPath}/drinks/count`;
+        stepVal.dataset.aggValuePath = `${teamStatsPath}/drinks/count`;
+        stepVal.dataset.value = stats.drinks.count;
+        stepVal.dataset.change = 0;
+
+        const stepDown = statsRow.querySelector('.stepper-down');
+        stepDown.addEventListener('click', () => {
+          let value = parseInt(stepVal.textContent);
+          if (value <= 0) return;
+          value--;
+          stepVal.textContent = value;
+          stepVal.dataset.change = value - stats.drinks.count;
+          statsRow.classList.toggle('changed', value != stats.drinks.count);
+          saveBtn.classList.toggle('disabled', !statsList.querySelector('.menu-item.changed'));
+        });
+
+        const stepUp = statsRow.querySelector('.stepper-up');
+        stepUp.addEventListener('click', () => {
+          let value = parseInt(stepVal.textContent);
+          value++;
+          stepVal.textContent = value;
+          stepVal.dataset.change = value - stats.drinks.count;
+          statsRow.classList.toggle('changed', value != stats.drinks.count);
+          saveBtn.classList.toggle('disabled', !statsList.querySelector('.menu-item.changed'));
+        });
+
       });
     });
 
-    saveBtn.addEventListener('click', () => {
-      // saveBtn.classList.add('disabled');
-      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-      saveBtn.classList.add('disabled');
-      const statsBody = statsCard.querySelector('tbody');
-      const updates = {};
-      statsBody.querySelectorAll('.week-stats-item.changed').forEach(row => {
-        let teamId = row.dataset.team;
-        let drinks = parseInt(row.querySelector('.drinks-count').textContent);
-        let drinksOrig = parseInt(row.querySelector('.drinks-count').dataset.orig);
-        let path = `${session.user.league.refs.stats}/${week}/${teamId}/drinks/count`;
-        updates[path] = drinks;
+    /* ------------------------------------------------ */
+    // handle save button click
 
-        // update team's total drinks
-        let team = teams[teamId];
-        let teamPath = `${session.user.league.refs.teams}/${teamId}/stats/drinks/count`;
-        runTransaction(ref(db, teamPath), currentDrinks => {
-          let newDrinks = currentDrinks + drinks - drinksOrig;
-          return newDrinks;
-        });
+    const saveBtnSet = {
+      reset: () => {
+        saveBtn.innerHTML = 'Submit';
+        saveBtn.className = 'btn btn-save disabled';
+      },
+      saving: () => {
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        saveBtn.classList.add('disabled');
+      },
+      saved: () => {
+        saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
+        saveBtn.classList.add('save-success');
+      },
+      nosave: (msg) => {
+        saveBtn.innerHTML = '<i class="fa-solid fa-exclamation-triangle"></i> Error';
+        saveBtn.classList.add('save-error');
+        if (msg) saveBtn.innerHTML += `<div>${msg}</div>`;
+      }
+    };
+
+    saveBtn.addEventListener('click', () => {
+
+      saveBtnSet.saving();
+      const updates = {};
+      const changedRows = statsList.querySelectorAll('.menu-item.changed');
+
+      changedRows.forEach(row => {
+        let teamId = row.dataset.team;
+        let drinksChange = parseInt(row.querySelector('.drinks-count').dataset.change);
+        let sPath = `${session.user.league.refs.stats}/${week.id}/${teamId}/drinks/count`;
+        let tPath = `${session.user.league.refs.teams}/${teamId}/stats/drinks/count`;
+        updates[sPath] = increment(drinksChange);
+        updates[tPath] = increment(drinksChange);
       });
 
       console.log('updates', updates);
-      update(ref(db), updates).then(() => {
-        saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
-        saveBtn.classList.add('save-success');
-        setTimeout(() => {
-          saveBtn.innerHTML = 'Submit';
-          saveBtn.classList.remove('save-success');
-        }, 2000);
-      });
+      update(ref(db), updates)
+        .then(() => {
+          saveBtnSet.saved();
+          setTimeout(() => {
+            saveBtnSet.reset();
+          }, 2000);
+        })
+        .catch(err => {
+          console.error(err);
+          saveBtnSet.nosave(err.message);
+        });
+
     });
 
-  }
-
-
-
+  });
 
 }

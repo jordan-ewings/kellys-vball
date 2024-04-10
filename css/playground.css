@@ -1,0 +1,239 @@
+/* Row */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px 16px;
+gap: 10px;
+
+width: 393px;
+height: 44px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 7;
+align-self: stretch;
+flex-grow: 0;
+
+/* Contents */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 0px 0px 16px;
+gap: 4px;
+
+width: 361px;
+height: 44px;
+
+/* BG/Primary - Dark Elevated */
+background: #1C1C1E;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+/* Title and Trailing Accessories */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+
+width: 345px;
+height: 44px;
+
+/* Separators/Non-opaque - Dark */
+border-bottom: 0.5px solid rgba(84, 84, 88, 0.65);
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+align-self: stretch;
+flex-grow: 1;
+
+/* Title and Detail */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: flex-start;
+padding: 0px;
+
+width: 260px;
+height: 44px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+/* Accessories and Grabber */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 0px;
+
+width: 85px;
+height: 44px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+/* Title */
+
+width: 260px;
+height: 22px;
+
+/* Body/Regular */
+font-family: 'SF Pro';
+font-style: normal;
+font-weight: 400;
+font-size: 17px;
+line-height: 22px;
+/* identical to box height, or 129% */
+display: flex;
+align-items: center;
+letter-spacing: -0.4px;
+
+/* Labels/Primary - Dark */
+color: #FFFFFF;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+
+/* Drill-in */
+
+width: 8px;
+height: 32px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 4;
+flex-grow: 0;
+
+
+/* Drill-in */
+
+position: absolute;
+width: 11px;
+height: 22px;
+left: calc(50% - 11px/2 - 0.5px);
+top: calc(50% - 22px/2);
+
+font-family: 'SF Pro';
+font-style: normal;
+font-weight: 590;
+font-size: 17px;
+line-height: 22px;
+/* identical to box height, or 129% */
+display: flex;
+align-items: center;
+text-align: center;
+font-feature-settings: 'ss15' on;
+
+/* Labels/Tertiary - Dark */
+color: rgba(235, 235, 245, 0.3);
+
+
+
+
+
+
+
+
+/* Stepper */
+
+width: 94px;
+height: 32px;
+
+/* Fills/Tertiary - Dark */
+background: rgba(118, 118, 128, 0.24);
+border-radius: 8px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Separator */
+
+position: absolute;
+width: 1px;
+left: calc(50% - 1px/2);
+top: 7px;
+bottom: 7px;
+
+/* Labels/Tertiary - Dark */
+background: rgba(235, 235, 245, 0.3);
+border-radius: 8px;
+
+
+/* Decrement */
+
+position: absolute;
+height: 22px;
+left: 14.89%;
+right: 65.96%;
+top: calc(50% - 22px/2);
+
+font-family: 'SF Pro';
+font-style: normal;
+font-weight: 400;
+font-size: 17px;
+line-height: 22px;
+/* identical to box height, or 129% */
+display: flex;
+align-items: center;
+text-align: center;
+
+/* Labels/Primary - Dark */
+color: #FFFFFF;
+
+
+
+/* Increment */
+
+position: absolute;
+height: 22px;
+left: 64.89%;
+right: 15.96%;
+top: calc(50% - 22px/2);
+
+font-family: 'SF Pro';
+font-style: normal;
+font-weight: 400;
+font-size: 17px;
+line-height: 22px;
+/* identical to box height, or 129% */
+display: flex;
+align-items: center;
+text-align: center;
+
+/* Labels/Primary - Dark */
+color: #FFFFFF;

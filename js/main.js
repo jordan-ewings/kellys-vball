@@ -1,6 +1,5 @@
 import { db, session } from './firebase.js';
 import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
-
 import * as util from './util.js';
 import { initStandingsContent } from './standings.js';
 import { initScheduleContent } from './schedule.js';
@@ -28,16 +27,85 @@ document.addEventListener('DOMContentLoaded', initUserContent);
 
 export async function initUserContent(e) {
 
-  configureStyle();
-
   await session.init();
-
   initHomeContent();
   initStandingsContent();
   initScheduleContent();
-
-  footerLink.textContent = session.user.league.title;
   initPageContent();
+}
+
+/* ------------------------------------------------ */
+
+function initPageContent() {
+
+  console.log(session);
+  footerLink.textContent = session.user.league.title;
+  if (APP.initialized) return;
+  APP.initialized = true;
+
+  // set up nav links
+  navLinks.forEach(navLink => {
+    navLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      let name = navLink.id.replace('nav-', '');
+      showContent(name);
+    });
+  });
+
+  // set up footer link
+  footerLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (currentSection().id == 'standings-section') {
+      let mainHead = currentSection().querySelector('.main-header');
+      let btnBack = mainHead.querySelector('.btn-back:not(.d-none)');
+      if (btnBack) {
+        btnBack.click();
+      }
+    }
+    navbarNav.querySelector('#nav-index').click();
+  });
+
+  // show home content by default
+  navbarNav.querySelector('#nav-index').click();
+  loadingSpinner.classList.add('d-none');
+  mainDiv.classList.remove('d-none');
+  footer.classList.remove('d-none');
+}
+
+/* ------------------------------------------------ */
+
+function showContent(name) {
+
+  if (navbar.classList.contains('hidden')) navbar.classList.remove('hidden');
+  const navLink = document.querySelector('#nav-' + name);
+  const section = document.querySelector('#' + name + '-section');
+
+  navbarBorder.style.left = navLink.offsetLeft + 'px';
+  navbarBorder.style.width = navLink.offsetWidth + 'px';
+  navLinks.forEach(nav => nav.classList.toggle('active', nav == navLink));
+  sections.forEach(sec => sec.classList.toggle('d-none', sec != section));
+
+  footer.classList.toggle('fixed-bottom', name == 'index');
+
+  if (name == 'schedule') {
+    const weekFilterContainer = section.querySelector('#week-filter-container');
+    const weekBtn = weekFilterContainer.querySelector('button.active');
+    weekBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+}
+
+/* ------------------------------------------------ */
+
+const homeNav = document.querySelector('#nav-index');
+const homeSection = document.querySelector('#index-section');
+const leagueSelectContainer = document.querySelector('#league-select-container');
+
+/* ------------------------------------------------ */
+
+function initHomeContent() {
+
+  configureStyle();
+  makeLeagueSelect();
 }
 
 /* ------------------------------------------------ */
@@ -56,161 +124,10 @@ function configureStyle() {
     `, 0);
   }
 
-  // store device type in APP variable
+  // store device type
   APP.device = 'desktop';
   if (window.innerWidth < 768) APP.device = 'mobile';
   if (window.innerWidth >= 768 && window.innerWidth < 992) APP.device = 'tablet';
-
-  // set max widths if desktop
-
-  // if (APP.device == 'desktop') {
-  //   let style = document.createElement('style');
-  //   document.head.appendChild(style);
-  //   style.sheet.insertRule(`
-  //     .main-header::before {
-  //       max-width: 992px;
-  //     }
-  //     .main-body {
-  //       max-width: 992px;
-  //     }
-  //   `, 0);
-  // }
-}
-
-/* ------------------------------------------------ */
-
-function initPageContent() {
-
-  if (APP.initialized) {
-    console.log('Updated page content', session);
-    return;
-  }
-
-  APP.initialized = true;
-  console.log('Initialized page content', session);
-
-  // set up nav links
-  navLinks.forEach(navLink => {
-    navLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      let name = navLink.id.replace('nav-', '');
-      showContent(name);
-    });
-  });
-
-  // set up footer link
-  footerLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    // if footer is clicked while the standings carousel is active, reset it
-    if (currentSection().id == 'standings-section') {
-      let mainHead = currentSection().querySelector('.main-header');
-      let btnBack = mainHead.querySelector('.btn-back:not(.d-none)');
-      if (btnBack) {
-        btnBack.click();
-      }
-    }
-    navbarNav.querySelector('#nav-index').click();
-  });
-
-  // show home content by default
-  navbarNav.querySelector('#nav-index').click();
-  loadingSpinner.classList.add('d-none');
-  mainDiv.classList.remove('d-none');
-  footer.classList.remove('d-none');
-
-
-
-
-  // gesture listeners
-  // let scrollY = 0;
-  // let scrollDir = 0;
-  // document.addEventListener('scroll', (e) => {
-
-  //   if (!currentSection()) return;
-  //   if (currentSection().id != 'schedule-section') return;
-  //   let header = currentSection().querySelector('.main-header');
-
-  //   if (APP.focusedTeam) {
-  //     if (header.classList.contains('hidden')) {
-  //       header.classList.remove('hidden');
-  //     }
-  //     return;
-  //   }
-
-  //   if (!header.firstElementChild) return;
-
-  //   let mainBody = currentSection().querySelector('.main-body');
-  //   let currentY = window.scrollY;
-  //   let dir = currentY > scrollY ? 1 : -1;
-  //   let belowTop = mainBody.getBoundingClientRect().top < 0;
-  //   let aboveBottom = mainBody.getBoundingClientRect().bottom > window.innerHeight;
-
-  //   if (belowTop && aboveBottom) {
-  //     if (dir != scrollDir) {
-  //       scrollDir = dir;
-  //       if (dir == -1) {
-  //         header.classList.remove('hidden');
-  //       } else {
-  //         header.classList.add('hidden');
-  //       }
-  //     }
-  //   } else if (!belowTop) {
-  //     header.classList.remove('hidden');
-  //   }
-
-  //   scrollY = currentY;
-  // });
-}
-
-/* ------------------------------------------------ */
-
-function showContent(name) {
-
-  if (navbar.classList.contains('hidden')) {
-    navbar.classList.remove('hidden');
-  }
-
-  const navLink = document.querySelector('#nav-' + name);
-  const section = document.querySelector('#' + name + '-section');
-
-  navbarBorder.style.left = navLink.offsetLeft + 'px';
-  navbarBorder.style.width = navLink.offsetWidth + 'px';
-  navLinks.forEach(nav => {
-    nav.classList.toggle('active', nav == navLink);
-  });
-
-  sections.forEach(sec => {
-    sec.classList.toggle('d-none', sec != section);
-  });
-
-  footer.classList.toggle('fixed-bottom', name == 'index');
-
-  // if schedule, scroll into view active week button
-  if (name == 'schedule') {
-    let weekFilterContainer = section.querySelector('#week-filter-container');
-    let weekBtn = weekFilterContainer.querySelector('button.active');
-    weekBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }
-}
-
-/* ------------------------------------------------ */
-
-const homeNav = document.querySelector('#nav-index');
-const homeSection = document.querySelector('#index-section');
-const leagueSelectContainer = document.querySelector('#league-select-container');
-
-/* ------------------------------------------------ */
-
-function initHomeContent() {
-
-  // onValue(ref(db, 'leagues'), snapshot => {
-  //   let leagues = Object.values(snapshot.val());
-  //   makeLeagueSelect(leagues);
-  // }, { onlyOnce: true });
-
-  makeLeagueSelect();
-
-
 }
 
 /* ------------------------------------------------ */
