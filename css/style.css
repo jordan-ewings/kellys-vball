@@ -479,7 +479,6 @@ td.drinks {
 }
 
 .menu-item .contents .main>.title {
-  /* font-size: 1rem; */
   font-weight: 400;
   color: var(--ios-text-primary);
   display: flex;
@@ -555,13 +554,6 @@ td.drinks {
 .week-stats .menu-item:not(.changed) .drinks-count-orig {
   display: none;
 }
-
-/* .week-stats div:has(>button.btn-save) {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-} */
 
 .week-stats button.btn-save {
   color: var(--ios-text-primary);
@@ -727,11 +719,6 @@ td.drinks {
 
 .game-item-form .team-record {
   display: none;
-}
-
-.game-item-form .stat-col .game-court,
-.game-item-form .stat-col .game-time {
-  /* display: none; */
 }
 
 .game-item.collapsing {
