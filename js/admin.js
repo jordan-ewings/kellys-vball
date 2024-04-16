@@ -1,7 +1,5 @@
-import * as util from './util.js';
-import * as gest from './gestures.js';
-import { db, APP } from './firebase.js';
-import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+import { db } from './firebase.js';
+import { ref, set, update } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 import { DBold } from './data.js';
 
 /* ------------------------------------------------ */
@@ -14,27 +12,36 @@ async function init() {
 
 }
 
+const APP = {};
+
 /* ------------------------------------------------ */
 // adding data to firebase
 
 async function loadNewData() {
 
-  await DBold.load('games');
-  await DBold.load('teams');
+  let night = 'monday';
 
-  let gamesRaw = DBold.get('games');
-  let teamsRaw = DBold.get('teams');
-  let meta = { season: '2024', session: '01', league: 'MONDAY' };
+  let meta = { season: '2024', session: '01', league: night.toUpperCase() };
+  let gamesSheet = night + '-games';
+  let teamsSheet = night + '-teams';
+
+  await DBold.load(gamesSheet);
+  await DBold.load(teamsSheet);
+
+  let gamesRaw = DBold.get(gamesSheet);
+  let teamsRaw = DBold.get(teamsSheet);
   let leagueId = meta.season + meta.session + meta.league;
 
   let weeksArr = gamesRaw.map(g => g.week).filter((v, i, a) => a.indexOf(v) === i);
   let weeks = {};
   weeksArr.forEach(w => {
     let week_id = 'WK' + w.padStart(2, '0');
+    let date = new Date(gamesRaw.find(g => g.week == w).date);
     weeks[week_id] = {
       id: week_id,
       nbr: parseInt(w),
       label: 'Week ' + w,
+      gameday: date,
       refs: {
         games: 'games/' + leagueId + '/' + week_id,
         stats: 'stats/' + leagueId + '/' + week_id,
@@ -193,15 +200,28 @@ function pushNewData() {
     actions.push({ ref: ref, value: value });
   });
 
-  console.log(actions);
-
+  let updates = {};
   actions.forEach(action => {
-    let dbPath = action.ref;
-    let dbValue = action.value;
-    set(ref(db, dbPath), dbValue);
+    updates[action.ref] = action.value;
   });
 
-  console.log('pushed data to firebase');
+  console.log(updates);
+
+  update(ref(db), updates)
+    .then(() => {
+      console.log('pushed data to firebase');
+    })
+    .catch((error) => {
+      console.error('Error updating data:', error);
+    });
+
+
+  // actions.forEach(action => {
+  //   let dbPath = action.ref;
+  //   let dbValue = action.value;
+  //   update(ref(db, dbPath), dbValue);
+  // });
+
 }
 
 /* ------------------------------------------------ */

@@ -53,12 +53,18 @@ function makeSchedule(weeks) {
     // create and append week group and week button
 
     const week = weeks[weekKey];
+    const weekDate = new Date(week.gameday);
+    const weekDateStr = weekDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const weekGroup = createElement(`<div class="week-group carousel-item" id="week-${week.id}-group" data-week="${week.id}"></div>`);
-    const weekBtn = createElement(`<button class="btn text-nowrap" type="button" id="week-${week.id}-btn" data-week="${week.id}">${week.label}</button>`);
+    const weekBtn = createElement(
+      `<button class="btn d-flex flex-column justify-content-center align-items-center text-nowrap" type="button" id="week-${week.id}-btn" data-week="${week.id}">
+        <span>${week.label}</span>
+        <span class="week-btn-date">${weekDateStr}</span>
+      </button>`);
     weekBtn.addEventListener('click', (e) => {
       weekBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       weekFilterContainer.querySelectorAll('button').forEach(b => {
-        b.classList.toggle('active', b == e.target);
+        b.classList.toggle('active', b == weekBtn);
       });
 
       let weekIndex = Object.keys(weeks).indexOf(weekKey);

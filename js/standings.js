@@ -179,7 +179,12 @@ function makeStats() {
 
     const menuItem = createMenuItem(true);
     menuItem.dataset.week = week.id;
+    menuItem.classList.add('week-stats-nav');
     menuItem.querySelector('.title').textContent = week.label;
+
+    const dateStr = new Date(week.gameday).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const dateEl = createElement(`<div>${dateStr}</div>`);
+    menuItem.querySelector('.main-info').appendChild(dateEl);
 
     statsBody.appendChild(menuItem);
     menuItem.addEventListener('click', () => {

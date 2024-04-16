@@ -143,6 +143,16 @@ function makeLeagueSelect() {
   };
 
   let leagues = Object.values(session.cache.leagues);
+  // sort leagues by season, session, league
+  // 'league' is a day of the week (e.g., 'MONDAY', 'TUESDAY', etc.), sort accordingly, not just alphabetically
+  leagues.sort((a, b) => {
+    if (a.season != b.season) return a.season - b.season;
+    if (a.session != b.session) return a.session - b.session;
+    if (a.league == b.league) return 0;
+    let days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+    return days.indexOf(a.league) - days.indexOf(b.league);
+  });
+
   let selects = ['season', 'session', 'league'];
 
   selects.forEach((s, i) => {
