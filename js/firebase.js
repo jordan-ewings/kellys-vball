@@ -1,6 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js';
 import { getDatabase } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+import { getAuth, signInAnonymously, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDIQtjpMrCnKYnm1ylGYevAT6uNsWytuFI",
@@ -21,77 +22,79 @@ export const db = getDatabase(app);
 
 /* ------------------------------------------------ */
 
+export const auth = getAuth(app);
+
+/* ------------------------------------------------ */
+
 export const session = {
 
-  user: {},
-  cache: {},
+  // meta
+  leagues: {},
+
+  // session specific
+  league: {},
+  teams: {},
+  weeks: {},
+
+  // user specific
+  user: null,
+  admin: false,
 
   init: async function () {
 
-    await this.getOnce('leagues', 'leagues');
-    await this.getOnce('brackets/DE14', 'bracket');
-
-    this.user = JSON.parse(localStorage.getItem('user'));
-    if (this.user == null) {
-      this.user = {
-        leagueId: Object.keys(this.cache.leagues)[0],
-        league: this.cache.leagues[Object.keys(this.cache.leagues)[0]]
-      };
-      localStorage.setItem('user', JSON.stringify(this.user));
+    let leagues = await this.getOnce('leagues');
+    let leagueId = localStorage.getItem('leagueId');
+    let leagueIdValid = (leagueId && leagues[leagueId]);
+    if (!leagueIdValid) {
+      leagueId = Object.keys(leagues)[0];
     }
 
-    // load nodes
-    const getNodePath = (node) => `${node}/${this.user.leagueId}`;
-    await this.getOnce(getNodePath('teams'), 'teams');
-    await this.getOnce(getNodePath('weeks'), 'weeks');
+    this.leagues = leagues;
+    this.setUserProps(auth.currentUser);
+    await this.setLeagueProps(leagueId);
 
+    console.log('Session initialized:', this);
   },
 
-  setUserLeague: function (leagueId) {
+  setUserProps: function (user) {
+    if (user) {
+      this.user = user;
+      this.admin = !user.isAnonymous;
+      this.adminControlEnabled = this.admin;
+    } else {
+      this.user = null;
+      this.admin = false;
+      this.adminControlEnabled = false;
+    }
+  },
 
-    const league = this.cache.leagues[leagueId];
+  setLeagueProps: async function (leagueId) {
+
+    const league = this.leagues[leagueId];
     if (league) {
-      this.user.leagueId = leagueId;
-      this.user.league = league;
-      localStorage.setItem('user', JSON.stringify(this.user));
+      this.league = league;
+      this.teams = await this.getOnce('teams/' + leagueId);
+      this.weeks = await this.getOnce('weeks/' + leagueId);
+      localStorage.setItem('leagueId', leagueId);
+      return true;
     } else {
       console.error('League not found:', leagueId, 'setUserLeague() cancelled');
+      return false;
     }
   },
 
-  getOnce: async function (path, cacheKey) {
+  getLeague: function () {
+    return this.league;
+  },
+
+  getOnce: async function (path) {
     return await get(child(ref(db), path)).then(snapshot => {
       if (snapshot.exists()) {
-        if (cacheKey) this.cache[cacheKey] = snapshot.val();
         return snapshot.val();
       } else {
-        console.error('No data found at', refPath, 'getOnce() cancelled');
+        console.error('No data found at', path, 'getOnce() cancelled');
         return null;
       }
     });
   },
-
-  onTeamsValue: function (callback) {
-    const path = this.user.league.refs.teams;
-    onValue(ref(db, path), snapshot => {
-      callback(snapshot.val());
-    });
-  },
-
-  onValueOnceWith: function (nodes, callback) {
-    let nodePaths = nodes.map(node => ref(db, this.user.league.refs[node]));
-    let values = {};
-    let count = 0;
-
-    nodePaths.forEach((path, i) => {
-      onValue(path, snapshot => {
-        values[nodes[i]] = snapshot.val();
-        count++;
-        if (count == nodePaths.length) {
-          callback(values);
-        }
-      }, { onlyOnce: true });
-    });
-  }
-
 }

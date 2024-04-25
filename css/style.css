@@ -361,6 +361,46 @@ td:first-child {
   color: var(--ios-text-tertiary);
 }
 
+/* clear default formatting of password input element (no border, no background, etc.) */
+#admin-container .menu-item .main>.title {
+  align-self: stretch;
+}
+
+.login-form input[type="password"] {
+  background-color: transparent;
+  color: var(--ios-text);
+  padding: none;
+  border: none;
+  width: 100%;
+}
+
+.login-form div[role="button"] {
+  width: 2.75rem;
+  align-self: stretch;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-form div[role="button"] i {
+  font-size: 1.2rem;
+  color: var(--ios-text);
+}
+
+.logged-in-form .form-check-input[role="switch"] {
+  width: 2.75rem;
+  height: 1.5rem;
+  align-self: stretch;
+}
+
+.logout-form div[role="button"] {
+  color: var(--ios-link);
+}
+
+.admin-control.hidden-control {
+  display: none !important;
+}
+
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* STANDINGS */
 

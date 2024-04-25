@@ -94,7 +94,7 @@ function processLeaderboard(teams) {
 
 function makeLeaderboard() {
 
-  onValue(ref(db, session.user.league.refs.teams), snapshot => {
+  onValue(ref(db, session.getLeague().refs.teams), snapshot => {
 
     const teams = snapshot.val();
     const teamsProc = processLeaderboard(teams);
@@ -160,8 +160,8 @@ function createMenuItem(drill = true) {
 
 function makeStats() {
 
-  let weeks = Object.values(session.cache.weeks);
-  let teams = Object.values(session.cache.teams);
+  let weeks = Object.values(session.weeks);
+  let teams = Object.values(session.teams);
 
   statsBody.innerHTML = '';
   carouselInner.querySelectorAll('.carousel-item').forEach((item, index) => {
@@ -200,10 +200,10 @@ function makeStats() {
     const carouselItem = createElement(
       `<div class="carousel-item week-stats" data-week="${week.id}" id="week-${week.id}-stats">
         <div>
-          <button class="btn btn-save disabled">Submit</button>
+          <button class="btn btn-save disabled admin-control">Submit</button>
         </div>
         <div class="cont-card">
-          <div class="cont-card-title"><span>TEAM-DRINKS ENTRY</span></div>
+          <div class="cont-card-title"><span>TEAM DRINKS</span></div>
           <div class="cont-card-body menu-item-list"></div>
         </div>
       </div>`
@@ -229,7 +229,7 @@ function makeStats() {
   const resetItemButtons = (carouselItem) => {
     const saveBtn = carouselItem.querySelector('.btn-save');
     saveBtn.innerHTML = 'Submit';
-    saveBtn.className = 'btn btn-save disabled';
+    saveBtn.className = 'btn btn-save disabled admin-control';
   };
 
   backBtn.addEventListener('click', () => {
@@ -257,8 +257,8 @@ function makeStats() {
 
     teams.forEach(team => {
 
-      const teamStatsPath = `${session.user.league.refs.teams}/${team.id}/stats`;
-      const teamWeekStatsPath = `${session.user.league.refs.stats}/${week.id}/${team.id}`;
+      const teamStatsPath = `${session.getLeague().refs.teams}/${team.id}/stats`;
+      const teamWeekStatsPath = `${session.getLeague().refs.stats}/${week.id}/${team.id}`;
 
       onValue(ref(db, teamWeekStatsPath), snapshot => {
 
@@ -271,7 +271,7 @@ function makeStats() {
         const stepOrig = createElement(`<div class="drinks-count-orig">${stats.drinks.count}</div>`);
         const stepVal = createElement(`<div class="drinks-count">${stats.drinks.count}</div>`);
         const stepInput = createElement(
-          `<div class="drinks-input stepper-container">
+          `<div class="drinks-input stepper-container admin-control">
             <div class="stepper">
               <div role="button" class="stepper-btn stepper-down">
                 <i class="fa-solid fa-minus"></i>
@@ -333,7 +333,7 @@ function makeStats() {
     const saveBtnSet = {
       reset: () => {
         saveBtn.innerHTML = 'Submit';
-        saveBtn.className = 'btn btn-save disabled';
+        saveBtn.className = 'btn btn-save disabled admin-control';
       },
       saving: () => {
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
@@ -359,8 +359,8 @@ function makeStats() {
       changedRows.forEach(row => {
         let teamId = row.dataset.team;
         let drinksChange = parseInt(row.querySelector('.drinks-count').dataset.change);
-        let sPath = `${session.user.league.refs.stats}/${week.id}/${teamId}/drinks/count`;
-        let tPath = `${session.user.league.refs.teams}/${teamId}/stats/drinks/count`;
+        let sPath = `${session.getLeague().refs.stats}/${week.id}/${teamId}/drinks/count`;
+        let tPath = `${session.getLeague().refs.teams}/${teamId}/stats/drinks/count`;
         updates[sPath] = increment(drinksChange);
         updates[tPath] = increment(drinksChange);
       });

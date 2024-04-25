@@ -1,5 +1,6 @@
-import { db, session } from './firebase.js';
+import { db, auth, session } from './firebase.js';
 import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
 import * as util from './util.js';
 import { initStandingsContent } from './standings.js';
 import { initScheduleContent } from './schedule.js';
@@ -23,11 +24,36 @@ export const APP = {};
 
 /* ------------------------------------------------ */
 
-document.addEventListener('DOMContentLoaded', initUserContent);
+function createElement(html) {
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  return template.content.firstChild;
+}
 
-export async function initUserContent(e) {
+/* ------------------------------------------------ */
+
+document.addEventListener('DOMContentLoaded', async () => {
 
   await session.init();
+  initUserContent();
+
+  // set up firebase auth
+  onAuthStateChanged(auth, user => {
+
+    let currentUserId = session.user ? session.user.uid : null;
+    let newUserId = user ? user.uid : null;
+    if (currentUserId == newUserId) return;
+
+    session.setUserProps(user);
+    initUserContent();
+  });
+
+});
+
+/* ------------------------------------------------ */
+
+export function initUserContent() {
+
   initHomeContent();
   initStandingsContent();
   initScheduleContent();
@@ -36,10 +62,26 @@ export async function initUserContent(e) {
 
 /* ------------------------------------------------ */
 
+// toggle visibility of admin controls depending on session.admin
+function setAdminControls() {
+  let showAdmin = session.admin && session.adminControlEnabled;
+  console.log('showAdmin:', showAdmin);
+  const adminControls = document.querySelectorAll('.admin-control');
+  adminControls.forEach(ac => {
+    if (!showAdmin) {
+      ac.classList.add('hidden-control');
+    } else {
+      ac.classList.remove('hidden-control');
+    }
+  });
+}
+
+/* ------------------------------------------------ */
+
 function initPageContent() {
 
   console.log(session);
-  footerLink.textContent = session.user.league.title;
+  footerLink.textContent = session.getLeague().title;
   if (APP.initialized) return;
   APP.initialized = true;
 
@@ -76,6 +118,8 @@ function initPageContent() {
 
 function showContent(name) {
 
+  setAdminControls();
+
   if (navbar.classList.contains('hidden')) navbar.classList.remove('hidden');
   const navLink = document.querySelector('#nav-' + name);
   const section = document.querySelector('#' + name + '-section');
@@ -99,6 +143,7 @@ function showContent(name) {
 const homeNav = document.querySelector('#nav-index');
 const homeSection = document.querySelector('#index-section');
 const leagueSelectContainer = document.querySelector('#league-select-container');
+const adminContainer = document.querySelector('#admin-container');
 
 /* ------------------------------------------------ */
 
@@ -106,6 +151,7 @@ function initHomeContent() {
 
   configureStyle();
   makeLeagueSelect();
+  makeAdminSignin();
 }
 
 /* ------------------------------------------------ */
@@ -137,12 +183,12 @@ function makeLeagueSelect() {
   leagueSelectContainer.innerHTML = '';
 
   let LG = {
-    season: session.user.league.season,
-    session: session.user.league.session,
-    league: session.user.league.league
+    season: session.getLeague().season,
+    session: session.getLeague().session,
+    league: session.getLeague().league
   };
 
-  let leagues = Object.values(session.cache.leagues);
+  let leagues = Object.values(session.leagues);
   // sort leagues by season, session, league
   // 'league' is a day of the week (e.g., 'MONDAY', 'TUESDAY', etc.), sort accordingly, not just alphabetically
   leagues.sort((a, b) => {
@@ -195,9 +241,10 @@ function makeLeagueSelect() {
       LG[s] = e.target.value;
       let leagueId = LG.season + LG.session + LG.league;
 
-      if (session.cache.leagues[leagueId]) {
-        session.setUserLeague(leagueId);
-        initUserContent();
+      if (session.leagues[leagueId]) {
+        session.setLeagueProps(leagueId).then(() => {
+          initUserContent();
+        });
       } else {
         console.log('League selection invalid - reloading options');
         makeLeagueSelect();
@@ -207,3 +254,111 @@ function makeLeagueSelect() {
     leagueSelectContainer.appendChild(formGroup);
   });
 }
+
+/* ------------------------------------------------ */
+// admin signin area
+
+// all users will be signed in anonymously by default (firebase signInAnonymously method is ran on page load)
+// however, will give option to sign in with password to access admin features
+
+function makeAdminSignin() {
+
+  const loginDiv = createElement(
+    `<div class="menu-item login-form">
+      <div class="label"></div>
+      <div class="contents">
+        <div class="main">
+          <div class="title">
+            <input type="password" placeholder="Enter password...">
+          </div>
+          <div class="detail"></div>
+        </div>
+        <div class="main-info">
+          <div role="button">
+            <i class="fa-regular fa-circle-right"></i>
+          </div>
+        </div>
+        <div class="trail">
+        </div>
+      </div>
+    </div>`
+  );
+
+  const loggedInDiv = createElement(
+    `<div class="menu-item logged-in-form">
+      <div class="label"></div>
+      <div class="contents">
+        <div class="main">
+          <div class="title">
+            <span>Enable admin features</span>
+          </div>
+          <div class="detail"></div>
+        </div>
+        <div class="main-info">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="admin-switch">
+          </div>
+        </div>
+        <div class="trail">
+        </div>
+      </div>
+    </div>`
+  );
+
+  const logoutDiv = createElement(
+    `<div class="menu-item logout-form">
+      <div class="label"></div>
+      <div class="contents">
+        <div class="main">
+          <div class="title">
+            <div role="button">
+              <span>Logout</span>
+            </div>
+          </div>
+          <div class="detail"></div>
+        </div>
+        <div class="main-info">
+        </div>
+        <div class="trail">
+        </div>
+      </div>
+    </div>`
+  );
+
+  // const adminPassword = loginDiv.querySelector('input');
+  const loginButton = loginDiv.querySelector('div[role="button"]');
+  loginButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    const email = 'jordanewings@outlook.com';
+    const password = loginDiv.querySelector('input').value;
+    signInWithEmailAndPassword(auth, email, password).then(userCredential => {
+      console.log('Admin signed in:', userCredential.user);
+    }).catch(error => {
+      console.error('signInWithEmailAndPassword() failed:', error);
+    });
+  });
+
+  const logoutButton = logoutDiv.querySelector('div[role="button"]');
+  logoutButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    signOut(auth);
+  });
+
+  const adminSwitch = loggedInDiv.querySelector('#admin-switch');
+  adminSwitch.checked = session.adminControlEnabled;
+  adminSwitch.addEventListener('change', (e) => {
+    session.adminControlEnabled = e.target.checked;
+    setAdminControls();
+  });
+
+  const adminBody = adminContainer.querySelector('.cont-card-body');
+  adminBody.innerHTML = '';
+  if (session.admin) {
+    adminBody.appendChild(loggedInDiv);
+    adminBody.appendChild(logoutDiv);
+  } else {
+    adminBody.appendChild(loginDiv);
+  }
+
+}
+

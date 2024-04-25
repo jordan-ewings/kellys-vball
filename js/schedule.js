@@ -15,7 +15,7 @@ const scheduleContainer = document.querySelector('#schedule-container');
 
 export function initScheduleContent() {
 
-  onValue(ref(db, session.user.league.refs.weeks), snapshot => {
+  onValue(ref(db, session.getLeague().refs.weeks), snapshot => {
 
     const weeks = snapshot.val();
     makeSchedule(weeks);
@@ -115,10 +115,10 @@ function makeSchedule(weeks) {
   /* ------------------------------------------------ */
   // set team records, update on change
 
-  const teamIds = Object.keys(session.cache.teams);
+  const teamIds = Object.keys(session.teams);
   teamIds.forEach(teamId => {
 
-    const teamPath = session.user.league.refs.teams + '/' + teamId;
+    const teamPath = session.getLeague().refs.teams + '/' + teamId;
     const teamRecordRef = ref(db, teamPath + '/stats/games/record');
     onValue(teamRecordRef, snapshot => {
       const record = snapshot.val();
@@ -152,7 +152,7 @@ function makeGameItem(d) {
     const teamItem = gameItem.querySelector('.team-item-' + (index + 1));
     teamItem.dataset.team_id = teamId;
 
-    let team = session.cache.teams[teamId];
+    let team = session.teams[teamId];
     teamItem.querySelector('.team-nbr').textContent = team.nbr;
     teamItem.querySelector('.team-name').textContent = team.name;
     teamItem.querySelector('.team-record').textContent = team.stats.games.record;
@@ -198,16 +198,7 @@ function makeGameItem(d) {
 
   let matches = d.matches;
   let newMatches = JSON.parse(JSON.stringify(matches));
-  let matchesRef = ref(db, session.user.league.refs.games + '/' + d.week + '/' + d.id + '/matches');
-
-  onValue(matchesRef, snapshot => {
-
-    matches = snapshot.val();
-    newMatches = JSON.parse(JSON.stringify(matches));
-    formatWinners(matches);
-    formatGameStatus(matches);
-    resetForm();
-  });
+  let matchesRef = ref(db, session.getLeague().refs.games + '/' + d.week + '/' + d.id + '/matches');
 
   /* ------------------------------------------------ */
 
@@ -262,6 +253,15 @@ function makeGameItem(d) {
       }
     }
   };
+
+  onValue(matchesRef, snapshot => {
+
+    matches = snapshot.val();
+    newMatches = JSON.parse(JSON.stringify(matches));
+    formatWinners(matches);
+    formatGameStatus(matches);
+    resetForm();
+  });
 
   /* ------------------------------------------------ */
   // handle match/team form selections
@@ -344,10 +344,10 @@ async function handleMatchUpdate(d, newMatches) {
   const gameId = d.id;
   const weekId = d.week;
   const teamIds = Object.keys(d.teams);
-  const gamesPath = () => `${session.user.league.refs.games}/${weekId}/${gameId}/matches`;
-  const teamsPath = (teamId) => `${session.user.league.refs.teams}/${teamId}/stats/games`;
-  const statsPath = (teamId) => `${session.user.league.refs.stats}/${weekId}/${teamId}/games`;
-  const games = await get(ref(db, session.user.league.refs.games)).then(snap => snap.val());
+  const gamesPath = () => `${session.getLeague().refs.games}/${weekId}/${gameId}/matches`;
+  const teamsPath = (teamId) => `${session.getLeague().refs.teams}/${teamId}/stats/games`;
+  const statsPath = (teamId) => `${session.getLeague().refs.stats}/${weekId}/${teamId}/games`;
+  const games = await get(ref(db, session.getLeague().refs.games)).then(snap => snap.val());
 
   let updates = {};
   updates[gamesPath()] = newMatches;
