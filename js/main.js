@@ -5,6 +5,8 @@ import * as util from './util.js';
 import { initStandingsContent } from './standings.js';
 import { initScheduleContent } from './schedule.js';
 
+import { ContCard, MenuItem } from '../components/common.js';
+
 /* ------------------------------------------------ */
 
 const navbar = document.querySelector('.navbar');
@@ -263,69 +265,31 @@ function makeLeagueSelect() {
 
 function makeAdminSignin() {
 
-  const loginDiv = createElement(
-    `<div class="menu-item login-form">
-      <div class="label"></div>
-      <div class="contents">
-        <div class="main">
-          <div class="title">
-            <input type="password" placeholder="Enter password...">
-          </div>
-          <div class="detail"></div>
-        </div>
-        <div class="main-info">
-          <div role="button">
-            <i class="fa-regular fa-circle-right"></i>
-          </div>
-        </div>
-        <div class="trail">
-        </div>
-      </div>
-    </div>`
-  );
+  const loginDiv = new MenuItem();
+  loginDiv.classList.add('login-form');
+  loginDiv.addMain('<input type="password" placeholder="Enter password..."/>');
+  loginDiv.addTrail('<div role="button"><i class="fa-regular fa-circle-right"></i></div>');
 
-  const loggedInDiv = createElement(
-    `<div class="menu-item logged-in-form">
-      <div class="label"></div>
-      <div class="contents">
-        <div class="main">
-          <div class="title">
-            <span>Enable admin features</span>
-          </div>
-          <div class="detail"></div>
-        </div>
-        <div class="main-info">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="admin-switch">
-          </div>
-        </div>
-        <div class="trail">
-        </div>
-      </div>
-    </div>`
-  );
+  const loggedInDiv = new MenuItem();
+  loggedInDiv.classList.add('logged-in-form');
+  loggedInDiv.addMain('Enable admin features');
+  loggedInDiv.addTrail('<div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="admin-switch"/></div>');
 
-  const logoutDiv = createElement(
-    `<div class="menu-item logout-form">
-      <div class="label"></div>
-      <div class="contents">
-        <div class="main">
-          <div class="title">
-            <div role="button">
-              <span>Logout</span>
-            </div>
-          </div>
-          <div class="detail"></div>
-        </div>
-        <div class="main-info">
-        </div>
-        <div class="trail">
-        </div>
-      </div>
-    </div>`
-  );
+  const logoutDiv = new MenuItem();
+  logoutDiv.classList.add('logout-form');
+  logoutDiv.addMain('<div role="button"><span>Logout</span></div>');
 
-  // const adminPassword = loginDiv.querySelector('input');
+  const card = new ContCard('ADMIN');
+  if (session.admin) {
+    card.addContent(loggedInDiv);
+    card.addContent(logoutDiv);
+  } else {
+    card.addContent(loginDiv);
+  }
+
+  adminContainer.innerHTML = '';
+  adminContainer.appendChild(card);
+
   const loginButton = loginDiv.querySelector('div[role="button"]');
   loginButton.addEventListener('click', (e) => {
     e.preventDefault();
@@ -344,21 +308,11 @@ function makeAdminSignin() {
     signOut(auth);
   });
 
-  const adminSwitch = loggedInDiv.querySelector('#admin-switch');
+  const adminSwitch = loggedInDiv.querySelector('.form-check-input');
   adminSwitch.checked = session.adminControlEnabled;
   adminSwitch.addEventListener('change', (e) => {
     session.adminControlEnabled = e.target.checked;
     setAdminControls();
   });
-
-  const adminBody = adminContainer.querySelector('.cont-card-body');
-  adminBody.innerHTML = '';
-  if (session.admin) {
-    adminBody.appendChild(loggedInDiv);
-    adminBody.appendChild(logoutDiv);
-  } else {
-    adminBody.appendChild(loginDiv);
-  }
-
 }
 

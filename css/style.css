@@ -296,7 +296,7 @@ td:first-child {
   justify-content: space-between;
   font-weight: 400;
   color: var(--ios-text-secondary);
-  padding: 0 .4rem;
+  padding: 0 1rem 0 1rem;
 }
 
 .cont-card-title>span {
@@ -306,9 +306,16 @@ td:first-child {
 }
 
 .cont-card-body {
-  padding: .6rem .4rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0.1rem 0;
+  /* padding: .6rem .4rem; */
   background-color: var(--ios-bg-secondary);
   border-radius: 10px;
+}
+
+#leaderboard-container .cont-card-body {
+  padding: .4rem .4rem;
 }
 
 #standings-carousel .carousel-item {
@@ -374,6 +381,12 @@ td:first-child {
   width: 100%;
 }
 
+.login-form input[type="password"]:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
 .login-form div[role="button"] {
   width: 2.75rem;
   align-self: stretch;
@@ -383,14 +396,20 @@ td:first-child {
 }
 
 .login-form div[role="button"] i {
-  font-size: 1.2rem;
-  color: var(--ios-text);
+  font-size: 1.4rem;
+  color: var(--ios-link);
 }
 
 .logged-in-form .form-check-input[role="switch"] {
-  width: 2.75rem;
-  height: 1.5rem;
+  width: 3.5rem;
+  height: 2rem;
+  margin: 0;
   align-self: stretch;
+}
+
+.logged-in-form .form-check {
+  padding: 0;
+  margin: 0;
 }
 
 .logout-form div[role="button"] {
@@ -473,6 +492,11 @@ td.drinks {
   align-items: center;
   flex-grow: 0;
   align-self: stretch;
+  /* padding-right: 0.4rem; */
+}
+
+/* if label is not empty, add padding to the right of the label */
+.menu-item .label:not(:empty) {
   padding-right: 0.4rem;
 }
 
