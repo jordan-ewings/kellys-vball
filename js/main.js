@@ -1,6 +1,5 @@
 import { db, auth, session } from './firebase.js';
-import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
 import * as util from './util.js';
 import { initStandingsContent } from './standings.js';
 import { initScheduleContent } from './schedule.js';
@@ -26,16 +25,9 @@ export const APP = {};
 
 /* ------------------------------------------------ */
 
-function createElement(html) {
-  const template = document.createElement('template');
-  template.innerHTML = html;
-  return template.content.firstChild;
-}
-
-/* ------------------------------------------------ */
-
 document.addEventListener('DOMContentLoaded', async () => {
 
+  // initialize session, then init user content, then set admin controls
   await session.init();
   initUserContent();
 
@@ -64,26 +56,10 @@ export function initUserContent() {
 
 /* ------------------------------------------------ */
 
-// toggle visibility of admin controls depending on session.admin
-function setAdminControls() {
-  let showAdmin = session.admin && session.adminControlEnabled;
-  console.log('showAdmin:', showAdmin);
-  const adminControls = document.querySelectorAll('.admin-control');
-  adminControls.forEach(ac => {
-    if (!showAdmin) {
-      ac.classList.add('hidden-control');
-    } else {
-      ac.classList.remove('hidden-control');
-    }
-  });
-}
-
-/* ------------------------------------------------ */
-
 function initPageContent() {
 
-  console.log(session);
   footerLink.textContent = session.getLeague().title;
+
   if (APP.initialized) return;
   APP.initialized = true;
 
@@ -120,7 +96,10 @@ function initPageContent() {
 
 function showContent(name) {
 
-  setAdminControls();
+  let adminControls = document.querySelectorAll('.admin-control');
+  adminControls.forEach(control => {
+    control.classList.toggle('hidden-control', !session.adminControls);
+  });
 
   if (navbar.classList.contains('hidden')) navbar.classList.remove('hidden');
   const navLink = document.querySelector('#nav-' + name);
@@ -182,8 +161,6 @@ function configureStyle() {
 
 function makeLeagueSelect() {
 
-  leagueSelectContainer.innerHTML = '';
-
   let LG = {
     season: session.getLeague().season,
     session: session.getLeague().session,
@@ -191,8 +168,6 @@ function makeLeagueSelect() {
   };
 
   let leagues = Object.values(session.leagues);
-  // sort leagues by season, session, league
-  // 'league' is a day of the week (e.g., 'MONDAY', 'TUESDAY', etc.), sort accordingly, not just alphabetically
   leagues.sort((a, b) => {
     if (a.season != b.season) return a.season - b.season;
     if (a.session != b.session) return a.session - b.session;
@@ -203,16 +178,15 @@ function makeLeagueSelect() {
 
   let selects = ['season', 'session', 'league'];
 
+  const card = new ContCard('SELECT LEAGUE');
+  leagueSelectContainer.innerHTML = '';
+  leagueSelectContainer.appendChild(card);
+
   selects.forEach((s, i) => {
 
-    let formGroup = util.createFromTemplate('league-select-form-group-template');
-    let select = formGroup.querySelector('select');
-    let label = formGroup.querySelector('label');
-
-    formGroup.id = s + '-div';
+    const select = document.createElement('select');
     select.id = s + 'Select';
-    label.for = s + 'Select';
-    label.textContent = s;
+    select.classList.add('form-select');
 
     let limLeagues = leagues;
     if (s == 'session') limLeagues = limLeagues.filter(l => l.season == LG.season);
@@ -238,7 +212,6 @@ function makeLeagueSelect() {
 
     // update local storage on change
     select.addEventListener('change', e => {
-
       e.preventDefault();
       LG[s] = e.target.value;
       let leagueId = LG.season + LG.session + LG.league;
@@ -253,66 +226,113 @@ function makeLeagueSelect() {
       }
     });
 
-    leagueSelectContainer.appendChild(formGroup);
+    // add to card
+    const item = new MenuItem()
+      .addMain(s.charAt(0).toUpperCase() + s.slice(1))
+      .addTrail(select);
+
+    card.addContent(item);
   });
 }
 
 /* ------------------------------------------------ */
 // admin signin area
 
-// all users will be signed in anonymously by default (firebase signInAnonymously method is ran on page load)
-// however, will give option to sign in with password to access admin features
-
 function makeAdminSignin() {
 
-  const loginDiv = new MenuItem();
-  loginDiv.classList.add('login-form');
-  loginDiv.addMain('<input type="password" placeholder="Enter password..."/>');
-  loginDiv.addTrail('<div role="button"><i class="fa-regular fa-circle-right"></i></div>');
-
-  const loggedInDiv = new MenuItem();
-  loggedInDiv.classList.add('logged-in-form');
-  loggedInDiv.addMain('Enable admin features');
-  loggedInDiv.addTrail('<div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="admin-switch"/></div>');
-
-  const logoutDiv = new MenuItem();
-  logoutDiv.classList.add('logout-form');
-  logoutDiv.addMain('<div role="button"><span>Logout</span></div>');
-
-  const card = new ContCard('ADMIN');
-  if (session.admin) {
-    card.addContent(loggedInDiv);
-    card.addContent(logoutDiv);
-  } else {
-    card.addContent(loginDiv);
-  }
+  const card = new ContCard('ADMIN ACCESS');
 
   adminContainer.innerHTML = '';
   adminContainer.appendChild(card);
 
-  const loginButton = loginDiv.querySelector('div[role="button"]');
-  loginButton.addEventListener('click', (e) => {
-    e.preventDefault();
-    const email = 'jordanewings@outlook.com';
-    const password = loginDiv.querySelector('input').value;
-    signInWithEmailAndPassword(auth, email, password).then(userCredential => {
-      console.log('Admin signed in:', userCredential.user);
-    }).catch(error => {
-      console.error('signInWithEmailAndPassword() failed:', error);
-    });
+  /* --------------------------- */
+  // item: sign in
+
+  const passwordInput = document.createElement('input');
+  passwordInput.type = 'password';
+  passwordInput.placeholder = 'Enter password...';
+
+  const loginButton = document.createElement('div');
+  loginButton.role = 'button';
+  loginButton.innerHTML = '<i class="fa-regular fa-circle-right"></i>';
+
+  const signInSpinner = document.createElement('div');
+  signInSpinner.classList.add('spinner-border', 'spinner-border-sm', 'd-none');
+
+  const loginDiv = new MenuItem()
+    .addClass('login-form')
+    .addMain(passwordInput)
+    .addTrail(loginButton)
+    .addTrail(signInSpinner);
+
+  const signIn = async () => {
+    loginButton.classList.add('d-none');
+    signInSpinner.classList.remove('d-none');
+    const password = passwordInput.value;
+
+    try {
+      await session.signIn(password);
+    } catch (error) {
+      console.error('Sign in failed:', error);
+    }
+  };
+
+  loginButton.addEventListener('click', signIn);
+  passwordInput.addEventListener('keypress', e => {
+    if (e.key === 'Enter') signIn();
   });
 
-  const logoutButton = logoutDiv.querySelector('div[role="button"]');
-  logoutButton.addEventListener('click', (e) => {
-    e.preventDefault();
-    signOut(auth);
-  });
+  /* --------------------------- */
+  // item: enable/disable admin controls
 
-  const adminSwitch = loggedInDiv.querySelector('.form-check-input');
-  adminSwitch.checked = session.adminControlEnabled;
+  const adminSwitch = document.createElement('input');
+  adminSwitch.type = 'checkbox';
+  adminSwitch.classList.add('form-check-input');
+  adminSwitch.id = 'admin-switch';
+  adminSwitch.role = 'switch';
+  adminSwitch.checked = session.adminControls;
   adminSwitch.addEventListener('change', (e) => {
-    session.adminControlEnabled = e.target.checked;
-    setAdminControls();
+    if (e.target.checked) {
+      session.adminControls = true;
+      session.enableAdminControls();
+    } else {
+      session.adminControls = false;
+      session.disableAdminControls();
+    }
   });
+
+  const adminSwitchWrapper = document.createElement('div');
+  adminSwitchWrapper.classList.add('form-check', 'form-switch');
+  adminSwitchWrapper.appendChild(adminSwitch);
+
+  const loggedInDiv = new MenuItem()
+    .addClass('logged-in-form')
+    .addMain('Enable Controls')
+    .addTrail(adminSwitchWrapper);
+
+  /* --------------------------- */
+  // item: sign out
+
+  const logoutButton = document.createElement('div');
+  logoutButton.role = 'button';
+  logoutButton.innerHTML = '<span>Logout</span>';
+  logoutButton.addEventListener('click', async (e) => {
+    await session.signOut();
+  });
+
+  const logoutDiv = new MenuItem()
+    .addClass('logout-form')
+    .addMain(logoutButton);
+
+  /* --------------------------- */
+  // add items to card
+
+  if (session.admin) {
+    card.addContent(loggedInDiv);
+    card.addContent(logoutDiv);
+    card.addFooter('Enable controls to edit game results and team stats.');
+  } else {
+    card.addContent(loginDiv);
+  }
 }
 

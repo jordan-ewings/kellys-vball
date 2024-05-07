@@ -1,7 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js';
 import { getDatabase } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 import { ref, get, child, onValue, set, update, remove, onChildAdded, onChildChanged, onChildRemoved } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
-import { getAuth, signInAnonymously, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDIQtjpMrCnKYnm1ylGYevAT6uNsWytuFI",
@@ -39,7 +39,9 @@ export const session = {
   // user specific
   user: null,
   admin: false,
+  adminControls: false,
 
+  // run on page load
   init: async function () {
 
     let leagues = await this.getOnce('leagues');
@@ -54,20 +56,24 @@ export const session = {
     await this.setLeagueProps(leagueId);
 
     console.log('Session initialized:', this);
+
+    return this;
   },
 
+  // run on auth state change
   setUserProps: function (user) {
     if (user) {
       this.user = user;
       this.admin = !user.isAnonymous;
-      this.adminControlEnabled = this.admin;
+      this.adminControls = !user.isAnonymous;
     } else {
       this.user = null;
       this.admin = false;
-      this.adminControlEnabled = false;
+      this.adminControls = false;
     }
   },
 
+  // run on league change
   setLeagueProps: async function (leagueId) {
 
     const league = this.leagues[leagueId];
@@ -82,6 +88,44 @@ export const session = {
       return false;
     }
   },
+
+  // set .admin-control elements visibility
+  enableAdminControls: function () {
+    const controls = document.querySelectorAll('.admin-control');
+    controls.forEach(control => {
+      control.classList.remove('hidden-control');
+    });
+  },
+
+  disableAdminControls: function () {
+    const controls = document.querySelectorAll('.admin-control');
+    controls.forEach(control => {
+      control.classList.add('hidden-control');
+    });
+  },
+
+  // sign out
+  signOut: async function () {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Sign out failed:', error);
+    }
+  },
+
+  // sign in user
+  signIn: async function (password) {
+    try {
+      await signInWithEmailAndPassword(
+        auth,
+        'jordanewings@outlook.com',
+        password
+      );
+    } catch (error) {
+      console.error('Sign in failed:', error);
+    }
+  },
+
 
   getLeague: function () {
     return this.league;

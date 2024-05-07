@@ -33,6 +33,14 @@ export function createFromTemplate(templateId) {
 
 /* ------------------------------------------------ */
 
+export function createElement(html) {
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  return template.content.firstChild;
+}
+
+/* ------------------------------------------------ */
+
 export function offsetScrollIntoView(element) {
 
   // get '.main-header' height of the section being displayed (i.e., doesn't have 'd-none' class)

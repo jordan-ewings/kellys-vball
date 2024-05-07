@@ -38,6 +38,7 @@ export class ContCard extends HTMLElement {
     const html = `
       <div class="cont-card-title"></div>
       <div class="cont-card-body"></div>
+      <div class="cont-card-footer"></div>
     `;
 
     this.classList.add('cont-card');
@@ -61,6 +62,13 @@ export class ContCard extends HTMLElement {
     div.appendChild(item);
     return this;
   }
+
+  addFooter(footer) {
+    const div = this.querySelector('.cont-card-footer');
+    const content = stdInput(footer);
+    div.appendChild(content);
+    return this;
+  }
 }
 
 // define the custom element
@@ -71,9 +79,8 @@ customElements.define('cont-card', ContCard);
 
 export class MenuItem extends HTMLElement {
 
-  constructor(nav) {
+  constructor() {
     super();
-    this.nav = nav || false;
     this.render();
   }
 
@@ -84,22 +91,36 @@ export class MenuItem extends HTMLElement {
       <div class="contents">
         <div class="main"></div>
         <div class="info"></div>
-        <div class="trail">
-          <div class="drill">
-            <i class="fa-solid fa-chevron-right"></i>
-          </div>
-        </div>
+        <div class="trail"></div>
       </div>
     `;
 
     this.classList.add('menu-item');
     this.innerHTML = html;
-    if (this.nav) {
-      this.setAttribute('role', 'button');
-    } else {
-      this.querySelector('.drill').remove();
-    }
 
+    return this;
+  }
+
+  addClass(classStr) {
+    if (classStr.includes(' ')) {
+      const classes = classStr.split(' ');
+      classes.forEach(cls => {
+        this.classList.add(cls);
+      });
+    } else {
+      this.classList.add(classStr);
+    }
+    return this;
+  }
+
+  // enable nav
+  enableNav() {
+    const drill = document.createElement('div');
+    drill.classList.add('drill');
+    drill.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+
+    this.setAttribute('role', 'button');
+    this.querySelector('.trail').appendChild(drill);
     return this;
   }
 
@@ -131,7 +152,12 @@ export class MenuItem extends HTMLElement {
   addTrail(trail) {
     const div = this.querySelector('.trail');
     const content = stdInput(trail);
-    div.appendChild(content);
+    // if drill in trail div, append just before it
+    if (div.querySelector('.drill')) {
+      div.insertBefore(content, div.querySelector('.drill'));
+    } else {
+      div.appendChild(content);
+    }
     return this;
   }
 }
