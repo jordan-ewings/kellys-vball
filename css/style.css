@@ -328,9 +328,14 @@ td:first-child {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  padding: .4rem 1rem 0 1rem;
+  padding: 0rem 1rem 0 1rem;
   color: var(--ios-text-secondary);
+}
+
+.cont-card-footer>span {
+  padding-top: .4rem;
   font-size: .8rem;
+  line-height: 1.5;
 }
 
 #leaderboard-container .cont-card-body {
@@ -776,13 +781,13 @@ td.drinks {
   border-right: .8px solid var(--ios-separator-opaque);
 }
 
-.game-item .team-name:hover {
+/* .game-item .team-name:hover {
   cursor: pointer;
 }
 
 .game-item-form i.result:hover {
   cursor: pointer;
-}
+} */
 
 .game-item .stat-col {
   padding-right: 0;

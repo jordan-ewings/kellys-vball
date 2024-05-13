@@ -34,9 +34,9 @@ export function createFromTemplate(templateId) {
 /* ------------------------------------------------ */
 
 export function createElement(html) {
-  const template = document.createElement('template');
-  template.innerHTML = html;
-  return template.content.firstChild;
+  let div = document.createElement('div');
+  div.innerHTML = html;
+  return div.firstElementChild;
 }
 
 /* ------------------------------------------------ */

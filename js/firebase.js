@@ -16,12 +16,7 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
-// Get a reference to the database service
 export const db = getDatabase(app);
-
-/* ------------------------------------------------ */
-
 export const auth = getAuth(app);
 
 /* ------------------------------------------------ */
@@ -35,6 +30,7 @@ export const session = {
   league: {},
   teams: {},
   weeks: {},
+  games: {},
 
   // user specific
   user: null,
@@ -44,33 +40,29 @@ export const session = {
   // run on page load
   init: async function () {
 
-    let leagues = await this.getOnce('leagues');
+    // get leagues and set league
+    this.leagues = await this.getOnce('leagues');
+    this.league = this.leagues[Object.keys(this.leagues)[0]];
+
     let leagueId = localStorage.getItem('leagueId');
-    let leagueIdValid = (leagueId && leagues[leagueId]);
-    if (!leagueIdValid) {
-      leagueId = Object.keys(leagues)[0];
+    if (leagueId && this.leagues[leagueId]) {
+      this.league = this.leagues[leagueId];
     }
 
-    this.leagues = leagues;
-    this.setUserProps(auth.currentUser);
-    await this.setLeagueProps(leagueId);
+    // get league specific data
+    this.teams = await this.getOnce('teams/' + this.league.id);
+    this.weeks = await this.getOnce('weeks/' + this.league.id);
+    this.games = await this.getOnce('games/' + this.league.id);
 
     console.log('Session initialized:', this);
-
     return this;
   },
 
-  // run on auth state change
+  // run on user change
   setUserProps: function (user) {
-    if (user) {
-      this.user = user;
-      this.admin = !user.isAnonymous;
-      this.adminControls = !user.isAnonymous;
-    } else {
-      this.user = null;
-      this.admin = false;
-      this.adminControls = false;
-    }
+    this.user = user;
+    this.admin = user ? !user.isAnonymous : false;
+    this.adminControls = user ? !user.isAnonymous : false;
   },
 
   // run on league change
@@ -81,11 +73,10 @@ export const session = {
       this.league = league;
       this.teams = await this.getOnce('teams/' + leagueId);
       this.weeks = await this.getOnce('weeks/' + leagueId);
+      this.games = await this.getOnce('games/' + leagueId);
       localStorage.setItem('leagueId', leagueId);
-      return true;
     } else {
       console.error('League not found:', leagueId, 'setUserLeague() cancelled');
-      return false;
     }
   },
 
@@ -132,13 +123,11 @@ export const session = {
   },
 
   getOnce: async function (path) {
-    return await get(child(ref(db), path)).then(snapshot => {
-      if (snapshot.exists()) {
-        return snapshot.val();
-      } else {
-        console.error('No data found at', path, 'getOnce() cancelled');
-        return null;
-      }
-    });
+    const data = await get(child(ref(db), path)).then(s => s.val());
+    return data;
+  },
+
+  update: async function (updates) {
+    return await update(ref(db), updates);
   },
 }

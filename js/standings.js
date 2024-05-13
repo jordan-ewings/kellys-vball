@@ -1,9 +1,8 @@
 import { offsetScrollIntoView, formatNumber, createElement } from './util.js';
 import { db, session } from './firebase.js';
-import { ref, onValue, set, update, runTransaction, increment } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+import { ref, onValue, update, increment } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
-import { APP } from './main.js';
-import { ContCard, MenuItem } from '../components/common.js';
+import { ContCard, MenuItem, LeaderboardItem } from '../components/common.js';
 
 /* ------------------------------------------------ */
 
@@ -25,6 +24,18 @@ export function initStandingsContent() {
 
   makeLeaderboard();
   makeStats();
+}
+
+export function handleStandingsAdmin() {
+
+  const adminControls = standingsSection.querySelectorAll('.admin-control');
+  adminControls.forEach(control => {
+    if (session.adminControls) {
+      control.classList.remove('d-none');
+    } else {
+      control.classList.add('d-none');
+    }
+  });
 }
 
 /* ------------------------------------------------ */
@@ -94,33 +105,12 @@ function makeLeaderboard() {
     leaderboardTBody.innerHTML = '';
 
     teamsProc.forEach(team => {
-      const row = makeLeaderboardItem(team);
+      const item = new LeaderboardItem(team);
+      const row = item.element();
       leaderboardTBody.appendChild(row);
     });
 
   });
-}
-
-/* ------------------------------------------------ */
-
-function makeLeaderboardItem(team) {
-
-  const item = createElement(
-    `<tr class="leaderboard-item" id="leaderboard-${team.id}">
-      <td class="team">
-        <div class="d-flex align-items-center column-gap-2">
-          <span class="team-nbr">${team.nbr}</span>
-          <span class="team-name">${team.name}</span>
-        </div>
-      </td>
-      <td class="wins">${team.wins}</td>
-      <td class="losses">${team.losses}</td>
-      <td class="winPct">${formatNumber(team.winPct, '0.000')}</td>
-      <td class="drinks">${team.drinks}</td>
-    </tr>`
-  );
-
-  return item;
 }
 
 /* ------------------------------------------------ */
@@ -141,7 +131,6 @@ function makeStats() {
   const carousel = new bootstrap.Carousel(standingsCarousel, { interval: false });
   const backBtn = mainHeader.querySelector('button.btn-back');
   const saveBtn = mainHeader.querySelector('button.btn-save');
-  saveBtn.classList.add('disabled', 'admin-control');
   const headerSpan = mainHeader.querySelector('.main-header-title span');
 
   weeks.forEach((week, index) => {
@@ -195,7 +184,7 @@ function makeStats() {
     reset: () => {
       saveBtn.innerHTML = 'Submit';
       saveBtn.className = 'btn btn-save disabled admin-control';
-      if (!session.adminControls) saveBtn.classList.add('hidden-control');
+      if (!session.adminControls) saveBtn.classList.add('d-none');
     },
     saving: () => {
       saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
@@ -211,8 +200,6 @@ function makeStats() {
       if (msg) saveBtn.innerHTML += `<div>${msg}</div>`;
     }
   };
-
-
 
   backBtn.addEventListener('click', () => {
 
@@ -259,17 +246,9 @@ function makeStats() {
         console.error(err);
         saveBtnSet.nosave(err.message);
       });
-
-    // testing
-    // setTimeout(() => {
-    //   saveBtnSet.saved();
-    //   setTimeout(() => {
-    //     saveBtnSet.reset();
-    //     resetItemRows(activeItem);
-    //   }, 2000);
-    // });
-
   });
+
+  saveBtnSet.reset();
 
   /* ------------------------------------------------ */
   // populate week items with team stats
@@ -278,7 +257,6 @@ function makeStats() {
 
     const carouselItem = carouselInner.querySelector(`.carousel-item[data-week="${week.id}"`);
     const statsCard = carouselItem.querySelector('.cont-card');
-    // const saveBtn = carouselItem.querySelector('.btn-save');
     const statsList = statsCard.querySelector('.cont-card-body');
 
     teams.forEach(team => {
@@ -290,7 +268,6 @@ function makeStats() {
 
         const stats = snapshot.val();
 
-        // const label = createElement(`<div class="team-nbr">${team.nbr}</div>`);
         const title = createElement(
           `<div class="d-flex align-items-center column-gap-2">
             <span class="team-nbr">${team.nbr}</span>
@@ -313,9 +290,9 @@ function makeStats() {
           </div>`
         );
 
+        if (!session.adminControls) stepInput.classList.add('d-none');
+
         const statsRow = new MenuItem()
-          // .addLabel(label)
-          // .addMain(team.name)
           .addMain(title)
           .addInfo(stepOrig)
           .addInfo(stepVal)
@@ -357,39 +334,6 @@ function makeStats() {
 
       });
     });
-
-    /* ------------------------------------------------ */
-    // handle save button click
-
-    // saveBtn.addEventListener('click', () => {
-
-    //   saveBtnSet.saving();
-    //   const updates = {};
-    //   const changedRows = statsList.querySelectorAll('.menu-item.changed');
-
-    //   changedRows.forEach(row => {
-    //     let teamId = row.dataset.team;
-    //     let drinksChange = parseInt(row.querySelector('.drinks-count').dataset.change);
-    //     let sPath = `${session.getLeague().refs.stats}/${week.id}/${teamId}/drinks/count`;
-    //     let tPath = `${session.getLeague().refs.teams}/${teamId}/stats/drinks/count`;
-    //     updates[sPath] = increment(drinksChange);
-    //     updates[tPath] = increment(drinksChange);
-    //   });
-
-    //   console.log('updates', updates);
-    //   update(ref(db), updates)
-    //     .then(() => {
-    //       saveBtnSet.saved();
-    //       setTimeout(() => {
-    //         saveBtnSet.reset();
-    //       }, 2000);
-    //     })
-    //     .catch(err => {
-    //       console.error(err);
-    //       saveBtnSet.nosave(err.message);
-    //     });
-
-    // });
 
   });
 
