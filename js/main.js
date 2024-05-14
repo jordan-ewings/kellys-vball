@@ -107,7 +107,7 @@ function showContent(name) {
   navLinks.forEach(nav => nav.classList.toggle('active', nav == navLink));
   sections.forEach(sec => sec.classList.toggle('d-none', sec != section));
 
-  footer.classList.toggle('fixed-bottom', name == 'index');
+  // footer.classList.toggle('fixed-bottom', name == 'index');
 
   if (name == 'schedule') {
     const weekFilterContainer = section.querySelector('#week-filter-container');

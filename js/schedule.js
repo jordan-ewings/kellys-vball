@@ -3,7 +3,7 @@ import { db, session } from './firebase.js';
 import { ref, get, onValue, update } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
 import { APP } from './main.js';
-import { ContCard, GameItem } from '../components/common.js';
+import { ContCard, GameItem } from '../components/main.js';
 
 /* ------------------------------------------------ */
 

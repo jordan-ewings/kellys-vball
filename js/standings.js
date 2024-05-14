@@ -2,7 +2,7 @@ import { offsetScrollIntoView, formatNumber, createElement } from './util.js';
 import { db, session } from './firebase.js';
 import { ref, onValue, update, increment } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
-import { ContCard, MenuItem, LeaderboardItem } from '../components/common.js';
+import { ContCard, MenuItem, LeaderboardItem } from '../components/main.js';
 
 /* ------------------------------------------------ */
 
@@ -272,6 +272,7 @@ function makeStats() {
           `<div class="d-flex align-items-center column-gap-2">
             <span class="team-nbr">${team.nbr}</span>
             <span class="team-name">${team.name}</span>
+            ${session.favTeam == team.name ? '<i class="fa-solid fa-user fav-team"></i>' : ''}
           </div>`
         );
         const stepOrig = createElement(`<div class="drinks-count-orig">${stats.drinks.count}</div>`);

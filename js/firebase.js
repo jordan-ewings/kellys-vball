@@ -37,6 +37,9 @@ export const session = {
   admin: false,
   adminControls: false,
 
+  // my team
+  favTeam: null,
+
   // run on page load
   init: async function () {
 
@@ -53,6 +56,12 @@ export const session = {
     this.teams = await this.getOnce('teams/' + this.league.id);
     this.weeks = await this.getOnce('weeks/' + this.league.id);
     this.games = await this.getOnce('games/' + this.league.id);
+
+    let favTeam = localStorage.getItem('favTeam');
+    let teamNames = Object.values(this.teams).map(t => t.name);
+    if (favTeam && teamNames.includes(favTeam)) {
+      this.favTeam = favTeam;
+    }
 
     console.log('Session initialized:', this);
     return this;
@@ -75,9 +84,20 @@ export const session = {
       this.weeks = await this.getOnce('weeks/' + leagueId);
       this.games = await this.getOnce('games/' + leagueId);
       localStorage.setItem('leagueId', leagueId);
+
+      // check if favTeam is in new league
+      let teamNames = Object.values(this.teams).map(t => t.name);
+      if (this.favTeam && !teamNames.includes(this.favTeam)) {
+        this.favTeam = null;
+      }
     } else {
       console.error('League not found:', leagueId, 'setUserLeague() cancelled');
     }
+  },
+
+  setFavTeam: function (teamName) {
+    this.favTeam = teamName;
+    localStorage.setItem('favTeam', teamName);
   },
 
   // set .admin-control elements visibility

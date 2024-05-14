@@ -2,7 +2,7 @@ import { db, auth, session } from './firebase.js';
 
 import { createElement } from './util.js';
 import { initUserContent, handleAdminContent } from './main.js';
-import { ContCard, MenuItem } from '../components/common.js';
+import { ContCard, MenuItem } from '../components/main.js';
 
 /* ------------------------------------------------ */
 
@@ -10,6 +10,7 @@ const homeNav = document.querySelector('#nav-index');
 const homeSection = document.querySelector('#index-section');
 const leagueSelectContainer = document.querySelector('#league-select-container');
 const adminContainer = document.querySelector('#admin-container');
+const teamSelectContainer = document.querySelector('#team-select-container');
 
 /* ------------------------------------------------ */
 
@@ -17,6 +18,7 @@ export function initHomeContent() {
 
   makeLeagueSelect();
   makeAdminSignin();
+  makeMyTeamPicker();
 }
 
 /* ------------------------------------------------ */
@@ -110,16 +112,9 @@ function makeAdminSignin() {
   /* --------------------------- */
   // item: sign in
 
-  const passwordInput = document.createElement('input');
-  passwordInput.type = 'password';
-  passwordInput.placeholder = 'Enter password...';
-
-  const loginButton = document.createElement('div');
-  loginButton.role = 'button';
-  loginButton.innerHTML = '<i class="fa-regular fa-circle-right"></i>';
-
-  const signInSpinner = document.createElement('div');
-  signInSpinner.classList.add('spinner-border', 'spinner-border-sm', 'd-none');
+  const passwordInput = createElement('<input type="password" placeholder="Enter password...">');
+  const loginButton = createElement('<div role="button"><i class="fa-regular fa-circle-right"></i></div>');
+  const signInSpinner = createElement('<div class="spinner-border spinner-border-sm d-none"></div>');
 
   const loginDiv = new MenuItem()
     .addClass('login-form')
@@ -147,13 +142,13 @@ function makeAdminSignin() {
   /* --------------------------- */
   // item: enable/disable admin controls
 
-  const adminSwitch = document.createElement('input');
-  adminSwitch.type = 'checkbox';
-  adminSwitch.classList.add('form-check-input');
-  adminSwitch.id = 'admin-switch';
-  adminSwitch.role = 'switch';
-  adminSwitch.checked = session.adminControls;
-  adminSwitch.addEventListener('change', (e) => {
+  const adminSwitch = createElement(`
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" id="admin-switch" role="switch" ${session.adminControls ? 'checked' : ''}>
+    </div>
+  `);
+
+  adminSwitch.querySelector('input').addEventListener('change', (e) => {
     if (e.target.checked) {
       session.adminControls = true;
     } else {
@@ -162,21 +157,15 @@ function makeAdminSignin() {
     handleAdminContent();
   });
 
-  const adminSwitchWrapper = document.createElement('div');
-  adminSwitchWrapper.classList.add('form-check', 'form-switch');
-  adminSwitchWrapper.appendChild(adminSwitch);
-
   const loggedInDiv = new MenuItem()
     .addClass('logged-in-form')
     .addMain('Enable Controls')
-    .addTrail(adminSwitchWrapper);
+    .addTrail(adminSwitch);
 
   /* --------------------------- */
   // item: sign out
 
-  const logoutButton = document.createElement('div');
-  logoutButton.role = 'button';
-  logoutButton.innerHTML = '<span>Logout</span>';
+  const logoutButton = createElement('<div role="button"><span>Logout</span></div>');
   logoutButton.addEventListener('click', async (e) => {
     await session.signOut();
   });
@@ -196,4 +185,57 @@ function makeAdminSignin() {
     card.addContent(loginDiv);
   }
 }
+
+/* ------------------------------------------------ */
+// my team picker
+
+function makeMyTeamPicker() {
+
+  const card = new ContCard('MY TEAM');
+
+  teamSelectContainer.innerHTML = '';
+  teamSelectContainer.appendChild(card);
+
+  const createTeamItem = (team) => {
+
+    const title = createElement(`
+      <div class="d-flex align-items-center column-gap-2">
+        <span class="team-nbr">${team.nbr}</span>
+        <span class="team-name">${team.name}</span>
+        ${session.favTeam == team.name ? '<i class="fa-solid fa-user fav-team"></i>' : ''}
+      </div>
+    `);
+
+    const check = createElement(`<i class="fa-regular fa-circle"></i>`);
+    if (session.favTeam == team.name) check.className = 'fa-solid fa-circle-check';
+
+    const item = new MenuItem();
+    item.setAttribute('role', 'button');
+    item.addClass('team-select-item');
+    item.addMain(title);
+    item.addTrail(check);
+
+    item.addEventListener('click', () => {
+      session.setFavTeam(team.name);
+      initUserContent();
+    });
+
+    return item;
+  }
+
+  const teams = Object.values(session.teams);
+  const hasValidFavTeam = (session.favTeam && teams.find(t => t.name == session.favTeam));
+  const favTeam = (hasValidFavTeam) ? teams.find(t => t.name == session.favTeam) : null;
+  if (favTeam) {
+    card.addContent(createTeamItem(favTeam));
+  }
+
+  teams.forEach(team => {
+    if (!favTeam || team.name != favTeam.name) {
+      card.addContent(createTeamItem(team));
+    }
+  });
+}
+
+
 

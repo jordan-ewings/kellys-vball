@@ -346,8 +346,9 @@ td:first-child {
 
 #league-select-container,
 #admin-container,
-#standings-carousel .carousel-item {
-  padding: 0 .5rem;
+#standings-carousel .carousel-item,
+#team-select-container {
+  padding: 0 .75rem;
 }
 
 #league-select-container select {
@@ -404,6 +405,17 @@ td:first-child {
   color: var(--ios-link);
 }
 
+.form-switch .form-check-input {
+  background-color: var(--ios-bg-tertiary);
+  border-color: var(--ios-bg-tertiary);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23ffffff'/%3e%3c/svg%3e");
+}
+
+.form-switch .form-check-input:checked {
+  background-color: var(--ios-green);
+  border-color: var(--ios-green);
+}
+
 .logged-in-form .form-check-input[role="switch"] {
   width: 3.5rem;
   height: 2rem;
@@ -422,6 +434,23 @@ td:first-child {
 
 .admin-control.hidden-control {
   display: none !important;
+}
+
+/* --------------- team picker --------------- */
+
+.team-select-item i.fa-circle,
+.team-select-item i.fa-circle-check {
+  font-size: 1.4rem;
+}
+
+.team-select-item i.fa-circle {
+  color: var(--ios-text-quaternary);
+  opacity: .5;
+}
+
+.team-select-item i.fa-circle-check {
+  color: var(--ios-green);
+  opacity: 1;
 }
 
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
@@ -470,6 +499,11 @@ td.drinks {
   text-align: right !important;
   min-width: 1.1rem;
   font-weight: 400;
+}
+
+i.fav-team {
+  color: var(--ios-orange);
+  font-size: .8rem;
 }
 
 /* --------------- MENU ITEMs --------------- */
@@ -626,30 +660,6 @@ td.drinks {
   display: none;
 }
 
-/* #header-save-btn {
-  color: var(--ios-text);
-  background: linear-gradient(90deg, var(--ios-blue) 0%, var(--ios-blue) 100%);
-  border-radius: 10px;
-  border: none;
-  padding: .5rem .75rem;
-}
-
-#header-save-btn.hidden {
-  display: none;
-}
-
-#header-save-btn.disabled {
-  pointer-events: none;
-  opacity: .5;
-  background: linear-gradient(90deg, var(--ios-bg-secondary) 0%, var(--ios-bg-secondary) 100%);
-}
-
-#header-save-btn.save-success {
-  pointer-events: none;
-  opacity: .5;
-  background: linear-gradient(90deg, var(--ios-green) 0%, var(--ios-green) 100%);
-} */
-
 .btn.btn-back {
   color: var(--ios-link);
 }
@@ -709,12 +719,6 @@ td.drinks {
   font-weight: 600 !important;
   font-size: 1.1rem;
 }
-
-/* #week-filter-container button.active span.week-btn-date {
-  color: var(--ios-text-secondary) !important;
-} */
-
-
 
 /* ---------------------------------- */
 
@@ -781,19 +785,11 @@ td.drinks {
   border-right: .8px solid var(--ios-separator-opaque);
 }
 
-/* .game-item .team-name:hover {
-  cursor: pointer;
-}
-
-.game-item-form i.result:hover {
-  cursor: pointer;
-} */
-
 .game-item .stat-col {
   padding-right: 0;
 }
 
-.game-item .stat-col .edit-icon-circle {
+.game-item .edit-icon-circle {
   background-color: var(--ios-bg-tertiary);
   border-radius: 50%;
   width: 1.9rem;
@@ -802,39 +798,20 @@ td.drinks {
   justify-content: center;
   align-items: center;
   margin-top: .4rem;
-
 }
 
-.game-item .stat-col .edit-icon {
+.game-item .edit-icon {
   color: var(--ios-blue);
   object-fit: contain;
   font-size: .9rem;
 }
 
-.game-item-form .stat-col .edit-icon {
-  font-size: 1.2rem;
-}
-
-.game-item-form .team-item {
-  padding: .25rem 0;
-}
-
-.game-item-form .team-record {
-  display: none;
-}
-
-.game-item.collapsing {
-  transition: height 0.1s ease-in-out;
-}
-
-.game-item-form .alert {
-  font-size: .9rem;
-  font-weight: 400;
-  padding: .6rem;
-  border-radius: 10px;
-}
-
 /* ---------------------------------- */
+
+.game-item .team-item {
+  padding: 0;
+  transition: all 0.2s ease-in-out;
+}
 
 .game-item .team-nbr {
   color: var(--ios-blue);
@@ -844,38 +821,42 @@ td.drinks {
   min-width: 1.1rem;
 }
 
-.game-group .game-item .team-name {
+.game-item .team-name {
   color: var(--ios-text);
   font-size: .95rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-
 }
 
-.team-item .team-record {
+.game-item .team-record {
   color: var(--ios-text-tertiary);
   font-size: .75rem;
   white-space: nowrap;
 }
 
-.game-item .team-item .result.fa-circle {
+.game-item .match-item.fa-circle {
   opacity: .25;
-  color: var(--ios-text-quaternary)
+  color: var(--ios-text-quaternary);
+  transition: all 0.1s ease-in-out;
 }
 
-.game-item.post .team-item .result.fa-circle {
+.game-item .match-item.fa-circle-check {
+  opacity: 1;
+  color: var(--ios-green);
+  transition: all 0.1s ease-in-out;
+}
+
+.game-item.post:not(.game-item-form) .match-item.fa-circle {
   opacity: 0;
 }
 
-.game-item .team-item .result.fa-circle-check {
-  opacity: 1;
-  color: var(--ios-green);
+.game-item-form .match-item {
+  font-size: 1.4rem;
 }
 
-.game-item-form .team-item .result {
-  opacity: 1 !important;
-  font-size: 1.4rem;
+.game-item-form .match-item:hover {
+  cursor: pointer;
 }
 
 .game-item-form .match-headers div {
@@ -899,22 +880,25 @@ td.drinks {
 
 /* ---------------------------------- */
 
-.game-item .team-item.selected .team-name {
-  color: var(--ios-blue) !important;
-  font-weight: 500 !important;
-  opacity: 1 !important;
+.game-item-form .edit-icon {
+  font-size: 1.2rem;
 }
 
-.game-item .team-item.loser.selected .team-result {
-  color: var(--ios-red) !important;
-  opacity: 1 !important;
+.game-item-form .team-item {
+  padding: .25rem 0;
+  transition: all 0.2s ease-in-out;
 }
 
-.game-item .team-item.unselected>* {
-  color: var(--ios-text-quaternary) !important;
+.game-item-form .team-record {
+  display: none;
 }
 
-/* ---------------------------------- */
+.game-item-form .alert {
+  font-size: .9rem;
+  font-weight: 400;
+  padding: .6rem;
+  border-radius: 10px;
+}
 
 .game-item-form .alert p:nth-child(2) {
   margin: .5rem 0;
