@@ -86,8 +86,11 @@ export const session = {
       localStorage.setItem('leagueId', leagueId);
 
       // check if favTeam is in new league
+      let favTeam = localStorage.getItem('favTeam');
       let teamNames = Object.values(this.teams).map(t => t.name);
-      if (this.favTeam && !teamNames.includes(this.favTeam)) {
+      if (favTeam && teamNames.includes(favTeam)) {
+        this.favTeam = favTeam;
+      } else {
         this.favTeam = null;
       }
     } else {
