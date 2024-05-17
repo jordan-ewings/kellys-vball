@@ -2,340 +2,251 @@ import { offsetScrollIntoView, formatNumber, createElement } from './util.js';
 import { db, session } from './firebase.js';
 import { ref, onValue, update, increment } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
-import { ContCard, MenuItem, LeaderboardItem } from '../components/main.js';
+import { ContCard, MenuItem, Stepper, Button } from '../components/common.js';
+import { Leaderboard } from '../components/standings.js';
 
 /* ------------------------------------------------ */
 
-const standingsSection = document.querySelector('#standings-section');
-const mainHeader = standingsSection.querySelector('.main-header');
+const section = document.querySelector('#standings-section');
+const mainHeader = section.querySelector('.main-header');
+const mainBody = section.querySelector('.main-body');
 
-const leaderboardContainer = standingsSection.querySelector('#leaderboard-container');
-const leaderboardTBody = leaderboardContainer.querySelector('tbody');
-
-const statsContainer = standingsSection.querySelector('#stats-container');
-const statsBody = statsContainer.querySelector('.cont-card-body');
-
-const standingsCarousel = standingsSection.querySelector('#standings-carousel');
-const carouselInner = standingsCarousel.querySelector('.carousel-inner');
+const statsActionsContainer = mainHeader.querySelector('#stats-actions-container');
+const leaderboardContainer = mainBody.querySelector('#leaderboard-container');
+const statsContainer = mainBody.querySelector('#stats-container');
+const getCarousel = () => mainBody.querySelector('#standings-carousel');
+const getCarouselBS = () => bootstrap.Carousel.getOrCreateInstance(getCarousel());
 
 /* ------------------------------------------------ */
 
-export function initStandingsContent() {
+export class Standings {
 
-  makeLeaderboard();
-  makeStats();
-}
+  init() {
 
-export function handleStandingsAdmin() {
+    this.reset();
+    this.addLeaderboardContent();
+    this.addStatsContent();
 
-  const adminControls = standingsSection.querySelectorAll('.admin-control');
-  adminControls.forEach(control => {
-    if (session.adminControls) {
-      control.classList.remove('d-none');
-    } else {
-      control.classList.add('d-none');
-    }
-  });
-}
-
-/* ------------------------------------------------ */
-
-function processLeaderboard(teams) {
-
-  const teamsArr = Object.values(teams);
-
-  let standings = teamsArr.map(team => {
-
-    let gameStats = team.stats.games;
-    team.games = gameStats.count;
-    team.wins = gameStats.wins;
-    team.losses = gameStats.losses;
-    team.streak = gameStats.streak;
-    team.winPct = team.games == 0 ? 0 : team.wins / team.games;
-
-    let drinkStats = team.stats.drinks;
-    team.drinks = drinkStats.count;
-
-    return team;
-  });
-
-  standings.sort((a, b) => {
-    if (a.winPct < b.winPct) return 1;
-    if (a.winPct > b.winPct) return -1;
-    if (a.losses > b.losses) return 1;
-    if (a.losses < b.losses) return -1;
-    if (a.wins < b.wins) return 1;
-    if (a.wins > b.wins) return -1;
-    if (a.id > b.id) return 1;
-    if (a.id < b.id) return -1;
-
-    return 0;
-  });
-
-  let rank = 1;
-  let prevWinPct = null;
-  standings.forEach((team, index) => {
-    let winPct = team.winPct;
-    let ties = standings.filter(t => t.winPct === winPct).length;
-    if (winPct != prevWinPct) rank = index + 1;
-    team.rank = ties > 1 ? 'T-' + rank : rank;
-    prevWinPct = winPct;
-  });
-
-  // if no games played, set rank to '-'
-  let teamGames = standings.map(t => t.games);
-  let totalGames = teamGames.reduce((a, b) => a + b);
-  if (totalGames == 0) {
-    standings.forEach(team => {
-      team.rank = '-';
-    });
+    return this;
   }
 
-  return standings;
-}
+  show() {
+    section.classList.remove('d-none');
+  }
 
-/* ------------------------------------------------ */
+  hide() {
+    section.classList.add('d-none');
+  }
 
-function makeLeaderboard() {
+  handleOptionsChange() {
 
-  onValue(ref(db, session.getLeague().refs.teams), snapshot => {
+    const leaderboard = section.querySelector('.leaderboard-table');
+    leaderboard.handleFavTeamChange();
 
-    const teams = snapshot.val();
-    const teamsProc = processLeaderboard(teams);
-    leaderboardTBody.innerHTML = '';
+    section.querySelectorAll('.week-stats').forEach(weekStats => {
+      weekStats.querySelectorAll('.menu-item').forEach(menuItem => {
 
-    teamsProc.forEach(team => {
-      const item = new LeaderboardItem(team);
-      const row = item.element();
-      leaderboardTBody.appendChild(row);
-    });
+        if (menuItem.querySelector('i.fav-team')) menuItem.querySelector('i.fav-team').remove();
+        if (!session.favTeam) return;
 
-  });
-}
-
-/* ------------------------------------------------ */
-
-function makeStats() {
-
-  let weeks = Object.values(session.weeks);
-  let teams = Object.values(session.teams);
-
-  statsBody.innerHTML = '';
-  carouselInner.querySelectorAll('.carousel-item').forEach((item, index) => {
-    if (index > 0) item.remove();
-  });
-
-  /* ------------------------------------------------ */
-  // initialize week buttons and carousel items
-
-  const carousel = new bootstrap.Carousel(standingsCarousel, { interval: false });
-  const backBtn = mainHeader.querySelector('button.btn-back');
-  const saveBtn = mainHeader.querySelector('button.btn-save');
-  const headerSpan = mainHeader.querySelector('.main-header-title span');
-
-  weeks.forEach((week, index) => {
-
-    const dateStr = new Date(week.gameday).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-
-    const menuItem = new MenuItem()
-      .enableNav()
-      .addClass('week-stats-nav')
-      .addMain(week.label)
-      .addTrail(dateStr);
-
-    statsBody.appendChild(menuItem);
-    menuItem.dataset.week = week.id;
-    menuItem.addEventListener('click', () => {
-      let itemIndex = index + 1;
-      let item = carouselInner.querySelector(`.carousel-item[data-week="${week.id}"`);
-      carousel.to(itemIndex);
-      mainHeader.classList.remove('hidden');
-      headerSpan.textContent = week.label;
-      document.querySelector('nav').classList.add('hidden');
-      offsetScrollIntoView(item);
-    });
-
-    const carouselItem = createElement(
-      `<div class="carousel-item week-stats" data-week="${week.id}" id="week-${week.id}-stats">
-      </div>`
-    );
-
-    const contCard = new ContCard('TEAM DRINKS');
-    carouselItem.appendChild(contCard);
-
-    carouselInner.appendChild(carouselItem);
-  });
-
-  /* ------------------------------------------------ */
-  // handle back button click
-
-  const resetItemRows = (carouselItem) => {
-    const changedRows = carouselItem.querySelectorAll('.menu-item.changed');
-    if (changedRows.length == 0) return;
-    changedRows.forEach(row => {
-      let stepVal = row.querySelector('.drinks-count');
-      stepVal.textContent = stepVal.dataset.value;
-      stepVal.dataset.change = 0;
-      row.classList.remove('changed');
-    });
-  };
-
-  const saveBtnSet = {
-    reset: () => {
-      saveBtn.innerHTML = 'Submit';
-      saveBtn.className = 'btn btn-save disabled admin-control';
-      if (!session.adminControls) saveBtn.classList.add('d-none');
-    },
-    saving: () => {
-      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-      saveBtn.classList.add('disabled');
-    },
-    saved: () => {
-      saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
-      saveBtn.classList.add('save-success');
-    },
-    nosave: (msg) => {
-      saveBtn.innerHTML = '<i class="fa-solid fa-exclamation-triangle"></i> Error';
-      saveBtn.classList.add('save-error');
-      if (msg) saveBtn.innerHTML += `<div>${msg}</div>`;
-    }
-  };
-
-  backBtn.addEventListener('click', () => {
-
-    const activeItem = carouselInner.querySelector('.carousel-item.active');
-    resetItemRows(activeItem);
-    saveBtnSet.reset();
-
-    carousel.to(0);
-    mainHeader.classList.add('hidden');
-    headerSpan.textContent = '';
-    document.querySelector('nav').classList.remove('hidden');
-    statsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-
-  saveBtn.addEventListener('click', () => {
-
-    saveBtnSet.saving();
-    const activeItem = carouselInner.querySelector('.carousel-item.active');
-    const statsCard = activeItem.querySelector('.cont-card');
-    const statsList = statsCard.querySelector('.cont-card-body');
-    const weekId = activeItem.dataset.week;
-
-    const updates = {};
-    const changedRows = statsList.querySelectorAll('.menu-item.changed');
-
-    changedRows.forEach(row => {
-      let teamId = row.dataset.team;
-      let drinksChange = parseInt(row.querySelector('.drinks-count').dataset.change);
-      let sPath = `${session.getLeague().refs.stats}/${weekId}/${teamId}/drinks/count`;
-      let tPath = `${session.getLeague().refs.teams}/${teamId}/stats/drinks/count`;
-      updates[sPath] = increment(drinksChange);
-      updates[tPath] = increment(drinksChange);
-    });
-
-    console.log('updates', updates);
-    update(ref(db), updates)
-      .then(() => {
-        saveBtnSet.saved();
-        setTimeout(() => {
-          saveBtnSet.reset();
-        }, 2000);
-      })
-      .catch(err => {
-        console.error(err);
-        saveBtnSet.nosave(err.message);
+        const teamName = menuItem.querySelector('.team-name');
+        if (teamName.textContent == session.favTeam) {
+          const icon = createElement(`<i class="fa-solid fa-user fav-team"></i>`);
+          teamName.after(icon);
+        }
       });
-  });
+    });
 
-  saveBtnSet.reset();
+    const steppers = section.querySelectorAll('.drinks-stepper');
+    const saveBtn = mainHeader.querySelector('.btn-save');
+    if (session.adminControls) {
+      steppers.forEach(stepper => stepper.enableEditMode());
+      saveBtn.show();
+    } else {
+      steppers.forEach(stepper => stepper.disableEditMode());
+      saveBtn.hide();
+    }
+  }
 
   /* ------------------------------------------------ */
-  // populate week items with team stats
+  // private methods
 
-  weeks.forEach(week => {
+  reset() {
+    leaderboardContainer.innerHTML = '';
+    statsContainer.innerHTML = '';
+    section.querySelectorAll('.carousel-item').forEach((item, index) => {
+      if (index > 0) item.remove();
+    });
 
-    const carouselItem = carouselInner.querySelector(`.carousel-item[data-week="${week.id}"`);
-    const statsCard = carouselItem.querySelector('.cont-card');
-    const statsList = statsCard.querySelector('.cont-card-body');
+    const backBtn = new Button(
+      'btn-back',
+      '<i class="fa-solid fa-chevron-left"></i> Back');
+    const title = createElement(`<div class="main-header-title"><span></span></div>`);
+    const saveBtn = new Button(
+      'btn-save disabled admin-control',
+      'Submit');
 
-    teams.forEach(team => {
+    mainHeader.innerHTML = '';
+    mainHeader.appendChild(backBtn);
+    mainHeader.appendChild(title);
+    mainHeader.appendChild(saveBtn);
+  }
 
-      const teamStatsPath = `${session.getLeague().refs.teams}/${team.id}/stats`;
-      const teamWeekStatsPath = `${session.getLeague().refs.stats}/${week.id}/${team.id}`;
+  /* ------------------------------------------------ */
+  // leaderboard content
 
-      onValue(ref(db, teamWeekStatsPath), snapshot => {
+  addLeaderboardContent() {
 
-        const stats = snapshot.val();
+    const card = new ContCard('LEADERBOARD');
+    leaderboardContainer.appendChild(card);
 
-        const title = createElement(
-          `<div class="d-flex align-items-center column-gap-2">
+    const leaderboard = new Leaderboard();
+    card.addContent(leaderboard);
+
+    const teamsRef = ref(db, session.getLeague().refs.teams);
+    onValue(teamsRef, snap => {
+      const teams = snap.val();
+      leaderboard.update(teams);
+    });
+
+  }
+
+  /* ------------------------------------------------ */
+  // stats content
+
+  addStatsContent() {
+
+    const weeks = Object.values(session.weeks);
+    const teams = Object.values(session.teams);
+    const saveBtn = mainHeader.querySelector('.btn-save');
+    const backBtn = mainHeader.querySelector('.btn-back');
+
+    /* ------------------------------------------------ */
+    // stats card (carousel nav)
+
+    const card = new ContCard('STATS');
+    statsContainer.appendChild(card);
+
+    weeks.forEach((week, index) => {
+
+      const dateStr = new Date(week.gameday).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const menuItem = new MenuItem()
+        .enableNav()
+        .addClass('week-stats-nav')
+        .addDataset('week', week.id)
+        .addMain(week.label)
+        .addTrail(dateStr);
+
+      menuItem.addEventListener('click', () => {
+        let item = getCarousel().querySelector(`.carousel-item[data-week="${week.id}"`);
+        let items = getCarousel().querySelectorAll('.carousel-item');
+        let itemIndex = Array.from(items).indexOf(item);
+        getCarouselBS().to(itemIndex);
+
+        saveBtn.reset();
+        mainHeader.classList.remove('hidden');
+        mainHeader.querySelector('.main-header-title span').textContent = week.label;
+        document.querySelector('nav').classList.add('hidden');
+        offsetScrollIntoView(item);
+      });
+
+      card.addContent(menuItem);
+    });
+
+    /* ------------------------------------------------ */
+    // stats sub-cards (carousel items)
+
+    weeks.forEach(week => {
+
+      const card = new ContCard('TEAM DRINKS');
+      teams.forEach(team => {
+        const item = new MenuItem();
+
+        const title = createElement(`
+          <div class="d-flex align-items-center column-gap-2">
             <span class="team-nbr">${team.nbr}</span>
             <span class="team-name">${team.name}</span>
             ${session.favTeam == team.name ? '<i class="fa-solid fa-user fav-team"></i>' : ''}
-          </div>`
-        );
-        const stepOrig = createElement(`<div class="drinks-count-orig">${stats.drinks.count}</div>`);
-        const stepVal = createElement(`<div class="drinks-count">${stats.drinks.count}</div>`);
-        const stepInput = createElement(
-          `<div class="drinks-input stepper-container admin-control">
-            <div class="stepper">
-              <div role="button" class="stepper-btn stepper-down">
-                <i class="fa-solid fa-minus"></i>
-              </div>
-              <div class="separator"></div>
-              <div role="button" class="stepper-btn stepper-up">
-                <i class="fa-solid fa-plus"></i>
-              </div>
-            </div>
-          </div>`
-        );
+          </div>
+        `);
 
-        if (!session.adminControls) stepInput.classList.add('d-none');
-
-        const statsRow = new MenuItem()
-          .addMain(title)
-          .addInfo(stepOrig)
-          .addInfo(stepVal)
-          .addInfo(stepInput);
-
-        statsRow.dataset.team = team.id;
-        const statsRowBefore = statsList.querySelector(`.menu-item[data-team="${team.id}"`);
-        if (statsRowBefore) {
-          statsList.replaceChild(statsRow, statsRowBefore);
-        } else {
-          statsList.appendChild(statsRow);
-        }
-
-        stepVal.dataset.valuePath = `${teamWeekStatsPath}/drinks/count`;
-        stepVal.dataset.aggValuePath = `${teamStatsPath}/drinks/count`;
-        stepVal.dataset.value = stats.drinks.count;
-        stepVal.dataset.change = 0;
-
-        const stepDown = statsRow.querySelector('.stepper-down');
-        stepDown.addEventListener('click', () => {
-          let value = parseInt(stepVal.textContent);
-          if (value <= 0) return;
-          value--;
-          stepVal.textContent = value;
-          stepVal.dataset.change = value - stats.drinks.count;
-          statsRow.classList.toggle('changed', value != stats.drinks.count);
-          saveBtn.classList.toggle('disabled', !statsList.querySelector('.menu-item.changed'));
+        const stepper = new Stepper(0);
+        stepper.classList.add('drinks-stepper');
+        stepper.dataset.team = team.id;
+        stepper.dataset.week = week.id;
+        stepper.addEventListener('change', () => {
+          if (section.querySelector('.drinks-stepper.changed')) {
+            saveBtn.enable();
+          } else {
+            saveBtn.disable();
+          }
         });
 
-        const stepUp = statsRow.querySelector('.stepper-up');
-        stepUp.addEventListener('click', () => {
-          let value = parseInt(stepVal.textContent);
-          value++;
-          stepVal.textContent = value;
-          stepVal.dataset.change = value - stats.drinks.count;
-          statsRow.classList.toggle('changed', value != stats.drinks.count);
-          saveBtn.classList.toggle('disabled', !statsList.querySelector('.menu-item.changed'));
+        const drinksRef = ref(db, `${session.getLeague().refs.stats}/${week.id}/${team.id}/drinks/count`);
+        onValue(drinksRef, snapshot => {
+          const count = snapshot.val();
+          stepper.resetWith(count);
         });
 
+        item.addMain(title);
+        item.addInfo(stepper);
+        card.addContent(item);
       });
+
+      const carouselItem = createElement(`<div class="carousel-item week-stats" data-week="${week.id}" id="week-${week.id}-stats"></div>`);
+      carouselItem.appendChild(card);
+      getCarousel().querySelector('.carousel-inner').appendChild(carouselItem);
     });
 
-  });
+    /* ------------------------------------------------ */
+    // nav back
 
+    backBtn.addEventListener('click', () => {
+
+      // reset changed steppers and save button
+      const steppers = section.querySelectorAll('.drinks-stepper');
+      steppers.forEach(stepper => stepper.reset());
+      saveBtn.reset();
+
+      getCarouselBS().to(0);
+      mainHeader.classList.add('hidden');
+      mainHeader.querySelector('.main-header-title span').textContent = '';
+      document.querySelector('nav').classList.remove('hidden');
+      statsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    /* ------------------------------------------------ */
+    // handle save button click
+
+    saveBtn.addEventListener('click', () => {
+
+      saveBtn.startSave();
+      const steppers = section.querySelectorAll('.drinks-stepper.changed');
+      const updates = {};
+
+      steppers.forEach(stepper => {
+        const teamId = stepper.dataset.team;
+        const weekId = stepper.dataset.week;
+        const drinksChange = parseInt(stepper.change);
+        const sPath = `${session.getLeague().refs.stats}/${weekId}/${teamId}/drinks/count`;
+        const tPath = `${session.getLeague().refs.teams}/${teamId}/stats/drinks/count`;
+        updates[sPath] = increment(drinksChange);
+        updates[tPath] = increment(drinksChange);
+      });
+
+      update(ref(db), updates)
+        .then(() => {
+          saveBtn.endSave();
+          setTimeout(() => {
+            saveBtn.reset();
+          }, 2000);
+        })
+        .catch(err => {
+          console.error(err);
+          saveBtn.errorSave();
+        });
+    });
+  }
 }
+
+/* ------------------------------------------------ */

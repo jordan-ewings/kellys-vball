@@ -133,9 +133,6 @@ div::-webkit-scrollbar {
   --bs-border-color: var(--ios-separator-opaque);
 }
 
-
-
-
 /* ---------------------------------- */
 
 nav {
@@ -348,37 +345,40 @@ td:first-child {
 #admin-container,
 #standings-carousel .carousel-item,
 #team-select-container {
-  padding: 0 .75rem;
+  padding: 0 .65rem;
 }
 
-#league-select-container select {
-  background-color: var(--ios-bg-secondary);
+.radio-menu .trail i {
+  font-size: 1.4rem;
+}
+
+.radio-menu .trail i.fa-circle {
+  color: var(--ios-text-quaternary);
+  opacity: .5;
+}
+
+.radio-menu .trail i.fa-circle-check {
+  color: var(--ios-green);
+  opacity: 1;
+}
+
+.form-select {
+  background-color: transparent;
   background-position: right;
   color: var(--ios-text);
-  padding-right: 1.5rem;
+  padding-left: 0;
   border: none;
-  text-align-last: right;
 }
 
-#league-select-container select:hover {
+.form-select:hover {
   cursor: pointer;
 }
 
-#league-select-container select:focus {
+.form-select:focus {
   outline: none;
   border: none;
   box-shadow: none;
 }
-
-#league-select-container select.invalid {
-  border: 1px solid var(--ios-red);
-  color: var(--ios-text-tertiary);
-}
-
-/* clear default formatting of password input element (no border, no background, etc.) */
-/* #admin-container .menu-item .main>.title {
-  align-self: stretch;
-} */
 
 .login-form input[type="password"] {
   background-color: transparent;
@@ -414,6 +414,10 @@ td:first-child {
 .form-switch .form-check-input:checked {
   background-color: var(--ios-green);
   border-color: var(--ios-green);
+}
+
+.form-switch .form-check-input:hover {
+  cursor: pointer;
 }
 
 .logged-in-form .form-check-input[role="switch"] {
@@ -453,12 +457,17 @@ td:first-child {
   opacity: 1;
 }
 
+/* .team-select-item:first-child .contents {
+  border-bottom: 1px solid var(--ios-separator-nonopaque);
+} */
+
+/* bold .team-name if i.fav-team is next to it  (i.e., span.team-name is a sibling of i.fav-team) */
+/* .team-select-item .team-name:has(+i.fav-team) {
+  font-weight: 500;
+} */
+
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* STANDINGS */
-
-/* #leaderboard-container {
-  margin-top: 1rem;
-} */
 
 th.team {
   text-align: left;
@@ -480,19 +489,13 @@ td.team .team-name {
 }
 
 th.drinks i.fa-beer {
-  color: var(--ios-orange);
+  color: var(--ios-brown);
   opacity: .6;
 }
 
 td.drinks {
-  color: var(--ios-orange)
+  color: var(--ios-brown)
 }
-
-/* .fa-chevron-right {
-  color: var(--ios-text-tertiary);
-  font-size: .8rem;
-  font-weight: 500;
-} */
 
 .team-nbr {
   color: var(--ios-blue) !important;
@@ -520,7 +523,8 @@ i.fav-team {
   justify-content: space-between;
   align-items: center;
   padding: 0 0 0 1rem;
-  height: 2.9rem;
+  /* height: 2.9rem; */
+  min-height: 2.9rem;
   font-size: 1rem;
 }
 
@@ -560,6 +564,16 @@ i.fav-team {
   align-self: stretch;
 }
 
+.menu-item .contents .main .sub-main {
+  /* font-size: .8rem; */
+  color: var(--ios-text-tertiary);
+}
+
+/* .menu-item .contents .main:has(.sub-main) {
+  padding-bottom: .2rem;
+  padding-top: .2rem;
+} */
+
 .menu-item .contents .info {
   display: flex;
   flex-direction: row;
@@ -597,10 +611,18 @@ i.fav-team {
 
 /* --------------- WEEK STATS --------------- */
 
-.menu-item.week-stats-nav .main-info>div {
+/* .menu-item.week-stats-nav .main-info>div {
   padding-right: 0.7rem;
   color: var(--ios-text-tertiary);
   font-size: .95rem;
+} */
+
+.stepper-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  column-gap: 1rem;
 }
 
 .stepper-container {
@@ -642,55 +664,39 @@ i.fav-team {
   color: var(--ios-text-primary);
 }
 
-.week-stats .menu-item .drinks-count {
-  color: var(--ios-text-primary);
+.stepper-count {
+  color: var(--ios-text);
   min-width: 1.1rem;
   text-align: right;
 }
 
-.week-stats .menu-item .drinks-count-orig {
-  color: var(--ios-text-quaternary);
-}
-
-.week-stats .menu-item.changed .drinks-count {
-  color: var(--ios-orange);
-}
-
-.week-stats .menu-item:not(.changed) .drinks-count-orig {
-  display: none;
-}
-
-.btn.btn-back {
-  color: var(--ios-link);
-}
-
-#header-save-btn {
-  color: var(--ios-link);
-  border: none;
-}
-
-#header-save-btn.hidden {
-  display: none;
-}
-
-#header-save-btn.disabled {
-  pointer-events: none;
-  opacity: 1;
+.stepper-count.zero {
   color: var(--ios-text-tertiary);
 }
 
-#header-save-btn.save-success {
+.stepper-count-initial {
+  color: var(--ios-text-quaternary);
+}
+
+.action-button {
+  color: var(--ios-link);
+}
+
+.action-button.disabled {
+  color: var(--ios-text-tertiary);
   pointer-events: none;
-  opacity: 1;
+}
+
+.action-button i.fa-check {
   color: var(--ios-green);
 }
 
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* SCHEDULE */
 
-#week-filter-container button {
+.week-filter-btn {
   color: var(--ios-text-secondary);
-  margin: 0rem .6rem;
+  margin: 0rem .8rem;
   padding: .1rem 0rem;
   padding-bottom: .4rem;
   border: none;
@@ -701,19 +707,19 @@ i.fav-team {
   text-transform: uppercase;
 }
 
-#week-filter-container button span.week-btn-date {
+.week-filter-btn span.week-btn-date {
   font-size: .7rem;
   font-weight: 300;
   color: var(--ios-text-tertiary);
 }
 
 
-#week-filter-container button:hover {
+.week-filter-btn:hover {
   color: var(--ios-blue) !important;
   cursor: pointer;
 }
 
-#week-filter-container button.active {
+.week-filter-btn.active {
   color: var(--ios-text) !important;
   border-bottom: 2px solid var(--ios-blue) !important;
   font-weight: 600 !important;

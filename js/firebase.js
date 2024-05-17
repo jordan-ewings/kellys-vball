@@ -99,8 +99,13 @@ export const session = {
   },
 
   setFavTeam: function (teamName) {
-    this.favTeam = teamName;
-    localStorage.setItem('favTeam', teamName);
+    if (teamName) {
+      this.favTeam = teamName;
+      localStorage.setItem('favTeam', teamName);
+    } else {
+      this.favTeam = null;
+      localStorage.removeItem('favTeam');
+    }
   },
 
   // set .admin-control elements visibility

@@ -1,241 +1,214 @@
 import { db, auth, session } from './firebase.js';
 
 import { createElement } from './util.js';
-import { initUserContent, handleAdminContent } from './main.js';
-import { ContCard, MenuItem } from '../components/main.js';
+// import { initUserContent, handleAdminContent, handleOptionsChange } from './main.js';
+import { ContCard, MenuItem, RadioMenu } from '../components/common.js';
+import { app } from './main.js';
 
 /* ------------------------------------------------ */
 
-const homeNav = document.querySelector('#nav-index');
-const homeSection = document.querySelector('#index-section');
-const leagueSelectContainer = document.querySelector('#league-select-container');
-const adminContainer = document.querySelector('#admin-container');
-const teamSelectContainer = document.querySelector('#team-select-container');
+const section = document.querySelector('#index-section');
+const mainHeader = section.querySelector('.main-header');
+const mainBody = section.querySelector('.main-body');
+
+const leagueSelectContainer = mainBody.querySelector('#league-select-container');
+const adminContainer = mainBody.querySelector('#admin-container');
+const teamSelectContainer = mainBody.querySelector('#team-select-container');
 
 /* ------------------------------------------------ */
 
-export function initHomeContent() {
+export class Home {
 
-  makeLeagueSelect();
-  makeAdminSignin();
-  makeMyTeamPicker();
-}
+  init() {
 
-/* ------------------------------------------------ */
-
-function makeLeagueSelect() {
-
-  let LG = {
-    season: session.getLeague().season,
-    session: session.getLeague().session,
-    league: session.getLeague().league
-  };
-
-  let leagues = Object.values(session.leagues);
-  leagues.sort((a, b) => {
-    if (a.season != b.season) return a.season - b.season;
-    if (a.session != b.session) return a.session - b.session;
-    if (a.league == b.league) return 0;
-    let days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-    return days.indexOf(a.league) - days.indexOf(b.league);
-  });
-
-  let selects = ['season', 'session', 'league'];
-
-  const card = new ContCard('SELECT LEAGUE');
-  leagueSelectContainer.innerHTML = '';
-  leagueSelectContainer.appendChild(card);
-
-  selects.forEach((s, i) => {
-
-    const select = document.createElement('select');
-    select.id = s + 'Select';
-    select.classList.add('form-select');
-
-    let limLeagues = leagues;
-    if (s == 'session') limLeagues = limLeagues.filter(l => l.season == LG.season);
-    if (s == 'league') limLeagues = limLeagues.filter(l => l.season == LG.season && l.session == LG.session);
-
-    // get options
-    let availOptions = limLeagues.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
-    let options = leagues.map(l => l[s]).filter((v, i, a) => a.indexOf(v) === i);
-
-    // add options
-    options.forEach(o => {
-      let opt = document.createElement('option');
-      opt.value = o;
-      opt.innerHTML = o;
-      if (o == LG[s]) opt.setAttribute('selected', '');
-      if (!availOptions.includes(o)) opt.setAttribute('disabled', '');
-      select.appendChild(opt);
-    });
-
-    // validate user selection
-    let invalid = !availOptions.includes(LG[s]);
-    select.classList.toggle('invalid', invalid);
-
-    // update local storage on change
-    select.addEventListener('change', e => {
-      e.preventDefault();
-      LG[s] = e.target.value;
-      let leagueId = LG.season + LG.session + LG.league;
-
-      if (session.leagues[leagueId]) {
-        session.setLeagueProps(leagueId).then(() => {
-          initUserContent();
-        });
-      } else {
-        console.log('League selection invalid - reloading options');
-        makeLeagueSelect();
-      }
-    });
-
-    // add to card
-    const item = new MenuItem()
-      .addMain(s.charAt(0).toUpperCase() + s.slice(1))
-      .addTrail(select);
-
-    card.addContent(item);
-  });
-}
-
-/* ------------------------------------------------ */
-// admin signin area
-
-function makeAdminSignin() {
-
-  const card = new ContCard('ADMIN ACCESS');
-
-  adminContainer.innerHTML = '';
-  adminContainer.appendChild(card);
-
-  /* --------------------------- */
-  // item: sign in
-
-  const passwordInput = createElement('<input type="password" placeholder="Enter password...">');
-  const loginButton = createElement('<div role="button"><i class="fa-regular fa-circle-right"></i></div>');
-  const signInSpinner = createElement('<div class="spinner-border spinner-border-sm d-none"></div>');
-
-  const loginDiv = new MenuItem()
-    .addClass('login-form')
-    .addMain(passwordInput)
-    .addTrail(loginButton)
-    .addTrail(signInSpinner);
-
-  const signIn = async () => {
-    loginButton.classList.add('d-none');
-    signInSpinner.classList.remove('d-none');
-    const password = passwordInput.value;
-
-    try {
-      await session.signIn(password);
-    } catch (error) {
-      console.error('Sign in failed:', error);
-    }
-  };
-
-  loginButton.addEventListener('click', signIn);
-  passwordInput.addEventListener('keypress', e => {
-    if (e.key === 'Enter') signIn();
-  });
-
-  /* --------------------------- */
-  // item: enable/disable admin controls
-
-  const adminSwitch = createElement(`
-    <div class="form-check form-switch">
-      <input class="form-check-input" type="checkbox" id="admin-switch" role="switch" ${session.adminControls ? 'checked' : ''}>
-    </div>
-  `);
-
-  adminSwitch.querySelector('input').addEventListener('change', (e) => {
-    if (e.target.checked) {
-      session.adminControls = true;
-    } else {
-      session.adminControls = false;
-    }
-    handleAdminContent();
-  });
-
-  const loggedInDiv = new MenuItem()
-    .addClass('logged-in-form')
-    .addMain('Enable Controls')
-    .addTrail(adminSwitch);
-
-  /* --------------------------- */
-  // item: sign out
-
-  const logoutButton = createElement('<div role="button"><span>Logout</span></div>');
-  logoutButton.addEventListener('click', async (e) => {
-    await session.signOut();
-  });
-
-  const logoutDiv = new MenuItem()
-    .addClass('logout-form')
-    .addMain(logoutButton);
-
-  /* --------------------------- */
-  // add items to card
-
-  if (session.admin) {
-    card.addContent(loggedInDiv);
-    card.addContent(logoutDiv);
-    card.addFooter('Enable controls to edit game results and team stats.');
-  } else {
-    card.addContent(loginDiv);
+    this.reset();
+    this.addLeagueSelectContent();
+    this.addAdminContent();
+    this.addMyTeamContent();
   }
-}
 
-/* ------------------------------------------------ */
-// my team picker
+  show() {
+    section.classList.remove('d-none');
+  }
 
-function makeMyTeamPicker() {
+  hide() {
+    section.classList.add('d-none');
+  }
 
-  const card = new ContCard('MY TEAM');
+  handleOptionsChange() {
 
-  teamSelectContainer.innerHTML = '';
-  teamSelectContainer.appendChild(card);
+    // nothing
 
-  const createTeamItem = (team) => {
+  }
 
-    const title = createElement(`
-      <div class="d-flex align-items-center column-gap-2">
-        <span class="team-nbr">${team.nbr}</span>
-        <span class="team-name">${team.name}</span>
-        ${session.favTeam == team.name ? '<i class="fa-solid fa-user fav-team"></i>' : ''}
+  /* ------------------------------------------------ */
+  // private methods
+
+  reset() {
+    leagueSelectContainer.innerHTML = '';
+    adminContainer.innerHTML = '';
+    teamSelectContainer.innerHTML = '';
+  }
+
+  /* ------------------------------------------------ */
+  // league select content
+
+  addLeagueSelectContent() {
+
+    const card = new ContCard('SELECT LEAGUE');
+    leagueSelectContainer.appendChild(card);
+
+    const leagues = Object.values(session.leagues);
+    leagues.sort((a, b) => {
+      if (a.season != b.season) return a.season - b.season;
+      if (a.session != b.session) return a.session - b.session;
+      if (a.league == b.league) return 0;
+      let days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+      return days.indexOf(a.league) - days.indexOf(b.league);
+    });
+
+    const userLeague = session.getLeague();
+    const radioMenu = new RadioMenu(false);
+    leagues.forEach(league => {
+      const main = league.title.split(' ')[0] + ' Night';
+      // sub is the rest of the title
+      const sub = league.title.split(' ').slice(2).join(' ');
+      // const title = createElement(`
+      //   <div class="d-flex flex-column">
+      //     <span>${main}</span>
+      //     <span class="sub-main">${sub}</span>
+      //   </div>
+      // `);
+
+      const title = createElement(`
+        <div class="d-flex justify-content-between align-items-center column-gap-2">
+          <span>${main}</span>
+          <span class="sub-main">${sub}</span>
+        </div>
+      `);
+      radioMenu.addOption(title, league.id, league.id == userLeague.id);
+    });
+
+    radioMenu.addEventListener('change', async (e) => {
+      const leagueId = radioMenu.getValue();
+      await session.setLeagueProps(leagueId);
+      app.initUserContent();
+    });
+
+    card.addContent(radioMenu);
+  }
+
+  /* ------------------------------------------------ */
+  // admin content
+
+  addAdminContent() {
+
+    const card = new ContCard('ADMIN ACCESS');
+    adminContainer.appendChild(card);
+
+    const passwordInput = createElement('<input type="password" placeholder="Enter password...">');
+    const signInSpinner = createElement('<div class="spinner-border spinner-border-sm d-none"></div>');
+    const loginButton = createElement('<div role="button"><i class="fa-regular fa-circle-right"></i></div>');
+    const logoutButton = createElement('<div role="button"><span>Logout</span></div>');
+    const adminSwitch = createElement(`
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="admin-switch" role="switch" ${session.adminControls ? 'checked' : ''}>
       </div>
     `);
 
-    const check = createElement(`<i class="fa-regular fa-circle"></i>`);
-    if (session.favTeam == team.name) check.className = 'fa-solid fa-circle-check';
+    const loginDiv = new MenuItem()
+      .addClass('login-form')
+      .addMain(passwordInput)
+      .addTrail(loginButton)
+      .addTrail(signInSpinner);
 
-    const item = new MenuItem();
-    item.setAttribute('role', 'button');
-    item.addClass('team-select-item');
-    item.addMain(title);
-    item.addTrail(check);
+    const loggedInDiv = new MenuItem()
+      .addClass('logged-in-form')
+      .addMain('Enable Controls')
+      .addTrail(adminSwitch);
 
-    item.addEventListener('click', () => {
-      session.setFavTeam(team.name);
-      initUserContent();
+    const logoutDiv = new MenuItem()
+      .addClass('logout-form')
+      .addMain(logoutButton);
+
+
+    if (session.admin) {
+      card.addContent(loggedInDiv);
+      card.addContent(logoutDiv);
+      card.addFooter('Enable controls to edit game results and team stats.');
+    } else {
+      card.addContent(loginDiv);
+    }
+
+    loginButton.addEventListener('click', async () => {
+      loginButton.classList.add('d-none');
+      signInSpinner.classList.remove('d-none');
+      const password = passwordInput.value;
+      try {
+        await session.signIn(password);
+        adminContainer.innerHTML = '';
+        this.addAdminContent();
+
+      } catch (error) {
+        console.error('Sign in failed:', error);
+      }
     });
 
-    return item;
+    logoutButton.addEventListener('click', async () => {
+      await session.signOut();
+      adminContainer.innerHTML = '';
+      this.addAdminContent();
+    });
+
+    adminSwitch.querySelector('input').addEventListener('change', (e) => {
+      session.adminControls = e.target.checked;
+      app.updateUserContent();
+    });
   }
 
-  const teams = Object.values(session.teams);
-  const hasValidFavTeam = (session.favTeam && teams.find(t => t.name == session.favTeam));
-  const favTeam = (hasValidFavTeam) ? teams.find(t => t.name == session.favTeam) : null;
-  if (favTeam) {
-    card.addContent(createTeamItem(favTeam));
-  }
+  /* ------------------------------------------------ */
+  // my team content
 
-  teams.forEach(team => {
-    if (!favTeam || team.name != favTeam.name) {
-      card.addContent(createTeamItem(team));
-    }
-  });
+  addMyTeamContent() {
+
+    const card = new ContCard('MY TEAM');
+    teamSelectContainer.appendChild(card);
+
+    const teams = Object.values(session.teams);
+    const radioMenu = new RadioMenu(true);
+    teams.forEach(team => {
+      const title = createElement(`
+        <div class="d-flex align-items-center column-gap-2">
+          <span class="team-nbr">${team.nbr}</span>
+          <span class="team-name">${team.name}</span>
+          ${session.favTeam == team.name ? '<i class="fa-solid fa-user fav-team"></i>' : ''}
+        </div>
+      `);
+
+      radioMenu.addOption(title, team.id, team.name == session.favTeam);
+    });
+
+    radioMenu.addEventListener('change', (e) => {
+
+      // update favTeam icon
+      const teamId = radioMenu.getValue();
+      radioMenu.querySelectorAll('.radio-menu-item').forEach(item => {
+        const favIcon = item.querySelector('i.fav-team');
+        if (favIcon) favIcon.remove();
+      });
+      const teamItem = radioMenu.querySelector(`.radio-menu-item[data-value="${teamId}"]`);
+      const favIcon = createElement('<i class="fa-solid fa-user fav-team"></i>');
+      teamItem.querySelector('.team-name').after(favIcon);
+
+      // set favTeam
+      const team = teams.find(t => t.id == teamId);
+      session.setFavTeam(team.name);
+      app.updateUserContent();
+    });
+
+    card.addContent(radioMenu);
+  }
 }
 
-
+/* ------------------------------------------------ */
 

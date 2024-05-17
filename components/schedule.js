@@ -1,6 +1,14 @@
 
-import { session } from "../js/firebase.js";
-import { createAlert } from "../js/util.js";
+import { db, session } from "../js/firebase.js";
+import { ref, get, onValue, update } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
+
+import { ContCard } from "./common.js";
+import { createAlert, createElement } from "../js/util.js";
+
+/* ------------------------------------------------ */
+// constants / helpers
+
+
 
 /* ------------------------------------------------ */
 // game item
@@ -42,7 +50,7 @@ export class GameItem extends HTMLElement {
     return gameStatus;
   }
 
-  /* ----- handle editing ----- */
+  /* ----- handlers ----- */
 
   enableEditMode() {
     this.querySelector('.team-col').classList.replace('col-9', 'col-8');
@@ -58,6 +66,31 @@ export class GameItem extends HTMLElement {
     this.getButton().classList.add('d-none');
 
     return this;
+  }
+
+  handleAdminChange() {
+    if (session.adminControls) {
+      this.enableEditMode();
+    } else {
+      this.disableEditMode();
+    }
+  }
+
+  handleFavTeamChange() {
+
+    // clear existing icons
+    this.querySelectorAll('i.fav-team').forEach(icon => icon.remove());
+
+    const favTeam = session.favTeam;
+    const teamData = Object.values(this.data.teams).find(team => team.name == favTeam);
+    if (teamData) {
+      // add icon after team record in team item
+      const teamId = Object.keys(this.data.teams).find(id => this.data.teams[id].name == favTeam);
+      const teamItem = this.getTeamItem(teamId);
+      const icon = createElement('<i class="fa-solid fa-user fav-team"></i>');
+      const teamRecord = teamItem.querySelector('.team-record');
+      teamRecord.after(icon);
+    }
   }
 
   /* ----- init element content/attributes ----- */
@@ -240,7 +273,6 @@ export class GameItem extends HTMLElement {
           <span class="team-nbr"></span>
           <span class="team-name"></span>
           <span class="team-record"></span>
-          ${session.favTeam == this.data.teams[teamIds[teamIdx]].name ? '<i class="fa-solid fa-user fav-team"></i>' : ''}
           <div class="ms-auto d-flex justify-content-end column-gap-2">
             ${matchItem(0, teamIdx)}
             ${matchItem(1, teamIdx)}
@@ -294,7 +326,9 @@ export class GameItem extends HTMLElement {
     this.setTeamItemElements();
     this.setMatchItemElements();
     this.setEventListeners();
+
     if (!session.adminControls) this.disableEditMode();
+    if (session.favTeam) this.handleFavTeamChange();
 
     return this;
   }

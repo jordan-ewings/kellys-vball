@@ -1,60 +1,127 @@
-import { createFromTemplate, createAlert, offsetScrollIntoView, createElement } from './util.js';
 import { db, session } from './firebase.js';
 import { ref, get, onValue, update } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
-import { APP } from './main.js';
-import { ContCard, GameItem } from '../components/main.js';
+import { createElement } from './util.js';
+import { GameItem } from '../components/schedule.js';
+import { ContCard } from '../components/common.js';
 
 /* ------------------------------------------------ */
+// constants / helpers
 
-const scheduleNav = document.querySelector('#nav-schedule');
-const scheduleSection = document.querySelector('#schedule-section');
-const weekFilterContainer = document.querySelector('#week-filter-container');
-const scheduleContainer = document.querySelector('#schedule-container');
-const getCarousel = () => scheduleContainer.querySelector('.carousel');
+const section = document.querySelector('#schedule-section');
+const weekFilterContainer = section.querySelector('#week-filter-container');
+const scheduleContainer = section.querySelector('#schedule-container');
+const getCarousel = () => section.querySelector('.carousel');
 const getCarouselBS = () => bootstrap.Carousel.getOrCreateInstance(getCarousel());
 
 /* ------------------------------------------------ */
+// schedule content
 
-export function initScheduleContent() {
+export class Schedule {
 
-  makeSchedule();
-}
+  init() {
 
-export function handleScheduleAdmin() {
+    this.reset();
+    this.addScheduleContent();
+    this.addFirebaseListeners();
 
-  let gameItems = scheduleContainer.querySelectorAll('.game-item');
-  gameItems.forEach(gameItem => {
-    if (session.adminControls) {
-      gameItem.enableEditMode();
-    } else {
-      gameItem.disableEditMode();
-    }
-  });
+    return this;
+  }
+
+  show() {
+    section.classList.remove('d-none');
+    const activeBtn = weekFilterContainer.querySelector('.week-filter-btn.active');
+    if (activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+
+  hide() {
+    section.classList.add('d-none');
+  }
+
+  handleOptionsChange() {
+
+    const gameItems = scheduleContainer.querySelectorAll('.game-item');
+    gameItems.forEach(gameItem => {
+      gameItem.handleAdminChange();
+      gameItem.handleFavTeamChange();
+    });
+  }
+
+  /* ------------------------------------------------ */
+  // private methods
+
+  reset() {
+    weekFilterContainer.innerHTML = '';
+    scheduleContainer.innerHTML = `
+      <div class="carousel slide carousel-fade" data-bs-touch="false">
+        <div class="carousel-inner"></div>
+      </div>
+    `;
+  }
+
+  addScheduleContent() {
+
+    Object.values(session.weeks).forEach((week) => {
+      const btn = createWeekButton(week);
+      const item = createWeekCarouselItem(week);
+
+      weekFilterContainer.appendChild(btn);
+      scheduleContainer.querySelector('.carousel-inner').appendChild(item);
+    });
+
+    let initialWeek = 'WK01';
+    Object.keys(session.weeks).forEach(weekId => {
+      Object.values(session.games[weekId]).forEach(game => {
+        Object.values(game.matches).forEach(match => {
+          if (match.status == 'POST') initialWeek = weekId;
+        });
+      });
+    });
+
+    const query = `[data-week="${initialWeek}"]`;
+    weekFilterContainer.querySelector(query).classList.add('active');
+    scheduleContainer.querySelector(query).classList.add('active');
+  }
+
+  addFirebaseListeners() {
+
+    const refs = session.getLeague().refs;
+    const gameItems = scheduleContainer.querySelectorAll('.game-item');
+
+    // record updates
+    const teamIds = Object.keys(session.teams);
+    teamIds.forEach(teamId => {
+      const recordRef = ref(db, `${refs.teams}/${teamId}/stats/games/record`);
+      onValue(recordRef, snap => {
+        const record = snap.val();
+        gameItems.forEach(gameItem => {
+          if (gameItem.data.teams[teamId]) {
+            gameItem.updateTeamRecord(teamId, record);
+          }
+        });
+      });
+    });
+
+    // match updates
+    gameItems.forEach(gameItem => {
+      const weekId = gameItem.data.week;
+      const gameId = gameItem.data.id;
+      const matchesRef = ref(db, `${refs.games}/${weekId}/${gameId}/matches`);
+      onValue(matchesRef, snap => {
+        const matches = snap.val();
+        gameItem.updateMatchResults(matches);
+      });
+    });
+  }
 }
 
 /* ------------------------------------------------ */
 
-function resetContainers() {
-  // const resetContainers = () => {
-
-  weekFilterContainer.innerHTML = '';
-  scheduleContainer.innerHTML = `
-    <div class="carousel slide carousel-fade" data-bs-touch="false">
-      <div class="carousel-inner"></div>
-    </div>`;
-}
-
-/* ------------------------------------------------ */
-
-function addWeekButton(week, index) {
-  // const addWeekButton = (week, index) => {
-
-  const carouselBS = getCarouselBS();
+function createWeekButton(week) {
 
   const date = new Date(week.gameday).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const btn = createElement(`
-    <button class="btn d-flex flex-column justify-content-center align-items-center text-nowrap" type="button" id="week-${week.id}-btn" data-week="${week.id}">
+    <button class="btn week-filter-btn d-flex flex-column justify-content-center align-items-center text-nowrap" type="button" id="week-${week.id}-btn" data-week="${week.id}">
       <span>${week.label}</span>
       <span class="week-btn-date">${date}</span>
     </button>
@@ -66,154 +133,38 @@ function addWeekButton(week, index) {
       b.classList.toggle('active', b == btn);
     });
 
-    carouselBS.to(index);
+    const weekIndex = Object.keys(session.weeks).indexOf(week.id);
+    getCarouselBS().to(weekIndex);
   });
 
-  weekFilterContainer.appendChild(btn);
+  return btn;
 }
 
 /* ------------------------------------------------ */
 
-function addWeekGames(week) {
-  // const addWeekGames = (week) => {
+function createWeekCarouselItem(week) {
 
-  const carousel = getCarousel();
-  const carouselInner = carousel.querySelector('.carousel-inner');
-  const weekGroup = createElement(`
-    <div class="week-group carousel-item" id="week-${week.id}-group" data-week="${week.id}">
-    </div>
-  `);
-
+  const item = createElement(`<div class="carousel-item week-group" id="week-${week.id}-group" data-week="${week.id}"></div>`);
   const games = Object.values(session.games[week.id]);
-  const timeSlots = games.map(g => g.time).filter((v, i, a) => a.indexOf(v) === i);
+  const times = games.map(g => g.time).filter((v, i, a) => a.indexOf(v) === i);
 
-  timeSlots.forEach(timeSlot => {
+  times.forEach(time => {
 
     const card = new ContCard();
     card.classList.add('game-group');
-    const cardGames = games.filter(g => g.time === timeSlot);
 
-    cardGames.forEach((game, index) => {
-
-      // const gameItem = makeGameItemGroup(game);
+    const timeGames = games.filter(g => g.time == time);
+    timeGames.forEach((game, index) => {
       const gameItem = new GameItem(game);
+      const separator = createElement(`<div class="game-separator"></div>`);
       card.addContent(gameItem);
-      if (index < cardGames.length - 1) {
-        const separator = createElement('<div class="game-separator"></div>');
+      if (index < timeGames.length - 1) {
         card.addContent(separator);
       }
     });
 
-    weekGroup.appendChild(card);
+    item.appendChild(card);
   });
 
-  carouselInner.appendChild(weekGroup);
+  return item;
 }
-
-/* ------------------------------------------------ */
-
-function setActiveWeek(weekId) {
-  // const setActiveItems = () => {
-
-  let activeBtn = weekFilterContainer.querySelector('button');
-  let activeGroup = scheduleContainer.querySelector('.week-group');
-
-  if (weekId) {
-    activeBtn = weekFilterContainer.querySelector(`#week-${weekId}-btn`);
-    activeGroup = scheduleContainer.querySelector(`#week-${weekId}-group`);
-  }
-
-  activeBtn.classList.add('active');
-  activeGroup.classList.add('active');
-}
-
-/* ------------------------------------------------ */
-
-function addDataListeners() {
-  // const addDataListeners = () => {
-
-  const teamIds = Object.keys(session.teams);
-  teamIds.forEach(teamId => {
-
-    const teamPath = session.getLeague().refs.teams + '/' + teamId;
-    const teamRecordRef = ref(db, teamPath + '/stats/games/record');
-    onValue(teamRecordRef, snapshot => {
-      const record = snapshot.val();
-      const gameItems = scheduleContainer.querySelectorAll('.game-item');
-      gameItems.forEach(gameItem => {
-        const hasTeam = gameItem.teamIds.includes(teamId);
-        if (hasTeam) gameItem.updateTeamRecord(teamId, record);
-      });
-    });
-  });
-
-  const gameItems = scheduleContainer.querySelectorAll('.game-item');
-  gameItems.forEach(gameItem => {
-
-    const weekId = gameItem.data.week;
-    const gameId = gameItem.data.id;
-    const matchesRef = ref(db, session.getLeague().refs.games + '/' + weekId + '/' + gameId + '/matches');
-    onValue(matchesRef, snapshot => {
-      const matches = snapshot.val();
-      gameItem.updateMatchResults(matches);
-    });
-
-  });
-}
-
-/* ------------------------------------------------ */
-
-function makeSchedule() {
-
-  resetContainers();
-
-  let initialWeek = null;
-  const weeks = Object.values(session.weeks);
-
-  weeks.forEach((week, index) => {
-    addWeekButton(week, index);
-    addWeekGames(week);
-    let games = Object.values(session.games[week.id]);
-    let gamesPost = games.filter(g => g.matches['G1'].status == 'POST' || g.matches['G2'].status == 'POST');
-    if (gamesPost.length > 0) initialWeek = week.id;
-  });
-
-  setActiveWeek(initialWeek);
-  addDataListeners();
-}
-
-/* ------------------------------------------------ */
-
-function handleTeamSelection(e) {
-
-  let team = APP.focusedTeam;
-  let allTeamItems = scheduleContainer.querySelectorAll('.team-item');
-
-  // clear all focus/unfocus formatting
-  if (!team) {
-    allTeamItems.forEach(ti => {
-      ti.classList.remove('selected', 'unselected');
-    });
-    return;
-  }
-
-  scheduleContainer.querySelectorAll('.team-item').forEach(ti => {
-    if (ti.getAttribute('data-team_id') == team) {
-      ti.classList.remove('unselected');
-      ti.classList.add('selected');
-    } else {
-      ti.classList.remove('selected');
-      ti.classList.add('unselected');
-    }
-  });
-
-  let weekGroup = scheduleContainer.querySelector('.week-group.active');
-  if (weekGroup) {
-    let firstSelected = weekGroup.querySelector('.team-item.selected');
-    let gameGroup = firstSelected.closest('.game-group');
-    console.log(gameGroup);
-    offsetScrollIntoView(gameGroup);
-  }
-}
-
-/* ------------------------------------------------ */

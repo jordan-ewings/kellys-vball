@@ -3,52 +3,110 @@ import { session } from "../js/firebase.js";
 import { formatNumber, createElement } from "../js/util.js";
 
 /* ------------------------------------------------ */
-// leaderboard item
+// leaderboard
 
-export class LeaderboardItem extends HTMLElement {
+export class Leaderboard extends HTMLElement {
 
-  constructor(data) {
+  constructor(teams) {
     super();
-    this.data = data;
+    this.teams = teams || null;
     this.render();
   }
 
   render() {
 
-    const team = this.data;
-    const html = `
-      <table>
-        <tbody>
-          <tr class="leaderboard-item" id="leaderboard-${team.id}">
-            <td class="team">
-              <div class="d-flex align-items-center column-gap-2">
-                <span class="team-nbr">${team.nbr}</span>
-                <span class="team-name">${team.name}</span>
-              </div>
-            </td>
-            <td class="wins">${team.wins}</td>
-            <td class="losses">${team.losses}</td>
-            <td class="winPct">${formatNumber(team.winPct, '0.000')}</td>
-            <td class="drinks">${team.drinks}</td>
-          </tr>
-        </tbody>
-      </table>
+    this.classList.add('leaderboard-table');
+    this.innerHTML = `
+      <div class="table-responsive">
+        <table class="table table-borderless align-middle text-nowrap m-0">
+          <thead>
+            <tr>
+              <th class="team">TEAM</th>
+              <th class="wins">W</th>
+              <th class="losses">L</th>
+              <th class="winPct">PCT</th>
+              <th class="drinks"><i class="fa-solid fa-beer"></i></th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
     `;
 
-    this.innerHTML = html;
-    if (session.favTeam == team.name) {
-      const star = createElement(`<i class="fa-solid fa-user fav-team"></i>`);
-      this.querySelector('.d-flex').appendChild(star);
-    }
+    this.update();
+
     return this;
   }
 
-  element() {
-    return this.querySelector('tr');
+  update(teams) {
+    if (teams) this.teams = teams;
+    if (this.teams) this.setTableRows();
+  }
+
+  setTableRows() {
+
+    const teams = this.teams;
+
+    // process teams
+    const teamsArr = Object.values(teams).map(team => {
+      team.stats.games.winPct = team.stats.games.winPct || 0;
+      return team;
+    });
+
+    teamsArr.sort((a, b) => {
+
+      let aGS = a.stats.games;
+      let bGS = b.stats.games;
+      if (aGS.winPct != bGS.winPct) return bGS.winPct - aGS.winPct;
+      if (aGS.wins != bGS.wins) return bGS.wins - aGS.wins;
+      if (aGS.losses != bGS.losses) return aGS.losses - bGS.losses;
+      if (a.id != b.id) return a.id - b.id;
+      return 0;
+    });
+
+    // update table
+    this.querySelector('tbody').innerHTML = '';
+    teamsArr.forEach(team => {
+
+      const row = document.createElement('tr');
+      row.classList.add('leaderboard-item');
+      row.dataset.team = team.id;
+      row.innerHTML = `
+        <td class="team">
+          <div class="d-flex align-items-center column-gap-2">
+            <span class="team-nbr">${team.nbr}</span>
+            <span class="team-name">${team.name}</span>
+          </div>
+        </td>
+        <td class="wins">${team.stats.games.wins}</td>
+        <td class="losses">${team.stats.games.losses}</td>
+        <td class="winPct">${formatNumber(team.stats.games.winPct, '0.000')}</td>
+        <td class="drinks">${team.stats.drinks.count}</td>
+      `;
+
+      this.querySelector('tbody').appendChild(row);
+    });
+
+    if (session.favTeam) this.handleFavTeamChange();
+  }
+
+  handleFavTeamChange() {
+
+    // clear existing icons
+    this.querySelectorAll('i.fav-team').forEach(icon => icon.remove());
+    if (!session.favTeam) return;
+
+    const teamData = Object.values(this.teams).find(team => team.name == session.favTeam);
+    if (teamData) {
+      const teamRow = this.querySelector(`.leaderboard-item[data-team="${teamData.id}"]`);
+      const teamName = teamRow.querySelector('.team-name');
+      const icon = createElement(`<i class="fa-solid fa-user fav-team"></i>`);
+      teamName.after(icon);
+    }
   }
 }
 
-// define the custom element
-customElements.define('leaderboard-item', LeaderboardItem);
+customElements.define('leaderboard-table', Leaderboard);
 
 /* ------------------------------------------------ */
