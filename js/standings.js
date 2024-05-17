@@ -40,21 +40,16 @@ export class Standings {
 
   handleOptionsChange() {
 
-    const leaderboard = section.querySelector('.leaderboard-table');
-    leaderboard.handleFavTeamChange();
+    section.querySelector('.leaderboard-table').handleFavTeamChange();
 
-    section.querySelectorAll('.week-stats').forEach(weekStats => {
-      weekStats.querySelectorAll('.menu-item').forEach(menuItem => {
-
-        if (menuItem.querySelector('i.fav-team')) menuItem.querySelector('i.fav-team').remove();
-        if (!session.favTeam) return;
-
-        const teamName = menuItem.querySelector('.team-name');
-        if (teamName.textContent == session.favTeam) {
-          const icon = createElement(`<i class="fa-solid fa-user fav-team"></i>`);
-          teamName.after(icon);
-        }
-      });
+    section.querySelectorAll('.team-drinks-item').forEach(item => {
+      const teamName = item.querySelector('.team-name');
+      const favIcon = item.querySelector('i.fav-team');
+      if (favIcon) favIcon.remove();
+      if (teamName.textContent == session.favTeam) {
+        const icon = createElement(`<i class="fa-solid fa-user fav-team"></i>`);
+        teamName.after(icon);
+      }
     });
 
     const steppers = section.querySelectorAll('.drinks-stepper');
@@ -118,8 +113,10 @@ export class Standings {
 
     const weeks = Object.values(session.weeks);
     const teams = Object.values(session.teams);
+    const headerTitle = mainHeader.querySelector('.main-header-title span');
     const saveBtn = mainHeader.querySelector('.btn-save');
     const backBtn = mainHeader.querySelector('.btn-back');
+    backBtn.dataset.slide = 0;
 
     /* ------------------------------------------------ */
     // stats card (carousel nav)
@@ -134,21 +131,10 @@ export class Standings {
         .enableNav()
         .addClass('week-stats-nav')
         .addDataset('week', week.id)
+        .addDataset('label', week.label)
+        .addDataset('slide', index + 1)
         .addMain(week.label)
         .addTrail(dateStr);
-
-      menuItem.addEventListener('click', () => {
-        let item = getCarousel().querySelector(`.carousel-item[data-week="${week.id}"`);
-        let items = getCarousel().querySelectorAll('.carousel-item');
-        let itemIndex = Array.from(items).indexOf(item);
-        getCarouselBS().to(itemIndex);
-
-        saveBtn.reset();
-        mainHeader.classList.remove('hidden');
-        mainHeader.querySelector('.main-header-title span').textContent = week.label;
-        document.querySelector('nav').classList.add('hidden');
-        offsetScrollIntoView(item);
-      });
 
       card.addContent(menuItem);
     });
@@ -160,8 +146,9 @@ export class Standings {
 
       const card = new ContCard('TEAM DRINKS');
       teams.forEach(team => {
-        const item = new MenuItem();
 
+        const item = new MenuItem();
+        item.classList.add('team-drinks-item');
         const title = createElement(`
           <div class="d-flex align-items-center column-gap-2">
             <span class="team-nbr">${team.nbr}</span>
@@ -199,21 +186,32 @@ export class Standings {
     });
 
     /* ------------------------------------------------ */
-    // nav back
+    // nav listeners
 
-    backBtn.addEventListener('click', () => {
+    const handleCarouselNavClick = (e) => {
 
-      // reset changed steppers and save button
-      const steppers = section.querySelectorAll('.drinks-stepper');
-      steppers.forEach(stepper => stepper.reset());
-      saveBtn.reset();
+      const btn = e.target.closest('[data-slide]');
+      const destSlide = parseInt(btn.dataset.slide);
+      const destHome = destSlide == 0;
+      if (destHome) {
+        section.querySelectorAll('.drinks-stepper').forEach(stepper => stepper.reset());
+        saveBtn.reset();
+      }
 
-      getCarouselBS().to(0);
-      mainHeader.classList.add('hidden');
-      mainHeader.querySelector('.main-header-title span').textContent = '';
-      document.querySelector('nav').classList.remove('hidden');
-      statsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+      getCarouselBS().to(destSlide);
+      mainHeader.classList.toggle('hidden', destHome);
+      document.querySelector('nav').classList.toggle('hidden', !destHome);
+      headerTitle.textContent = destHome ? '' : btn.dataset.label;
+      if (destHome) {
+        statsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    const menuItems = card.querySelectorAll('.menu-item.week-stats-nav');
+    menuItems.forEach(menuItem => menuItem.addEventListener('click', handleCarouselNavClick));
+    backBtn.addEventListener('click', handleCarouselNavClick);
 
     /* ------------------------------------------------ */
     // handle save button click
@@ -222,24 +220,21 @@ export class Standings {
 
       saveBtn.startSave();
       const steppers = section.querySelectorAll('.drinks-stepper.changed');
+      const refs = session.getLeague().refs;
       const updates = {};
 
       steppers.forEach(stepper => {
         const teamId = stepper.dataset.team;
         const weekId = stepper.dataset.week;
         const drinksChange = parseInt(stepper.change);
-        const sPath = `${session.getLeague().refs.stats}/${weekId}/${teamId}/drinks/count`;
-        const tPath = `${session.getLeague().refs.teams}/${teamId}/stats/drinks/count`;
-        updates[sPath] = increment(drinksChange);
-        updates[tPath] = increment(drinksChange);
+        updates[`${refs.stats}/${weekId}/${teamId}/drinks/count`] = increment(drinksChange);
+        updates[`${refs.teams}/${teamId}/stats/drinks/count`] = increment(drinksChange);
       });
 
       update(ref(db), updates)
         .then(() => {
           saveBtn.endSave();
-          setTimeout(() => {
-            saveBtn.reset();
-          }, 2000);
+          setTimeout(() => saveBtn.reset(), 2000);
         })
         .catch(err => {
           console.error(err);

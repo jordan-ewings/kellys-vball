@@ -248,13 +248,13 @@ footer a {
 .main-header .btn-back {
   position: absolute;
   left: 0;
-  padding-left: .5rem;
+  padding-left: 1rem;
 }
 
 .main-header .btn-save {
   position: absolute;
   right: 0;
-  padding-right: .5rem;
+  padding-right: 1rem;
 }
 
 /* --------------- TABLE --------------- */

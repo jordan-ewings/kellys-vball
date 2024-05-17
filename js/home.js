@@ -1,7 +1,6 @@
 import { db, auth, session } from './firebase.js';
 
 import { createElement } from './util.js';
-// import { initUserContent, handleAdminContent, handleOptionsChange } from './main.js';
 import { ContCard, MenuItem, RadioMenu } from '../components/common.js';
 import { app } from './main.js';
 
@@ -71,15 +70,7 @@ export class Home {
     const radioMenu = new RadioMenu(false);
     leagues.forEach(league => {
       const main = league.title.split(' ')[0] + ' Night';
-      // sub is the rest of the title
       const sub = league.title.split(' ').slice(2).join(' ');
-      // const title = createElement(`
-      //   <div class="d-flex flex-column">
-      //     <span>${main}</span>
-      //     <span class="sub-main">${sub}</span>
-      //   </div>
-      // `);
-
       const title = createElement(`
         <div class="d-flex justify-content-between align-items-center column-gap-2">
           <span>${main}</span>
