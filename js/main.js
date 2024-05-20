@@ -1,32 +1,22 @@
 import { auth, session } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
 
-import { Schedule } from './schedule.js';
-import { Standings } from './standings.js';
-import { Home } from './home.js';
+import schedule from './schedule.js';
+import standings from './standings.js';
+import home from './home.js';
+
+import nav from '../components/Nav.js';
 
 /* ------------------------------------------------ */
 
-const navbar = document.querySelector('.navbar');
-const navbarNav = document.querySelector('.navbar-nav');
-const navbarBorder = document.querySelector('#navbar-border');
-const navLinks = document.querySelectorAll('.nav-link');
 const mainDiv = document.querySelector('#main');
-const sections = document.querySelectorAll('section');
 const footer = document.querySelector('footer');
 const footerLink = document.querySelector('footer a');
 const loadingSpinner = document.querySelector('#loading');
-const currentSection = () => document.querySelector('section:not(.d-none)');
 
 /* ------------------------------------------------ */
 
-const home = new Home();
-const standings = new Standings();
-const schedule = new Schedule();
-
-/* ------------------------------------------------ */
-
-class AppInstance {
+class App {
 
   constructor() {
     this.initialized = false;
@@ -44,84 +34,85 @@ class AppInstance {
       const prevId = session.user ? session.user.uid : null;
       const currId = user ? user.uid : null;
       if (prevId == currId) return;
-
       session.setUserProps(user);
-      if (!this.initialized) {
-        this.initialized = true;
-        this.initUserContent();
-        this.initGlobalContent();
-        this.showContent('index');
-      } else {
+
+      if (this.initialized) {
         this.updateUserContent();
+        return;
       }
+
+      this.initialized = true;
+      this.initUserContent();
+      mainDiv.classList.remove('d-none');
+      footer.classList.remove('d-none');
+      loadingSpinner.classList.add('d-none');
+      nav.show('home');
     });
 
     return this;
   }
 
   /* ------------------------------------------------ */
+  // handle user settings changes
+
+  async setLeague(leagueId) {
+    await session.setLeagueProps(leagueId);
+    this.initUserContent();
+  }
+
+  setAdminControls(value) {
+    session.adminControls = value;
+    this.updateUserContent();
+  }
+
+  setFavTeam(teamName) {
+    session.setFavTeam(teamName);
+    this.updateUserContent();
+  }
+
+  /* ------------------------------------------------ */
+  // handle user authentication
+
+  async signIn(password) {
+    await session.signIn(password);
+  }
+
+  async signOut() {
+    await session.signOut();
+  }
+
+  /* ------------------------------------------------ */
+
+  getSections() {
+    return [home, standings, schedule];
+  }
 
   initUserContent() {
 
-    home.init();
-    standings.init();
-    schedule.init();
     footerLink.textContent = session.getLeague().title;
+    this.getSections().forEach(section => {
+      section.init();
+    });
   }
 
   updateUserContent() {
 
-    home.handleOptionsChange();
-    standings.handleOptionsChange();
-    schedule.handleOptionsChange();
-  }
-
-  initGlobalContent() {
-
-    this.configureStyle();
-    navLinks.forEach(navLink => {
-      navLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        let name = navLink.id.replace('nav-', '');
-        this.showContent(name);
-      });
+    this.getSections().forEach(section => {
+      section.handleOptionsChange();
     });
-
-    mainDiv.classList.remove('d-none');
-    footer.classList.remove('d-none');
-    loadingSpinner.classList.add('d-none');
   }
+}
 
-  /* ------------------------------------------------ */
+/* ------------------------------------------------ */
 
-  showContent(name) {
+const app = new App();
+export default app;
 
-    const navLink = document.querySelector('#nav-' + name);
-    navLinks.forEach(nav => nav.classList.toggle('active', nav == navLink));
-    navbarBorder.style.left = navLink.offsetLeft + 'px';
-    navbarBorder.style.width = navLink.offsetWidth + 'px';
+/* ------------------------------------------------ */
 
-    // run the show/hide methods for each section
-    if (name == 'index') {
-      home.show();
-      standings.hide();
-      schedule.hide();
-    } else if (name == 'standings') {
-      home.hide();
-      standings.show();
-      schedule.hide();
-    } else if (name == 'schedule') {
-      home.hide();
-      standings.hide();
-      schedule.show();
-    }
+document.addEventListener('DOMContentLoaded', () => {
 
-  }
-
-  /* ------------------------------------------------ */
-
-  configureStyle() {
-
+  const configureStyle = () => {
     let mainHeader = document.querySelector('.main-header');
     let insetTop = window.getComputedStyle(mainHeader).getPropertyValue('top');
     if (insetTop == '0px') {
@@ -133,11 +124,8 @@ class AppInstance {
         }
       `, 0);
     }
-  }
-}
+  };
 
-/* ------------------------------------------------ */
-
-export const app = new AppInstance();
-
-document.addEventListener('DOMContentLoaded', () => app.init());
+  configureStyle();
+  app.init();
+});

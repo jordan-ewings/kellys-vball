@@ -19,7 +19,7 @@ const getCarouselBS = () => bootstrap.Carousel.getOrCreateInstance(getCarousel()
 
 /* ------------------------------------------------ */
 
-export class Standings {
+class Standings {
 
   init() {
 
@@ -245,3 +245,6 @@ export class Standings {
 }
 
 /* ------------------------------------------------ */
+
+const standings = new Standings();
+export default standings;

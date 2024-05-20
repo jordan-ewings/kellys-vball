@@ -2,7 +2,8 @@ import { db, auth, session } from './firebase.js';
 
 import { createElement } from './util.js';
 import { ContCard, MenuItem, RadioMenu } from '../components/common.js';
-import { app } from './main.js';
+
+import app from './main.js';
 
 /* ------------------------------------------------ */
 
@@ -16,7 +17,7 @@ const teamSelectContainer = mainBody.querySelector('#team-select-container');
 
 /* ------------------------------------------------ */
 
-export class Home {
+class Home {
 
   init() {
 
@@ -82,8 +83,7 @@ export class Home {
 
     radioMenu.addEventListener('change', async (e) => {
       const leagueId = radioMenu.getValue();
-      await session.setLeagueProps(leagueId);
-      app.initUserContent();
+      await app.setLeague(leagueId);
     });
 
     card.addContent(radioMenu);
@@ -136,7 +136,7 @@ export class Home {
       signInSpinner.classList.remove('d-none');
       const password = passwordInput.value;
       try {
-        await session.signIn(password);
+        await app.signIn(password);
         adminContainer.innerHTML = '';
         this.addAdminContent();
 
@@ -146,14 +146,14 @@ export class Home {
     });
 
     logoutButton.addEventListener('click', async () => {
-      await session.signOut();
+      await app.signOut();
       adminContainer.innerHTML = '';
       this.addAdminContent();
     });
 
     adminSwitch.querySelector('input').addEventListener('change', (e) => {
-      session.adminControls = e.target.checked;
-      app.updateUserContent();
+      const value = e.target.checked;
+      app.setAdminControls(value);
     });
   }
 
@@ -193,8 +193,7 @@ export class Home {
 
       // set favTeam
       const team = teams.find(t => t.id == teamId);
-      session.setFavTeam(team.name);
-      app.updateUserContent();
+      app.setFavTeam(team.name);
     });
 
     card.addContent(radioMenu);
@@ -203,3 +202,5 @@ export class Home {
 
 /* ------------------------------------------------ */
 
+const home = new Home();
+export default home;

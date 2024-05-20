@@ -17,7 +17,7 @@ const getCarouselBS = () => bootstrap.Carousel.getOrCreateInstance(getCarousel()
 /* ------------------------------------------------ */
 // schedule content
 
-export class Schedule {
+class Schedule {
 
   init() {
 
@@ -168,3 +168,8 @@ function createWeekCarouselItem(week) {
 
   return item;
 }
+
+/* ------------------------------------------------ */
+
+const schedule = new Schedule();
+export default schedule;
