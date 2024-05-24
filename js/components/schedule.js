@@ -232,8 +232,8 @@ export class GameItem extends HTMLElement {
         const teamId = matchItem.dataset.team_id;
         const isWinner = (match.winner) ? match.winner == teamId : false;
         const icon = matchItem.querySelector('i');
-        icon.classList.toggle('fa-circle-check', isWinner);
-        icon.classList.toggle('fa-circle', !isWinner);
+        icon.classList.toggle('bi-check-circle', isWinner);
+        icon.classList.toggle('bi-circle', !isWinner);
       });
     });
   }
@@ -267,53 +267,10 @@ export class GameItem extends HTMLElement {
     const teamIds = Object.keys(this.data.teams);
     const matchIds = Object.keys(this.data.matches);
 
-    // const matchItem = (matchIdx, teamIdx) => {
-    //   return `<i class="match-item result fa-regular fa-circle" data-match_id="${matchIds[matchIdx]}" data-team_id="${teamIds[teamIdx]}"></i>`;
-    // };
-
-    // const cancelMatchItem = (matchIdx) => {
-    //   return `<i role="button" class="match-item cancel fa-regular fa-circle-xmark" data-match_id="${matchIds[matchIdx]}"></i>`;
-    // }
-
-    // const teamItem = (teamIdx) => {
-    //   return `
-    //     <div class="team-item d-flex align-items-center column-gap-2 team-item-${teamIdx + 1}" data-team_id="${teamIds[teamIdx]}">
-    //       <span class="team-nbr"></span>
-    //       <span class="team-name"></span>
-    //       <span class="team-record"></span>
-    //       <div class="ms-auto d-flex justify-content-end column-gap-2">
-    //         ${matchItem(0, teamIdx)}
-    //         ${matchItem(1, teamIdx)}
-    //       </div>
-    //     </div>
-    //   `;
-    // };
-
-    // const matchHeaders = () => {
-    //   // <span class="cancel">Cancellations <i class="fa-solid fa-chevron-right"></i></span>
-    //   return `
-    //     <div class="match-headers d-flex justify-content-end align-items-center column-gap-2 ${this.form ? '' : 'd-none'}">
-    //       ${cancelMatchItem(0)}
-    //       ${cancelMatchItem(1)}
-    //     </div>
-    //   `;
-    // };
-
-    // const formFooter = () => {
-    //   return `
-    //     <div class="form-footer row g-0 collapse">
-    //       <div class="col alert-col"></div>
-    //       <div class="col-4 ps-3 pe-1">
-    //         <button class="btn w-100 btn-primary" disabled>Submit</button>
-    //       </div>
-    //     </div>
-    //   `;
-    // };
-
     const matchItem = (matchIdx, teamIdx) => {
       return `
         <div role="button" class="match-item result" data-match_id="${matchIds[matchIdx]}" data-team_id="${teamIds[teamIdx]}">
-          <i class="fa-regular fa-circle"></i>
+          <i class="bi bi-circle"></i>
         </div>
       `;
     };
@@ -321,7 +278,7 @@ export class GameItem extends HTMLElement {
     const cancelMatchItem = (matchIdx) => {
       return `
         <div role="button" class="match-item cancel d-none" data-match_id="${matchIds[matchIdx]}">
-          <i class="fa-regular fa-circle-xmark"></i>
+          <i class="bi bi-x-circle"></i>
         </div>
       `;
     };
@@ -335,26 +292,6 @@ export class GameItem extends HTMLElement {
         </div>
       `;
     };
-
-    // const html = `
-    //   <div class="team-col col pe-2 d-flex flex-column row-gap-1 justify-content-center">
-    //     ${teamItem(0)}
-    //     ${teamItem(1)}
-    //     ${matchHeaders()}
-    //   </div>
-    //   <div class="stat-col col-4 ps-3 d-flex justify-content-between column-gap-1">
-    //     <div class="d-flex flex-column justify-content-start">
-    //       <span class="game-time"></span>
-    //       <span class="game-court"></span>
-    //     </div>
-    //     <div class="d-flex flex-column justify-content-start pe-1">
-    //       <div class="edit-icon-circle admin-control" role="button">
-    //         <i class="fa-solid fa-pen edit-icon"></i>
-    //       </div>
-    //     </div>
-    //   </div>
-    //   ${formFooter()}
-    // `;
 
     this.innerHTML = `
       <div>
@@ -396,31 +333,6 @@ export class GameItem extends HTMLElement {
       </div>
     `;
 
-    // const html = `
-    //   <div class="team-col col pe-2 d-flex justify-content-between column-gap-1">
-    //     <div class="d-flex flex-column">
-    //       ${teamItem(0)}
-    //       ${teamItem(1)}
-    //     </div>
-    //     <div class="d-flex flex-column ">
-    //       ${matchItem(0, 0)}
-    //       ${matchItem(1, 0)}
-    //   </div>
-    //   <div class="stat-col col-4 ps-3 d-flex justify-content-between column-gap-1">
-    //     <div class="d-flex flex-column justify-content-start">
-    //       <span class="game-time"></span>
-    //       <span class="game-court"></span>
-    //     </div>
-    //     <div class="d-flex flex-column justify-content-start pe-1">
-    //       <div class="edit-icon-circle admin-control" role="button">
-    //         <i class="fa-solid fa-pen edit-icon"></i>
-    //       </div>
-    //     </div>
-    //   </div>
-    //   ${formFooter()}
-    // `;
-
-    // this.innerHTML = html;
     this.setGeneralElements();
     this.setTeamItemElements();
     this.setMatchItemElements();

@@ -11,7 +11,7 @@ import Nav from './components/Nav.js';
 
 const mainDiv = document.querySelector('#main');
 const footer = document.querySelector('footer');
-const footerLink = document.querySelector('footer a');
+const footerLink = document.querySelector('#league-title');
 const loadingSpinner = document.querySelector('#loading');
 
 /* ------------------------------------------------ */

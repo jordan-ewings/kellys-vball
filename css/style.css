@@ -149,14 +149,17 @@ nav a {
   font-weight: 600 !important;
   font-size: 1rem !important;
   padding-top: 0 !important;
-  padding-bottom: .3rem !important;
+  padding-bottom: .3rem;
   text-align: center !important;
   margin: 0 .5rem !important;
 }
 
-nav a.direct-user {
-  border-bottom: 2px solid var(--ios-red) !important;
-  transition: border-bottom 1s;
+#nav-index {
+  padding-bottom: 0;
+}
+
+#nav-index i {
+  font-size: 1.5rem;
 }
 
 nav #navbar-border {
@@ -176,17 +179,17 @@ footer {
   margin-top: 2rem;
   padding-top: 1rem;
   padding-bottom: 1.5rem;
-  border-top: 1px solid var(--ios-separator-opaque);
-  box-shadow: 0 -15px 10px -15px var(--ios-separator-opaque);
+  border-top: 1px solid var(--ios-separator-nonopaque);
+  /* box-shadow: 0 -15px 10px -15px var(--ios-separator-opaque); */
   text-align: center;
 }
 
-footer a {
-  color: var(--ios-text);
-  font-weight: 500;
-  text-decoration: underline;
-  text-decoration-color: var(--ios-blue);
-  text-underline-offset: .5rem;
+footer span {
+  color: var(--ios-text-secondary);
+  font-weight: 400;
+  /* text-decoration: underline;
+  text-decoration-color: var(--ios-text-tertiary);
+  text-underline-offset: .5rem; */
 }
 
 #loading {
@@ -352,12 +355,12 @@ td:first-child {
   font-size: 1.4rem;
 }
 
-.radio-menu .trail i.fa-circle {
+.radio-menu .trail i.bi-circle {
   color: var(--ios-text-quaternary);
   opacity: .5;
 }
 
-.radio-menu .trail i.fa-circle-check {
+.radio-menu .trail i.bi-check-circle-fill {
   color: var(--ios-green);
   opacity: 1;
 }
@@ -776,6 +779,8 @@ i.fav-team {
 .game-group .cont-card-body {
   row-gap: .8rem;
   padding: .8rem 0;
+  padding-left: .25rem;
+  padding-right: .25rem;
 }
 
 /* ---------------------------------- */
@@ -786,8 +791,12 @@ i.fav-team {
   padding: 0 .1rem;
   display: flex;
   flex-direction: column;
-  padding-left: .25rem;
-  padding-right: .5rem;
+  padding-right: .25rem;
+}
+
+.game-item.pending {
+  pointer-events: none;
+  opacity: .5;
 }
 
 .game-item>div:not(.form-footer),
@@ -836,14 +845,10 @@ i.fav-team {
   column-gap: .5rem;
 }
 
-
-
 .game-item .stat-col,
 .game-item .form-footer .save-col {
   margin-left: 1rem;
   padding-left: 1rem;
-  /* padding-right: .5rem; */
-  /* width: 33%; */
   justify-content: space-between;
   column-gap: .5rem;
   border-left: .8px solid var(--ios-separator-opaque);
@@ -854,29 +859,7 @@ i.fav-team {
   flex-grow: 1;
 }
 
-
-
-
-/* .game-item .form-footer>div {
-  display: flex;
-  flex-direction: row;
-  flex-grow: 1;
-} */
-
-
-
-
-
-
-
-.game-item.pending {
-  pointer-events: none;
-  opacity: .5;
-}
-
-.game-item:first-child {
-  border-top: none;
-}
+/* ---------------------------------- */
 
 .game-item .edit-icon-circle {
   background-color: var(--ios-bg-tertiary);
@@ -895,7 +878,23 @@ i.fav-team {
   font-size: .9rem;
 }
 
+.game-item-form .edit-icon {
+  font-size: 1.2rem;
+}
+
 /* ---------------------------------- */
+
+.game-item .game-time {
+  color: var(--ios-text);
+  font-size: .95rem;
+  font-weight: 400;
+}
+
+.game-item .game-court {
+  color: var(--ios-text-secondary);
+  font-size: .85rem;
+  font-weight: 200;
+}
 
 .game-item .team-item {
   padding: 0;
@@ -924,13 +923,21 @@ i.fav-team {
   white-space: nowrap;
 }
 
+.game-item-form .team-record {
+  display: none;
+}
+
+/* ---------------------------------- */
+
 .game-item .match-item i {
   font-size: 1.1rem;
+  line-height: 1.5rem;
   transition: all 0.2s;
 }
 
 .game-item-form .match-item i {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
+  line-height: 1.5rem;
   transition: all 0.2s;
 }
 
@@ -938,61 +945,33 @@ i.fav-team {
   pointer-events: none;
 }
 
-.game-item .match-item i.fa-circle {
+.game-item .match-item i.bi-circle {
   opacity: .25;
   color: var(--ios-text-quaternary);
   transition: all 0.1s ease-in-out;
 }
 
-.game-item .match-item i.fa-circle-check {
+.game-item .match-item i.bi-check-circle {
   opacity: 1;
   color: var(--ios-green);
   transition: all 0.1s ease-in-out;
 }
 
-.game-item.post:not(.game-item-form) .match-item i.fa-circle {
+.game-item.post:not(.game-item-form) .match-item i.bi-circle {
   opacity: 0;
 }
-
-
 
 .game-item-form .match-item.cancel i {
   opacity: 0.25;
   color: var(--ios-text-quaternary);
-  /* transition: all 0.1s ease-in-out; */
 }
 
 .game-item-form .match-item.cancel.picked i {
   opacity: 1;
   color: var(--ios-red);
-  /* transition: all 0.1s ease-in-out; */
-}
-
-/* .game-item-form .match-item:hover {
-  cursor: pointer;
-} */
-
-.game-item .game-time {
-  color: var(--ios-text);
-  font-size: .95rem;
-  font-weight: 400;
-}
-
-.game-item .game-court {
-  color: var(--ios-text-secondary);
-  font-size: .85rem;
-  font-weight: 200;
 }
 
 /* ---------------------------------- */
-
-.game-item-form .edit-icon {
-  font-size: 1.2rem;
-}
-
-.game-item-form .team-record {
-  display: none;
-}
 
 .game-item-form .alert {
   font-size: .9rem;

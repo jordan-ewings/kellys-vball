@@ -184,6 +184,8 @@ export class RadioMenu extends HTMLElement {
     this.selectedOnTop = selectedOnTop || false;
     this.value = null;
     this.appendOrder = [];
+    this.checkClass = 'bi bi-check-circle-fill';
+    this.uncheckClass = 'bi bi-circle';
     this.render();
   }
 
@@ -194,11 +196,12 @@ export class RadioMenu extends HTMLElement {
 
   addOption(title, value, checked = false) {
     const item = new MenuItem();
-    const check = createElement('<i class="fa-regular fa-circle"></i>');
+    // const check = createElement('<i class="fa-regular fa-circle"></i>');
+    const check = document.createElement('i');
+    check.className = checked ? this.checkClass : this.uncheckClass;
     if (checked === true) {
       this.value = value;
       item.classList.add('selected');
-      check.className = 'fa-solid fa-circle-check';
     }
     item.addMain(title);
     item.addTrail(check);
@@ -247,7 +250,9 @@ export class RadioMenu extends HTMLElement {
       const trail = item.querySelector('.trail');
       const check = trail.querySelector('i');
       const isValue = item.dataset.value == this.value;
-      check.className = isValue ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle';
+      // check.className = isValue ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle';
+      // check.className = isValue ? 'bi bi-check-circle' : 'bi bi-circle';
+      check.className = isValue ? this.checkClass : this.uncheckClass;
       item.classList.toggle('selected', isValue);
     });
 
