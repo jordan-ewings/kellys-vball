@@ -2,8 +2,8 @@ import { db, session } from './firebase.js';
 import { ref, get, onValue, update } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
 import { createElement } from './util.js';
-import { GameItem } from '../components/schedule.js';
-import { ContCard } from '../components/common.js';
+import { GameItem } from './components/schedule.js';
+import { ContCard } from './components/common.js';
 
 /* ------------------------------------------------ */
 // constants / helpers
@@ -17,40 +17,40 @@ const getCarouselBS = () => bootstrap.Carousel.getOrCreateInstance(getCarousel()
 /* ------------------------------------------------ */
 // schedule content
 
-class Schedule {
+export default class Schedule {
 
-  init() {
+  static navLink = document.querySelector('#nav-schedule');
+
+  static init() {
 
     this.reset();
     this.addScheduleContent();
     this.addFirebaseListeners();
-
-    return this;
   }
 
-  show() {
+  static show() {
     section.classList.remove('d-none');
     const activeBtn = weekFilterContainer.querySelector('.week-filter-btn.active');
     if (activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }
 
-  hide() {
+  static hide() {
     section.classList.add('d-none');
   }
 
-  handleOptionsChange() {
+  static handleOptionsChange() {
 
     const gameItems = scheduleContainer.querySelectorAll('.game-item');
     gameItems.forEach(gameItem => {
       gameItem.handleAdminChange();
-      gameItem.handleFavTeamChange();
+      // gameItem.handleFavTeamChange();
     });
   }
 
   /* ------------------------------------------------ */
   // private methods
 
-  reset() {
+  static reset() {
     weekFilterContainer.innerHTML = '';
     scheduleContainer.innerHTML = `
       <div class="carousel slide carousel-fade" data-bs-touch="false">
@@ -59,7 +59,7 @@ class Schedule {
     `;
   }
 
-  addScheduleContent() {
+  static addScheduleContent() {
 
     Object.values(session.weeks).forEach((week) => {
       const btn = createWeekButton(week);
@@ -69,21 +69,19 @@ class Schedule {
       scheduleContainer.querySelector('.carousel-inner').appendChild(item);
     });
 
-    let initialWeek = 'WK01';
-    Object.keys(session.weeks).forEach(weekId => {
-      Object.values(session.games[weekId]).forEach(game => {
-        Object.values(game.matches).forEach(match => {
-          if (match.status == 'POST') initialWeek = weekId;
-        });
-      });
-    });
+    // set current week according to gameday
+    const today = new Date();
+    const initialWeek = Object.values(session.weeks).find(week => {
+      const gameday = new Date(week.gameday);
+      return today <= gameday;
+    }).id;
 
     const query = `[data-week="${initialWeek}"]`;
     weekFilterContainer.querySelector(query).classList.add('active');
     scheduleContainer.querySelector(query).classList.add('active');
   }
 
-  addFirebaseListeners() {
+  static addFirebaseListeners() {
 
     const refs = session.getLeague().refs;
     const gameItems = scheduleContainer.querySelectorAll('.game-item');
@@ -170,6 +168,3 @@ function createWeekCarouselItem(week) {
 }
 
 /* ------------------------------------------------ */
-
-const schedule = new Schedule();
-export default schedule;

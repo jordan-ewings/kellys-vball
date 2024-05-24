@@ -1,11 +1,11 @@
 import { auth, session } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
 
-import schedule from './schedule.js';
-import standings from './standings.js';
-import home from './home.js';
+import Home from './home.js';
+import Standings from './standings.js';
+import Schedule from './schedule.js';
 
-import nav from '../components/Nav.js';
+import Nav from './components/Nav.js';
 
 /* ------------------------------------------------ */
 
@@ -16,24 +16,20 @@ const loadingSpinner = document.querySelector('#loading');
 
 /* ------------------------------------------------ */
 
-class App {
+export default class App {
 
-  constructor() {
-    this.initialized = false;
-    return this;
-  }
+  static initialized = false;
 
   /* ------------------------------------------------ */
   // initialization
 
-  async init() {
+  static async init() {
 
     await session.init();
 
     onAuthStateChanged(auth, user => {
-      const prevId = session.user ? session.user.uid : null;
-      const currId = user ? user.uid : null;
-      if (prevId == currId) return;
+      // if (session.isSameUser(user)) return;
+      console.log('user', user);
       session.setUserProps(user);
 
       if (this.initialized) {
@@ -46,7 +42,6 @@ class App {
       mainDiv.classList.remove('d-none');
       footer.classList.remove('d-none');
       loadingSpinner.classList.add('d-none');
-      nav.show('home');
     });
 
     return this;
@@ -55,17 +50,17 @@ class App {
   /* ------------------------------------------------ */
   // handle user settings changes
 
-  async setLeague(leagueId) {
+  static async setLeague(leagueId) {
     await session.setLeagueProps(leagueId);
     this.initUserContent();
   }
 
-  setAdminControls(value) {
-    session.adminControls = value;
+  static setAdminControls(value) {
+    session.setAdminControls(value);
     this.updateUserContent();
   }
 
-  setFavTeam(teamName) {
+  static setFavTeam(teamName) {
     session.setFavTeam(teamName);
     this.updateUserContent();
   }
@@ -73,21 +68,21 @@ class App {
   /* ------------------------------------------------ */
   // handle user authentication
 
-  async signIn(password) {
-    await session.signIn(password);
+  static async signIn(password) {
+    return await session.signIn(password);
   }
 
-  async signOut() {
-    await session.signOut();
+  static async signOut() {
+    return await session.signOut();
   }
 
   /* ------------------------------------------------ */
 
-  getSections() {
-    return [home, standings, schedule];
+  static getSections() {
+    return [Home, Standings, Schedule];
   }
 
-  initUserContent() {
+  static initUserContent() {
 
     footerLink.textContent = session.getLeague().title;
     this.getSections().forEach(section => {
@@ -95,18 +90,13 @@ class App {
     });
   }
 
-  updateUserContent() {
+  static updateUserContent() {
 
     this.getSections().forEach(section => {
       section.handleOptionsChange();
     });
   }
 }
-
-/* ------------------------------------------------ */
-
-const app = new App();
-export default app;
 
 /* ------------------------------------------------ */
 
@@ -127,5 +117,5 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   configureStyle();
-  app.init();
+  App.init();
 });

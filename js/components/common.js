@@ -1,9 +1,9 @@
+import { createElement } from "../util.js";
+import { session } from "../firebase.js";
+
 /* ------------------------------------------------ */
 // helpers
 
-import { createElement } from "../js/util.js";
-
-// helper to create a new element
 function stdInput(input) {
 
   let content = input;
@@ -36,14 +36,13 @@ export class ContCard extends HTMLElement {
   }
 
   render() {
-    const html = `
+    this.classList.add('cont-card');
+    this.innerHTML = `
       <div class="cont-card-title"></div>
       <div class="cont-card-body"></div>
       <div class="cont-card-footer"></div>
     `;
 
-    this.classList.add('cont-card');
-    this.innerHTML = html;
     if (this.title !== '') this.addTitle(this.title);
     if (this.body !== '') this.addContent(this.body);
 
@@ -87,7 +86,8 @@ export class MenuItem extends HTMLElement {
 
   // method for rendering the component
   render() {
-    const html = `
+    this.classList.add('menu-item');
+    this.innerHTML = `
       <div class="label"></div>
       <div class="contents">
         <div class="main"></div>
@@ -95,9 +95,6 @@ export class MenuItem extends HTMLElement {
         <div class="trail"></div>
       </div>
     `;
-
-    this.classList.add('menu-item');
-    this.innerHTML = html;
 
     return this;
   }
@@ -118,7 +115,6 @@ export class MenuItem extends HTMLElement {
     this.dataset[key] = value;
     return this;
   }
-
 
   // enable nav
   enableNav() {
@@ -163,12 +159,9 @@ export class MenuItem extends HTMLElement {
     return this;
   }
 
-  // trail contains action button(s)
-  // if not nav, user can add action buttons
   addTrail(trail) {
     const div = this.querySelector('.trail');
     const content = stdInput(trail);
-    // if drill in trail div, append just before it
     if (div.querySelector('.drill')) {
       div.insertBefore(content, div.querySelector('.drill'));
     } else {
@@ -460,3 +453,56 @@ export class Button extends HTMLElement {
 }
 
 customElements.define('action-button', Button);
+
+/* ------------------------------------------------ */
+// favTeamIcon
+
+export class FavTeamListener {
+
+  /* ------------------------------------------------ */
+  // static methods
+
+  static instances = [];
+
+  static updateAll() {
+    FavTeamListener.instances = FavTeamListener.instances.filter(instance => {
+      return document.body.contains(instance.element);
+    });
+    FavTeamListener.instances.forEach(instance => instance.update());
+  }
+
+  /* ------------------------------------------------ */
+  // instance methods
+
+  constructor(element) {
+    this.element = element;
+    this.teamNameElement = this.element.querySelector('.team-name');
+    this.anchorElement = this.teamNameElement;
+    this.update();
+
+    FavTeamListener.instances.push(this);
+  }
+
+  // custom icon location (icon will be inserted after this element)
+  setAnchor(selector) {
+    const anchor = this.element.querySelector(selector);
+    if (anchor) this.anchorElement = anchor;
+    this.update();
+  }
+
+  // toggle icon based on session.favTeam
+  update() {
+
+    const isFav = session.favTeam == this.teamNameElement.textContent;
+    const anchor = this.anchorElement;
+    const icon = createElement('<i class="fa-solid fa-user fav-team"></i>');
+    const iconOld = this.element.querySelector('i.fav-team');
+
+    if (iconOld) iconOld.remove();
+    if (isFav) anchor.after(icon);
+  }
+}
+
+document.addEventListener('session-setFavTeam', FavTeamListener.updateAll);
+
+/* ------------------------------------------------ */

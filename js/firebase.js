@@ -74,6 +74,20 @@ export const session = {
     this.adminControls = user ? !user.isAnonymous : false;
   },
 
+  isSameUser: function (user) {
+    const prevId = this.user ? this.user.uid : null;
+    const newId = user ? user.uid : null;
+    return prevId == newId;
+  },
+
+  // run on adminControls change
+  setAdminControls: function (value) {
+    this.adminControls = value;
+
+    const e = new CustomEvent('session-setAdminControls', { detail: this.adminControls });
+    document.dispatchEvent(e);
+  },
+
   // run on league change
   setLeagueProps: async function (leagueId) {
 
@@ -99,13 +113,17 @@ export const session = {
   },
 
   setFavTeam: function (teamName) {
+
+    this.favTeam = (teamName) ? teamName : null;
     if (teamName) {
-      this.favTeam = teamName;
       localStorage.setItem('favTeam', teamName);
     } else {
-      this.favTeam = null;
       localStorage.removeItem('favTeam');
     }
+
+    // dispatch event
+    const e = new CustomEvent('session-setFavTeam', { detail: this.favTeam });
+    document.dispatchEvent(e);
   },
 
   // set .admin-control elements visibility
@@ -125,24 +143,21 @@ export const session = {
 
   // sign out
   signOut: async function () {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error('Sign out failed:', error);
-    }
+    return await signOut(auth);
   },
 
   // sign in user
   signIn: async function (password) {
-    try {
-      await signInWithEmailAndPassword(
-        auth,
-        'jordanewings@outlook.com',
-        password
-      );
-    } catch (error) {
-      console.error('Sign in failed:', error);
-    }
+    return await signInWithEmailAndPassword(auth, 'jordanewings@outlook.com', password);
+    // try {
+    //   await signInWithEmailAndPassword(
+    //     auth,
+    //     'jordanewings@outlook.com',
+    //     password
+    //   );
+    // } catch (error) {
+    //   console.error('Sign in failed:', error);
+    // }
   },
 
 

@@ -1,6 +1,6 @@
 
-import { session } from "../js/firebase.js";
-import { formatNumber, createElement } from "../js/util.js";
+import { formatNumber, createElement } from "../util.js";
+import { FavTeamListener } from "./common.js";
 
 /* ------------------------------------------------ */
 // leaderboard
@@ -86,27 +86,17 @@ export class Leaderboard extends HTMLElement {
       `;
 
       this.querySelector('tbody').appendChild(row);
+
+      // fav team listener
+      new FavTeamListener(row.querySelector('.d-flex'));
     });
 
-    if (session.favTeam) this.handleFavTeamChange();
-  }
-
-  handleFavTeamChange() {
-
-    // clear existing icons
-    this.querySelectorAll('i.fav-team').forEach(icon => icon.remove());
-    if (!session.favTeam) return;
-
-    const teamData = Object.values(this.teams).find(team => team.name == session.favTeam);
-    if (teamData) {
-      const teamRow = this.querySelector(`.leaderboard-item[data-team="${teamData.id}"]`);
-      const teamName = teamRow.querySelector('.team-name');
-      const icon = createElement(`<i class="fa-solid fa-user fav-team"></i>`);
-      teamName.after(icon);
-    }
   }
 }
 
 customElements.define('leaderboard-table', Leaderboard);
 
 /* ------------------------------------------------ */
+// stats content
+
+

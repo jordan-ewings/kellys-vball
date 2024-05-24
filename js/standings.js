@@ -2,8 +2,8 @@ import { offsetScrollIntoView, formatNumber, createElement } from './util.js';
 import { db, session } from './firebase.js';
 import { ref, onValue, update, increment } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
-import { ContCard, MenuItem, Stepper, Button } from '../components/common.js';
-import { Leaderboard } from '../components/standings.js';
+import { ContCard, MenuItem, Stepper, Button, FavTeamListener } from './components/common.js';
+import { Leaderboard } from './components/standings.js';
 
 /* ------------------------------------------------ */
 
@@ -19,38 +19,26 @@ const getCarouselBS = () => bootstrap.Carousel.getOrCreateInstance(getCarousel()
 
 /* ------------------------------------------------ */
 
-class Standings {
+export default class Standings {
 
-  init() {
+  static navLink = document.querySelector('#nav-standings');
+
+  static init() {
 
     this.reset();
     this.addLeaderboardContent();
     this.addStatsContent();
-
-    return this;
   }
 
-  show() {
+  static show() {
     section.classList.remove('d-none');
   }
 
-  hide() {
+  static hide() {
     section.classList.add('d-none');
   }
 
-  handleOptionsChange() {
-
-    section.querySelector('.leaderboard-table').handleFavTeamChange();
-
-    section.querySelectorAll('.team-drinks-item').forEach(item => {
-      const teamName = item.querySelector('.team-name');
-      const favIcon = item.querySelector('i.fav-team');
-      if (favIcon) favIcon.remove();
-      if (teamName.textContent == session.favTeam) {
-        const icon = createElement(`<i class="fa-solid fa-user fav-team"></i>`);
-        teamName.after(icon);
-      }
-    });
+  static handleOptionsChange() {
 
     const steppers = section.querySelectorAll('.drinks-stepper');
     const saveBtn = mainHeader.querySelector('.btn-save');
@@ -66,7 +54,7 @@ class Standings {
   /* ------------------------------------------------ */
   // private methods
 
-  reset() {
+  static reset() {
     leaderboardContainer.innerHTML = '';
     statsContainer.innerHTML = '';
     section.querySelectorAll('.carousel-item').forEach((item, index) => {
@@ -90,7 +78,7 @@ class Standings {
   /* ------------------------------------------------ */
   // leaderboard content
 
-  addLeaderboardContent() {
+  static addLeaderboardContent() {
 
     const card = new ContCard('LEADERBOARD');
     leaderboardContainer.appendChild(card);
@@ -109,7 +97,7 @@ class Standings {
   /* ------------------------------------------------ */
   // stats content
 
-  addStatsContent() {
+  static addStatsContent() {
 
     const weeks = Object.values(session.weeks);
     const teams = Object.values(session.teams);
@@ -153,9 +141,11 @@ class Standings {
           <div class="d-flex align-items-center column-gap-2">
             <span class="team-nbr">${team.nbr}</span>
             <span class="team-name">${team.name}</span>
-            ${session.favTeam == team.name ? '<i class="fa-solid fa-user fav-team"></i>' : ''}
           </div>
         `);
+
+        // fav team listener
+        new FavTeamListener(title);
 
         const stepper = new Stepper(0);
         stepper.classList.add('drinks-stepper');
@@ -245,6 +235,3 @@ class Standings {
 }
 
 /* ------------------------------------------------ */
-
-const standings = new Standings();
-export default standings;

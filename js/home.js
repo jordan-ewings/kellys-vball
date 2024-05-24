@@ -1,9 +1,9 @@
 import { db, auth, session } from './firebase.js';
 
 import { createElement } from './util.js';
-import { ContCard, MenuItem, RadioMenu } from '../components/common.js';
+import { ContCard, MenuItem, RadioMenu, FavTeamListener } from './components/common.js';
 
-import app from './main.js';
+import App from './app.js';
 
 /* ------------------------------------------------ */
 
@@ -17,9 +17,11 @@ const teamSelectContainer = mainBody.querySelector('#team-select-container');
 
 /* ------------------------------------------------ */
 
-class Home {
+export default class Home {
 
-  init() {
+  static navLink = document.querySelector('#nav-index');
+
+  static init() {
 
     this.reset();
     this.addLeagueSelectContent();
@@ -27,15 +29,15 @@ class Home {
     this.addMyTeamContent();
   }
 
-  show() {
+  static show() {
     section.classList.remove('d-none');
   }
 
-  hide() {
+  static hide() {
     section.classList.add('d-none');
   }
 
-  handleOptionsChange() {
+  static handleOptionsChange() {
 
     // nothing
 
@@ -44,7 +46,7 @@ class Home {
   /* ------------------------------------------------ */
   // private methods
 
-  reset() {
+  static reset() {
     leagueSelectContainer.innerHTML = '';
     adminContainer.innerHTML = '';
     teamSelectContainer.innerHTML = '';
@@ -53,7 +55,7 @@ class Home {
   /* ------------------------------------------------ */
   // league select content
 
-  addLeagueSelectContent() {
+  static addLeagueSelectContent() {
 
     const card = new ContCard('SELECT LEAGUE');
     leagueSelectContainer.appendChild(card);
@@ -83,7 +85,7 @@ class Home {
 
     radioMenu.addEventListener('change', async (e) => {
       const leagueId = radioMenu.getValue();
-      await app.setLeague(leagueId);
+      await App.setLeague(leagueId);
     });
 
     card.addContent(radioMenu);
@@ -92,12 +94,13 @@ class Home {
   /* ------------------------------------------------ */
   // admin content
 
-  addAdminContent() {
+  static addAdminContent() {
 
     const card = new ContCard('ADMIN ACCESS');
     adminContainer.appendChild(card);
 
     const passwordInput = createElement('<input type="password" placeholder="Enter password...">');
+    const passwordMessage = createElement('<span class="d-none invalid-msg">Incorrect password</span>');
     const signInSpinner = createElement('<div class="spinner-border spinner-border-sm d-none"></div>');
     const loginButton = createElement('<div role="button"><i class="fa-regular fa-circle-right"></i></div>');
     const logoutButton = createElement('<div role="button"><span>Logout</span></div>');
@@ -129,38 +132,43 @@ class Home {
       card.addFooter('Enable controls to edit game results and team stats.');
     } else {
       card.addContent(loginDiv);
+      card.addFooter(passwordMessage);
     }
 
     loginButton.addEventListener('click', async () => {
       loginButton.classList.add('d-none');
       signInSpinner.classList.remove('d-none');
       const password = passwordInput.value;
-      try {
-        await app.signIn(password);
-        adminContainer.innerHTML = '';
-        this.addAdminContent();
-
-      } catch (error) {
-        console.error('Sign in failed:', error);
-      }
+      await App.signIn(password)
+        .then(user => {
+          adminContainer.innerHTML = '';
+          this.addAdminContent();
+        })
+        .catch(error => {
+          passwordMessage.classList.remove('d-none');
+          console.log('Sign in failed:', error);
+          loginButton.classList.remove('d-none');
+          signInSpinner.classList.add('d-none');
+          passwordInput.value = '';
+        });
     });
 
     logoutButton.addEventListener('click', async () => {
-      await app.signOut();
+      await App.signOut();
       adminContainer.innerHTML = '';
       this.addAdminContent();
     });
 
     adminSwitch.querySelector('input').addEventListener('change', (e) => {
       const value = e.target.checked;
-      app.setAdminControls(value);
+      App.setAdminControls(value);
     });
   }
 
   /* ------------------------------------------------ */
   // my team content
 
-  addMyTeamContent() {
+  static addMyTeamContent() {
 
     const card = new ContCard('MY TEAM');
     teamSelectContainer.appendChild(card);
@@ -172,28 +180,19 @@ class Home {
         <div class="d-flex align-items-center column-gap-2">
           <span class="team-nbr">${team.nbr}</span>
           <span class="team-name">${team.name}</span>
-          ${session.favTeam == team.name ? '<i class="fa-solid fa-user fav-team"></i>' : ''}
         </div>
       `);
+
+      // fav team listener
+      new FavTeamListener(title);
 
       radioMenu.addOption(title, team.id, team.name == session.favTeam);
     });
 
     radioMenu.addEventListener('change', (e) => {
-
-      // update favTeam icon
       const teamId = radioMenu.getValue();
-      radioMenu.querySelectorAll('.radio-menu-item').forEach(item => {
-        const favIcon = item.querySelector('i.fav-team');
-        if (favIcon) favIcon.remove();
-      });
-      const teamItem = radioMenu.querySelector(`.radio-menu-item[data-value="${teamId}"]`);
-      const favIcon = createElement('<i class="fa-solid fa-user fav-team"></i>');
-      teamItem.querySelector('.team-name').after(favIcon);
-
-      // set favTeam
       const team = teams.find(t => t.id == teamId);
-      app.setFavTeam(team.name);
+      App.setFavTeam(team.name);
     });
 
     card.addContent(radioMenu);
@@ -202,5 +201,3 @@ class Home {
 
 /* ------------------------------------------------ */
 
-const home = new Home();
-export default home;
