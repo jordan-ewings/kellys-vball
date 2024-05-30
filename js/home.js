@@ -1,7 +1,12 @@
 import { db, auth, session } from './firebase.js';
 
 import { createElement } from './util.js';
-import { ContCard, MenuItem, RadioMenu, FavTeamListener } from './components/common.js';
+import {
+  ContCard,
+  MenuItem,
+  RadioMenu,
+  TeamLabel
+} from './components/common.js';
 
 import App from './app.js';
 
@@ -176,23 +181,14 @@ export default class Home {
     const teams = Object.values(session.teams);
     const radioMenu = new RadioMenu(true);
     teams.forEach(team => {
-      const title = createElement(`
-        <div class="d-flex align-items-center column-gap-2">
-          <span class="team-nbr">${team.nbr}</span>
-          <span class="team-name">${team.name}</span>
-        </div>
-      `);
-
-      // fav team listener
-      new FavTeamListener(title);
-
+      const title = new TeamLabel(team);
       radioMenu.addOption(title, team.id, team.name == session.favTeam);
     });
 
     radioMenu.addEventListener('change', (e) => {
       const teamId = radioMenu.getValue();
-      const team = teams.find(t => t.id == teamId);
-      App.setFavTeam(team.name);
+      const favTeam = teamId ? teams.find(t => t.id == teamId).name : null;
+      App.setFavTeam(favTeam);
     });
 
     card.addContent(radioMenu);

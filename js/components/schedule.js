@@ -2,7 +2,11 @@
 import { db, session } from "../firebase.js";
 import { ref, get, onValue, update } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
-import { ContCard, FavTeamListener } from "./common.js";
+import {
+  ContCard,
+  FavTeamListener,
+  TeamLabel,
+} from "./common.js";
 import { createAlert, createElement } from "../util.js";
 
 /* ------------------------------------------------ */
@@ -19,7 +23,18 @@ export class GameItem extends HTMLElement {
     super();
     this.data = data;
     this.form = false;
-    this.setProps();
+
+    // look up team data
+    this.teamIds = Object.keys(this.data.teams);
+    this.teamIds.forEach(teamId => {
+      let team = session.teams[teamId];
+      this.data.teams[teamId] = {
+        nbr: team.nbr,
+        name: team.name,
+        record: team.stats.games.record,
+      };
+    });
+
     this.render();
   }
 
@@ -54,6 +69,7 @@ export class GameItem extends HTMLElement {
 
   enableEditMode() {
     this.querySelector('.stat-col').classList.replace('col-3', 'col-4');
+    this.querySelector('.main-col').classList.replace('col-9', 'col-8');
     this.getButton().classList.remove('d-none');
 
     return this;
@@ -61,6 +77,7 @@ export class GameItem extends HTMLElement {
 
   disableEditMode() {
     this.querySelector('.stat-col').classList.replace('col-4', 'col-3');
+    this.querySelector('.main-col').classList.replace('col-8', 'col-9');
     this.getButton().classList.add('d-none');
 
     return this;
@@ -72,26 +89,6 @@ export class GameItem extends HTMLElement {
     } else {
       this.disableEditMode();
     }
-  }
-
-  /* ----- init element content/attributes ----- */
-
-  setProps() {
-    this.id = 'game-' + this.data.id;
-    this.dataset.game_id = this.data.id;
-    this.classList.add('game-item');
-    this.classList.add(this.getGameStatus().toLowerCase());
-
-    // look up team data
-    this.teamIds = Object.keys(this.data.teams);
-    this.teamIds.forEach(teamId => {
-      let team = session.teams[teamId];
-      this.data.teams[teamId] = {
-        nbr: team.nbr,
-        name: team.name,
-        record: team.stats.games.record,
-      };
-    });
   }
 
   /* ----- alert handling ----- */
@@ -115,6 +112,8 @@ export class GameItem extends HTMLElement {
     return this;
   }
 
+  /* ----- form toggling ----- */
+
   toggleForm() {
 
     this.form = !this.form;
@@ -137,9 +136,9 @@ export class GameItem extends HTMLElement {
 
     // show/hide form elements
     this.hideAlert();
-    this.querySelectorAll('.match-item.cancel').forEach(matchItem => {
-      matchItem.classList.toggle('d-none', !this.form);
-    });
+    // this.querySelectorAll('.match-item.cancel').forEach(matchItem => {
+    //   matchItem.classList.toggle('d-none', !this.form);
+    // });
 
     // form footer
     const formFooter = this.querySelector('.form-footer');
@@ -151,6 +150,8 @@ export class GameItem extends HTMLElement {
 
     return this;
   }
+
+  /* ----- handle match item clicks ----- */
 
   handleMatchItemClick(matchItem) {
 
@@ -185,6 +186,8 @@ export class GameItem extends HTMLElement {
     console.log('newMatches:', this.newMatches);
   }
 
+  /* ----- enable/disable save button ----- */
+
   setSaveButton() {
 
     const btn = this.querySelector('.form-footer button');
@@ -198,11 +201,7 @@ export class GameItem extends HTMLElement {
     btn.disabled = (changed) ? false : true;
   }
 
-  setGeneralElements() {
-
-    this.querySelector('.game-time').textContent = this.data.time;
-    this.querySelector('.game-court').textContent = 'Court ' + this.data.court;
-  }
+  /* ----- set/update elements ----- */
 
   setTeamItemElements() {
 
@@ -220,8 +219,14 @@ export class GameItem extends HTMLElement {
 
     const matchIds = Object.keys(this.data.matches);
     matchIds.forEach(matchId => {
-      const matchItems = this.getMatchItems(matchId);
+
       const match = (this.newMatches) ? this.newMatches[matchId] : this.data.matches[matchId];
+      const matchCol = this.querySelector(`.match-col[data-match_id="${matchId}"]`);
+      const matchItems = this.getMatchItems(matchId);
+
+      matchCol.classList.toggle('post', match.status != 'PRE');
+      matchCol.classList.toggle('cancelled', match.status == 'CNCL');
+
       matchItems.forEach(matchItem => {
 
         if (matchItem.classList.contains('cancel')) {
@@ -235,28 +240,7 @@ export class GameItem extends HTMLElement {
         icon.classList.toggle('bi-check-circle', isWinner);
         icon.classList.toggle('bi-circle', !isWinner);
       });
-    });
-  }
 
-  setEventListeners() {
-
-    const btn = this.getButton();
-    btn.addEventListener('click', (e) => {
-      this.toggleForm();
-    });
-
-    const matchItems = this.querySelectorAll('.match-item');
-    matchItems.forEach(matchItem => {
-      matchItem.addEventListener('click', (e) => {
-        if (this.form) this.handleMatchItemClick(matchItem);
-      });
-    });
-
-    const saveBtn = this.querySelector('.form-footer button');
-    saveBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      this.classList.add('pending');
-      await this.pushMatchUpdates();
     });
   }
 
@@ -277,38 +261,39 @@ export class GameItem extends HTMLElement {
 
     const cancelMatchItem = (matchIdx) => {
       return `
-        <div role="button" class="match-item cancel d-none" data-match_id="${matchIds[matchIdx]}">
+        <div role="button" class="match-item cancel" data-match_id="${matchIds[matchIdx]}">
           <i class="bi bi-x-circle"></i>
         </div>
       `;
     };
 
-    const teamItem = (teamIdx) => {
-      return `
-        <div class="team-item d-flex align-items-center column-gap-2 team-item-${teamIdx + 1}" data-team_id="${teamIds[teamIdx]}">
-          <span class="team-nbr"></span>
-          <span class="team-name"></span>
-          <span class="team-record"></span>
-        </div>
-      `;
-    };
+    const matchCancelledOverlay = `
+      <div class="cancelled-overlay">
+        <i class="bi bi-slash-circle"></i>
+      </div>
+    `;
+
+    this.id = 'game-' + this.data.id;
+    this.dataset.game_id = this.data.id;
+    this.classList.add('game-item');
 
     this.innerHTML = `
-      <div>
-        <div class="team-col">
-          ${teamItem(0)}
-          ${teamItem(1)}
-        </div>
-        <div class="matches-col">
-          <div class="match-col" data-match_id="${matchIds[0]}">
-            ${matchItem(0, 0)}
-            ${matchItem(0, 1)}
-            ${cancelMatchItem(0)}
+      <div class="row g-0">
+        <div class="main-col col-8">
+          <div class="team-col">
+            
           </div>
-          <div class="match-col" data-match_id="${matchIds[1]}">
-            ${matchItem(1, 0)}
-            ${matchItem(1, 1)}
-            ${cancelMatchItem(1)}
+          <div class="matches-col">
+            <div class="match-col" data-match_id="${matchIds[0]}">
+              ${matchItem(0, 0)}
+              ${matchItem(0, 1)}
+              ${cancelMatchItem(0)}
+            </div>
+            <div class="match-col" data-match_id="${matchIds[1]}">
+              ${matchItem(1, 0)}
+              ${matchItem(1, 1)}
+              ${cancelMatchItem(1)}
+            </div>
           </div>
         </div>
         <div class="stat-col col-4">
@@ -323,27 +308,54 @@ export class GameItem extends HTMLElement {
           </div>
         </div>
       </div>
-      <div class="form-footer collapse">
-        <div>
-          <div class="alert-col"></div>
-          <div class="save-col col-4">
-            <button class="btn w-100 btn-primary" disabled>Submit</button>
-          </div>
+      <div class="form-footer collapse row g-0">
+        <div class="alert-col col-8"></div>
+        <div class="save-col col-4">
+          <button class="btn w-100 btn-primary" disabled>Submit</button>
         </div>
       </div>
     `;
 
-    this.setGeneralElements();
-    this.setTeamItemElements();
-    this.setMatchItemElements();
-    this.setEventListeners();
-
-    if (!session.adminControls) this.disableEditMode();
-    this.teamIds.forEach(teamId => {
-      const teamItem = this.getTeamItem(teamId);
-      const listener = new FavTeamListener(teamItem);
-      listener.setAnchor('.team-record');
+    // add team items
+    this.teamIds.forEach((teamId, teamIdx) => {
+      const team = this.data.teams[teamId];
+      const item = new TeamLabel(team);
+      item.classList.add('team-item', 'team-item-' + (teamIdx + 1));
+      item.dataset.team_id = teamId;
+      item.appendRecord();
+      item.setFavTeamIconAnchor('.team-record');
+      this.querySelector('.team-col').appendChild(item);
     });
+
+    // populate game info
+    this.querySelector('.game-time').textContent = this.data.time;
+    this.querySelector('.game-court').textContent = 'Court ' + this.data.court;
+
+    // populate match items
+    this.setMatchItemElements();
+
+    // set event listeners
+    const btn = this.getButton();
+    btn.addEventListener('click', (e) => {
+      this.toggleForm();
+    });
+
+    const matchItems = this.querySelectorAll('.match-item');
+    matchItems.forEach(matchItem => {
+      matchItem.addEventListener('click', (e) => {
+        if (this.form) this.handleMatchItemClick(matchItem);
+      });
+    });
+
+    const saveBtn = this.querySelector('.form-footer button');
+    saveBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      this.classList.add('pending');
+      await this.pushMatchUpdates();
+    });
+
+    // set admin controls
+    if (!session.adminControls) this.disableEditMode();
 
     return this;
   }
@@ -421,8 +433,6 @@ export class GameItem extends HTMLElement {
   updateMatchResults(newMatches) {
 
     this.data.matches = newMatches;
-    this.classList.remove('pre', 'in', 'post');
-    this.classList.add(this.getGameStatus().toLowerCase());
 
     const pending = this.classList.contains('pending');
     const form = this.form;

@@ -2,7 +2,13 @@ import { offsetScrollIntoView, formatNumber, createElement } from './util.js';
 import { db, session } from './firebase.js';
 import { ref, onValue, update, increment } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js';
 
-import { ContCard, MenuItem, Stepper, Button, FavTeamListener } from './components/common.js';
+import {
+  ContCard,
+  MenuItem,
+  Stepper,
+  Button,
+  TeamLabel,
+} from './components/common.js';
 import { Leaderboard } from './components/standings.js';
 
 /* ------------------------------------------------ */
@@ -137,15 +143,8 @@ export default class Standings {
 
         const item = new MenuItem();
         item.classList.add('team-drinks-item');
-        const title = createElement(`
-          <div class="d-flex align-items-center column-gap-2">
-            <span class="team-nbr">${team.nbr}</span>
-            <span class="team-name">${team.name}</span>
-          </div>
-        `);
 
-        // fav team listener
-        new FavTeamListener(title);
+        const title = new TeamLabel(team);
 
         const stepper = new Stepper(0);
         stepper.classList.add('drinks-stepper');

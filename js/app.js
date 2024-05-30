@@ -32,19 +32,18 @@ export default class App {
       console.log('user', user);
       session.setUserProps(user);
 
-      if (this.initialized) {
-        this.updateUserContent();
+      if (App.initialized) {
+        App.updateUserContent();
         return;
       }
 
-      this.initialized = true;
-      this.initUserContent();
+      App.initialized = true;
+      App.initUserContent();
       mainDiv.classList.remove('d-none');
       footer.classList.remove('d-none');
       loadingSpinner.classList.add('d-none');
     });
 
-    return this;
   }
 
   /* ------------------------------------------------ */
@@ -52,17 +51,17 @@ export default class App {
 
   static async setLeague(leagueId) {
     await session.setLeagueProps(leagueId);
-    this.initUserContent();
+    App.initUserContent();
   }
 
   static setAdminControls(value) {
     session.setAdminControls(value);
-    this.updateUserContent();
+    App.updateUserContent();
   }
 
   static setFavTeam(teamName) {
     session.setFavTeam(teamName);
-    this.updateUserContent();
+    App.updateUserContent();
   }
 
   /* ------------------------------------------------ */
@@ -85,37 +84,42 @@ export default class App {
   static initUserContent() {
 
     footerLink.textContent = session.getLeague().title;
-    this.getSections().forEach(section => {
+    App.getSections().forEach(section => {
       section.init();
     });
   }
 
   static updateUserContent() {
 
-    this.getSections().forEach(section => {
+    App.getSections().forEach(section => {
       section.handleOptionsChange();
     });
   }
 }
 
 /* ------------------------------------------------ */
+// App.init() on DOMContentLoaded
 
 document.addEventListener('DOMContentLoaded', () => {
-
-  const configureStyle = () => {
-    let mainHeader = document.querySelector('.main-header');
-    let insetTop = window.getComputedStyle(mainHeader).getPropertyValue('top');
-    if (insetTop == '0px') {
-      let style = document.createElement('style');
-      document.head.appendChild(style);
-      style.sheet.insertRule(`
-        .main-header::before {
-          background-color: var(--ios-bg-primary);
-        }
-      `, 0);
-    }
-  };
-
-  configureStyle();
   App.init();
 });
+
+// document.addEventListener('DOMContentLoaded', () => {
+
+//   const configureStyle = () => {
+//     let mainHeader = document.querySelector('.main-header');
+//     let insetTop = window.getComputedStyle(mainHeader).getPropertyValue('top');
+//     if (insetTop == '0px') {
+//       let style = document.createElement('style');
+//       document.head.appendChild(style);
+//       style.sheet.insertRule(`
+//         .main-header::before {
+//           background-color: var(--ios-bg-primary);
+//         }
+//       `, 0);
+//     }
+//   };
+
+//   configureStyle();
+//   App.init();
+// });

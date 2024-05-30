@@ -1,6 +1,12 @@
 
-import { formatNumber, createElement } from "../util.js";
-import { FavTeamListener } from "./common.js";
+import {
+  formatNumber,
+  createElement
+} from "../util.js";
+import {
+  FavTeamListener,
+  TeamLabel
+} from "./common.js";
 
 /* ------------------------------------------------ */
 // leaderboard
@@ -73,22 +79,17 @@ export class Leaderboard extends HTMLElement {
       row.classList.add('leaderboard-item');
       row.dataset.team = team.id;
       row.innerHTML = `
-        <td class="team">
-          <div class="d-flex align-items-center column-gap-2">
-            <span class="team-nbr">${team.nbr}</span>
-            <span class="team-name">${team.name}</span>
-          </div>
-        </td>
+        <td class="team"></td>
         <td class="wins">${team.stats.games.wins}</td>
         <td class="losses">${team.stats.games.losses}</td>
         <td class="winPct">${formatNumber(team.stats.games.winPct, '0.000')}</td>
         <td class="drinks">${team.stats.drinks.count}</td>
       `;
 
-      this.querySelector('tbody').appendChild(row);
+      const teamLabel = new TeamLabel(team);
+      row.querySelector('.team').appendChild(teamLabel);
 
-      // fav team listener
-      new FavTeamListener(row.querySelector('.d-flex'));
+      this.querySelector('tbody').appendChild(row);
     });
 
   }

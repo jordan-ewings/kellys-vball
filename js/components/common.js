@@ -233,7 +233,12 @@ export class RadioMenu extends HTMLElement {
   }
 
   async selectOption(item) {
-    this.value = item.dataset.value;
+    // this.value = item.dataset.value;
+
+    // if item is already selected, clear value
+    const sameValue = item.dataset.value == this.value;
+    this.value = sameValue ? null : item.dataset.value;
+
     await this.updateElements();
     this.dispatchEvent(new CustomEvent('change', { detail: this.value }));
 
@@ -250,8 +255,6 @@ export class RadioMenu extends HTMLElement {
       const trail = item.querySelector('.trail');
       const check = trail.querySelector('i');
       const isValue = item.dataset.value == this.value;
-      // check.className = isValue ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle';
-      // check.className = isValue ? 'bi bi-check-circle' : 'bi bi-circle';
       check.className = isValue ? this.checkClass : this.uncheckClass;
       item.classList.toggle('selected', isValue);
     });
@@ -511,3 +514,120 @@ export class FavTeamListener {
 document.addEventListener('session-setFavTeam', FavTeamListener.updateAll);
 
 /* ------------------------------------------------ */
+// teamLabel
+// often need to show team name alongside other team info (e.g., number, name), so this component is useful
+
+export class TeamLabel extends HTMLElement {
+
+  constructor(team) {
+    super();
+    this.team = team;
+    this.render();
+
+    this.favTeamListener = new FavTeamListener(this);
+  }
+
+  render() {
+    this.classList.add('team-label');
+    this.classList.add('d-flex', 'align-items-center', 'column-gap-2', 'flex-nowrap');
+    this.innerHTML = `
+      <span class="team-nbr">${this.team.nbr}</span>
+      <span class="team-name">${this.team.name}</span>
+    `;
+    return this;
+  }
+
+  appendRecord() {
+    const record = (this.team.stats) ? this.team.stats.games.record : this.team.record;
+    const span = createElement(`<span class="team-record">${record}</span>`);
+    this.appendChild(span);
+  }
+
+  setFavTeamIconAnchor(selector) {
+    this.favTeamListener.setAnchor(selector);
+  }
+
+}
+
+customElements.define('team-label', TeamLabel);
+
+/* ------------------------------------------------ */
+// Section
+// a section component with a header and body
+// "home page" of section is the first carousel item
+// home page can contain elements that navigate to other sections
+// from non-home pages, can navigate back to home page with back button in header
+// (back button is hidden on home page)
+
+export class Section extends HTMLElement {
+
+  constructor() {
+    super();
+    this.render();
+  }
+
+  render() {
+    this.classList.add('x-section');
+    this.innerHTML = `
+      <div class="main-header"></div>
+      <div class="main-header main-header-subpage hidden">
+        <div role="button" class="btn-back" data-x-nav-index="0">
+          <i class="fa-solid fa-chevron-left"></i> Back
+        </div>
+        <div class="main-header-title">
+          <span></span>
+        </div>
+      </div>
+      <div class="main-body">
+        <div class="carousel slide" data-bs-touch="false" data-bs-interval="false">
+          <div class="carousel-inner">
+            <div class="carousel-item active" data-x-content-index="0"></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.carousel = this.querySelector('.carousel');
+    this.carouselInner = this.querySelector('.carousel-inner');
+    this.carouselBS = new bootstrap.Carousel(this.carousel);
+
+    this.header = this.querySelector('.main-header');
+    this.headerSub = this.querySelector('.main-header-subpage');
+    this.headerSubTitle = this.headerSub.querySelector('.main-header-title span');
+    this.headerSubBackBtn = this.headerSub.querySelector('.btn-back');
+    this.headerSubBackBtn.addEventListener('click', () => {
+      this.carouselBS.to(0);
+      this.headerSub.classList.add('hidden');
+      this.headerSubTitle.textContent = '';
+      this.header.classList.remove('hidden');
+      document.querySelector('nav').classList.remove('hidden');
+    });
+
+    return this;
+  }
+
+  // adding/linking nav buttons and content
+  initializeLink(link, pageTitle = null) {
+    const index = this.carouselInner.children.length;
+    const content = document.createElement('div');
+    content.classList.add('carousel-item');
+    content.dataset.xContentIndex = index;
+    this.carouselInner.appendChild(content);
+
+    link.dataset.xNavIndex = index;
+    link.addEventListener('click', () => {
+      this.carouselBS.to(index);
+      if (this.hasHome) {
+        document.querySelector('nav').classList.add('hidden');
+        this.header.classList.remove('hidden');
+        this.headerTitle.textContent = pageTitle;
+      }
+    });
+  }
+
+  getPageForLink(link) {
+    const index = link.dataset.xNavIndex;
+    return this.carouselInner.querySelector(`.carousel-item[data-x-content-index="${index}"]`);
+  }
+
+}
